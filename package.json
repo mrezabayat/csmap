@@ -10,6 +10,8 @@
     "preview": "astro preview",
     "astro": "astro",
     "check": "astro check",
+    "db:migrate:local": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "lint:content": "node scripts/lint-content.mjs",
     "audit:orphans": "node scripts/find-orphans.mjs",
     "audit:importance": "node scripts/audit-importance.mjs",
@@ -17,6 +19,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.9",
+    "@astrojs/cloudflare": "^12.6.13",
     "@astrojs/mdx": "^4.3.14",
     "@astrojs/react": "^5.0.7",
     "@astrojs/rss": "^4.0.18",
@@ -26,6 +29,8 @@
     "@tailwindcss/vite": "~4.1",
     "@xyflow/react": "^12.11.0",
     "astro": "^5.18.2",
+    "better-auth": "^1.6.14",
+    "drizzle-orm": "^0.45.2",
     "pagefind": "^1.5.2",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
@@ -33,6 +38,7 @@
     "typescript": "^6.0.3"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260606.1",
     "@types/react": "^19.2.16",
     "@types/react-dom": "^19.2.3"
   }

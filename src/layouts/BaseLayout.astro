@@ -1,5 +1,6 @@
 ---
 import "~/styles/global.css";
+import AuthMenu from "~/components/AuthMenu";
 
 interface Props {
   title: string;
@@ -84,6 +85,8 @@ const canonicalUrl = canonical
             <a href="/search" class="text-[var(--color-atlas-muted)] hover:text-[var(--color-atlas-ink)] no-underline">Search</a>
             <a href="/about" class="text-[var(--color-atlas-muted)] hover:text-[var(--color-atlas-ink)] no-underline">About</a>
           </nav>
+
+          <AuthMenu client:load />
 
           <button
             type="button"

@@ -2,8 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "computer-atlas",
   "compatibility_date": "2026-06-05",
+  "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "./dist",
     "not_found_handling": "404-page"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "computer-atlas",
+      "database_id": "75e609c7-9a77-4d5a-926b-8951f1dca74b"
+    }
+  ],
+  "observability": {
+    "enabled": false
   }
 }
