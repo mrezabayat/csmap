@@ -1,0 +1,69 @@
+---
+title: Integration Test
+aliases: ["integration tests", "integration testing"]
+category: software-engineering
+kind: concept
+summary: A test that exercises several components together, often hitting a real database, network, or external service — slower but higher-signal than unit tests.
+level: intermediate
+status: draft
+importance: important
+tags: ["testing", "quality"]
+prerequisites: ["testing", "unit-test"]
+related: ["ci-cd"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+An **integration test** exercises several real components together — your code, a real database, a real network, sometimes a real third-party service — and checks the whole flow works. They're slower than unit tests (often seconds or tens of seconds each) but they catch a class of bugs unit tests can't: wiring issues, schema drift, API contract violations, timing issues, environment mismatches.
+
+## More detail
+
+Integration tests sit in the middle of the testing pyramid: fewer than unit tests, more than end-to-end tests.
+
+Typical things they check:
+
+- **Database queries** against a real database, not a mock.
+- **HTTP endpoints** end-to-end through your routing layer.
+- **Background jobs** actually run and produce the expected side effects.
+- **Service-to-service calls** with one service deployed locally or in a test environment.
+- **Migrations** apply cleanly to a known starting schema.
+
+Strategies for managing the slowness:
+
+- **Test containers** (Testcontainers, podman, dind in CI) — spin up a Postgres / Redis / Kafka in a container per test run or per test class.
+- **Schemas per test** — each test gets a fresh schema; tear down after.
+- **Snapshot test data** — load a known fixture before each suite.
+- **Parallel test runners** — most modern frameworks support running independent test classes in parallel.
+
+What you replace with test doubles:
+
+- **Third-party APIs** (Stripe, Twilio, Slack) — use their sandboxes when possible, or record/replay (`vcr.py`, `nock`, `wiremock`).
+- **Slow internal services** — use a contract test instead of a full call.
+- **Time** — most tests benefit from a "frozen clock" so dates don't break tomorrow.
+
+Adjacent concepts:
+
+- **Contract testing** (Pact) — A and B agree on a contract; A tests that it sends the contract; B tests that it accepts the contract. No live integration needed.
+- **End-to-end testing** — drives the whole system the way a user would (Playwright, Cypress, Selenium). Top of the pyramid; expensive and brittle.
+- **Smoke testing** — a tiny set of "is the service up at all" tests run after each deploy.
+
+## Why it matters
+
+Unit tests prove your functions work; integration tests prove your *system* works. They're where you catch the subtle bugs that only show up when the database actually returns a `NULL`, or the API actually times out, or the service actually receives the message it expected. Without them, every deploy is a gamble.
+
+## Real-world examples
+
+- **Testcontainers** is a hugely popular library across languages for spinning up real databases / queues / brokers per test run; "no more mocking the database" is its tagline.
+- **Stripe's** test cards (e.g. `4242 4242 4242 4242`) and webhook signatures let you exercise the full integration with their sandbox.
+- **GitHub Actions** runs millions of integration tests per day across the open-source ecosystem; service containers in workflows are an example of the same pattern.
+- Many teams run **smoke tests** in production after each deploy: a 30-second curl-the-critical-endpoints script that catches "the deploy succeeded but the service is broken".
+
+## Common misconceptions
+
+- **"Integration tests can replace unit tests."** They're slower, harder to isolate, and harder to diagnose when they fail. You want both.
+- **"If you mock the database, it's still an integration test."** It's not — that's still a unit test, just with a wider scope. Mocking the database loses much of the value.
+
+## Learn next
+
+The faster, narrower tier: [unit test](/t/unit-test). What runs both on every PR: [CI/CD](/t/ci-cd).

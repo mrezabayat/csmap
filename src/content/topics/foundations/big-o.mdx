@@ -5,12 +5,12 @@ category: foundations
 kind: concept
 summary: A notation for describing how an algorithm's cost grows as its input grows — the standard way computer scientists compare algorithms.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["complexity", "algorithms"]
 prerequisites: ["algorithms"]
 related: ["data-structure", "recursion"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -53,6 +53,8 @@ Big O is how engineers reason about scale. Choosing an O(n) over an O(n²) algor
 - The Git blame for a 100k-line file: O(n) → fast. O(n²) → painful.
 - A database query that scans every row is O(n); the same query with the right index is O(log n) or O(1).
 - A regex that backtracks exponentially can hang a server on a 50-character input ("ReDoS").
+
+- Big O famously broke down during the AlphaGo project: the brute-force Go search tree is enormous, but Monte Carlo Tree Search plus a neural net evaluator turned out to win anyway.
 
 ## Common misconceptions
 

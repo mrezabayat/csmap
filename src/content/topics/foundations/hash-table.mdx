@@ -1,0 +1,67 @@
+---
+title: Hash Table
+aliases: ["hash map", "dictionary", "hashmap"]
+category: foundations
+kind: concept
+summary: A data structure that maps keys to values with average O(1) lookup, insert, and delete — the workhorse of dictionaries, sets, caches, and indexes.
+level: beginner
+status: draft
+importance: important
+tags: ["data-structures", "algorithms"]
+prerequisites: ["data-structure"]
+related: ["big-o", "tree"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **hash table** is a data structure for fast "is this key in here, and if so what's the value?" lookups. It works by feeding the key through a **hash function** to produce a number, using that number to pick a slot in an array, and storing the value there. Done right, lookup, insert, and delete all happen in roughly constant time regardless of how big the table gets.
+
+## More detail
+
+The basic recipe:
+
+1. **Hash** the key to an integer.
+2. Take `index = hash mod table_size` to pick a slot.
+3. Store / look up the value at that slot.
+
+Two collisions can land at the same slot. The two main strategies for handling them:
+
+- **Chaining** — each slot holds a linked list (or small dynamic array) of entries with that hash; on lookup you walk the list.
+- **Open addressing** — on collision, probe other slots (linear probing, quadratic probing, double hashing). Cache-friendlier, but requires careful deletion.
+
+Modern high-performance implementations almost all use open addressing with techniques like Robin Hood hashing or Swiss tables (Google's open-source `flat_hash_map`, used by Go's `map`, Abseil, etc.).
+
+Key performance considerations:
+
+- **Hash function quality** — bad hashes cluster, turning O(1) into O(n).
+- **Load factor** — entries per slot. Most implementations resize when > ~0.75.
+- **Resize cost** — doubling the table and re-hashing everything is O(n); amortised O(1) per insert.
+
+Hash table variants:
+
+- **Hash set** — same structure, no values, just "is this present?".
+- **Concurrent hash map** — supports many threads (Java's `ConcurrentHashMap`, Rust's `dashmap`).
+- **Persistent hash map** — immutable, structurally shared between updates (Clojure, Scala, Immer).
+
+A famous limitation: hash tables don't preserve insertion order — except many modern languages have specifically chosen to (Python 3.7+, JavaScript objects). They do this via a parallel array of insertion indices.
+
+## Why it matters
+
+Hash tables are the workhorse data structure of modern programming — `dict` in Python, `Object` and `Map` in JavaScript, `HashMap` in Java/Rust/Go, every database index that isn't a B-tree. They are also the foundation under sets, caches, deduplication, joins in databases, and most "is this in a list of N things" code.
+
+## Real-world examples
+
+- A Redis cache is, at heart, a giant hash table mapping string keys to values.
+- A spell-checker uses a hash set of known words for O(1) "is this a word?" lookups.
+- A SQL `JOIN` is often implemented as a "hash join": build a hash table from the smaller table, probe it with the larger one.
+- The 2003 SQL Slammer worm exploited a hash function so weak that it caused enough collisions to make a SQL Server fall over.
+
+## Common misconceptions
+
+- **"Hash tables are always O(1)."** Average-case O(1). Worst case is O(n) with adversarial inputs (which is why high-stakes systems use SipHash or random seeds).
+- **"`HashMap` keeps things in order."** Most do not; Python's `dict` does as a deliberate design choice but most languages' standard hash maps don't.
+
+## Learn next
+
+How to talk about that "constant time" claim: [Big O](/t/big-o). The other go-to associative structure: [tree](/t/tree).

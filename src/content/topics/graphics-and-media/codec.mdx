@@ -5,12 +5,12 @@ category: graphics-and-media
 kind: concept
 summary: A pair of algorithms — encoder and decoder — that compress and decompress media. The reason a 4K video isn't a terabyte.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["codec", "video", "audio"]
 prerequisites: ["bits"]
 related: ["image-format"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -55,6 +55,8 @@ Codecs are what make video streaming, video calls, and modern photography possib
 - Netflix streams in AV1 (and HEVC) to save bandwidth.
 - A WhatsApp voice note uses Opus.
 - YouTube delivers different codecs to different devices based on what they can decode in hardware.
+
+- A single Netflix title is encoded into dozens of variants (different codecs, bitrates, resolutions) so adaptive streaming can pick the right one for each viewer's bandwidth.
 
 ## Common misconceptions
 

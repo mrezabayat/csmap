@@ -1,0 +1,67 @@
+---
+title: Deadlock
+aliases: ["deadlocked"]
+category: operating-systems
+kind: concept
+summary: A state where two or more threads are each waiting for the other to release a lock — so none of them ever make progress.
+level: intermediate
+status: draft
+importance: important
+tags: ["concurrency", "locking"]
+prerequisites: ["mutex"]
+related: ["thread"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **deadlock** is when threads get stuck waiting for each other in a circle. Thread A holds lock 1 and wants lock 2. Thread B holds lock 2 and wants lock 1. Both wait forever. The classic example: two people approach a single-lane bridge from opposite sides, each politely refusing to back up until the other does.
+
+## More detail
+
+Coffman et al. (1971) identified four conditions that must *all* hold for a deadlock to be possible:
+
+1. **Mutual exclusion** — the resources can't be shared.
+2. **Hold and wait** — a thread holds at least one resource while waiting for another.
+3. **No preemption** — resources aren't forcibly taken back.
+4. **Circular wait** — a cycle of threads each waiting for the next.
+
+Eliminate any one and deadlock becomes impossible.
+
+Practical avoidance strategies:
+
+- **Lock ordering** — define a global order on all locks; every thread must acquire them in that order. Breaks circular wait.
+- **Trylock + back off** — `try_lock` and release everything if any attempt fails. Adds livelock risk but no deadlock.
+- **Use a single coarse lock** — one mutex around the whole subsystem. Often slower but always correct.
+- **Avoid locks entirely** — atomic operations, lock-free data structures, message-passing, immutable data, single-writer queues.
+
+Deadlock detection (when prevention is impractical):
+
+- **Wait-for graph** — track which thread is waiting for which; a cycle means deadlock.
+- **Database deadlock detector** — most RDBMSs detect transaction deadlocks and abort one transaction to break the cycle.
+- **Watchdog timers** — declare deadlock if a lock has been waited on too long.
+
+Related-but-different pathologies:
+
+- **Livelock** — threads keep responding to each other and getting nowhere (two people in a hallway endlessly stepping aside in the same direction).
+- **Starvation** — a thread is technically eligible but never scheduled because higher-priority work always arrives first.
+- **Priority inversion** — a high-priority thread waits on a lock held by a low-priority thread the OS isn't bothering to schedule. Famously almost killed the Mars Pathfinder mission.
+
+## Why it matters
+
+Deadlocks are nondeterministic — they happen under specific timing, often in production after stress builds up, and they bring a system to a complete halt. Designing concurrency to avoid them (or fail fast when they occur) is a core skill in any multi-threaded codebase.
+
+## Real-world examples
+
+- Most relational databases will abort one transaction with a `deadlock detected` error rather than wait forever — your code has to be prepared to retry.
+- The infamous Therac-25 radiation therapy machine had a race condition adjacent to deadlock that overdosed multiple patients in the 1980s.
+- Linux's `lockdep` infrastructure has caught thousands of *potential* deadlocks in kernel code that never actually fired in production.
+
+## Common misconceptions
+
+- **"Deadlocks only happen with explicit locks."** They happen any time there's a circular dependency on a finite resource — DB transactions, file handles, semaphores, message queues, network connections.
+- **"Detecting a deadlock is enough."** Detection without a recovery plan (retry, rollback, abort) just turns silent hangs into noisy hangs.
+
+## Learn next
+
+The basic primitive that makes deadlocks possible: [mutex](/t/mutex). The unit of execution that gets stuck: [thread](/t/thread).

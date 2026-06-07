@@ -1,0 +1,80 @@
+---
+title: SQL Injection
+aliases: ["sqli", "sql-injection"]
+category: security-and-privacy
+kind: concept
+summary: A vulnerability where attacker-controlled input is concatenated into a SQL query, letting them rewrite it to read, modify, or destroy any data the app can access.
+level: intermediate
+status: draft
+importance: important
+tags: ["security", "sql", "vulnerability"]
+prerequisites: ["sql"]
+related: ["xss", "threat-model"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**SQL injection** is when user-supplied text gets glued directly into a SQL query string, allowing the user to change what the query does. The textbook example: a login form that builds `SELECT * FROM users WHERE name = '$name' AND password = '$pw'`. An attacker enters `' OR 1=1 --` as the name; the query becomes `WHERE name = '' OR 1=1 -- AND password = ...`, which matches every row and logs them in.
+
+## More detail
+
+The fix is fundamentally simple: **never concatenate user input into SQL**. Use **parameterised queries** (also called prepared statements), where the SQL and the parameters are sent separately to the database. The database engine never confuses one for the other:
+
+```sql
+-- Vulnerable
+String query = "SELECT * FROM users WHERE name = '" + name + "'";
+
+-- Safe (parameterised)
+PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE name = ?");
+ps.setString(1, name);
+```
+
+Every modern database driver supports this. Every ORM uses parameterised queries by default. The only way to write injectable code in 2026 is to deliberately bypass these.
+
+Classes of SQL injection:
+
+- **In-band** — the attacker sees the query's results in the page they get back.
+- **Blind** — no visible output, but the attacker can infer data via the page's behaviour (timing differences, true/false redirects).
+- **Out-of-band** — the attacker forces the DB to make a network connection (DNS lookup, HTTP call) that leaks data.
+
+What an attacker can do once they have injection:
+
+- Read any data the app can read — usually the whole database.
+- Write / modify data.
+- Escalate privileges (e.g., grant themselves admin via UPDATE on the users table).
+- Execute OS commands via certain DB features (`xp_cmdshell` on SQL Server, `COPY ... TO PROGRAM` on Postgres if configured).
+- Pivot to other services on the network.
+
+Adjacent injection vulnerabilities:
+
+- **NoSQL injection** — same idea against MongoDB / DynamoDB query languages.
+- **Command injection** — `system("$user_input")` in shell calls.
+- **LDAP injection**, **XPath injection**, **template injection** — same pattern, different target language.
+
+Defences beyond parameterised queries:
+
+- **Principle of least privilege** — the app's DB user shouldn't be able to `DROP TABLE`.
+- **Input validation** — narrow types help (numeric IDs as integers, enums as enums).
+- **Output encoding** — separately, prevents the consequences of *injected* data leaking out (XSS).
+- **Web Application Firewalls (WAFs)** — defence-in-depth, not a substitute.
+
+## Why it matters
+
+SQL injection has been on the OWASP Top 10 since OWASP existed. It's almost trivially preventable yet still causes major breaches every year — usually in legacy code or in places where someone built a "quick" raw query.
+
+## Real-world examples
+
+- The **2008 Heartland Payment Systems breach** (130 million card numbers) started with SQL injection.
+- The **2011 Sony Pictures hack** (Sony's first major breach, by LulzSec) was SQL injection; the published table dump went on for pages.
+- **TalkTalk's 2015 breach** (157,000 customer records, £77M fine) was again SQL injection — through a legacy webpage the company had forgotten existed.
+- Bobby Tables (the xkcd comic) is the universal mnemonic. `Robert'); DROP TABLE Students;--`
+
+## Common misconceptions
+
+- **"My ORM protects me."** Yes, *as long as you only use parameterised queries through it*. Raw queries with string interpolation are still vulnerable. Most ORMs offer escape hatches that bypass safety.
+- **"SQL injection is a solved problem."** The fix is well-known. The bugs are still shipped. Treat any string concatenation around SQL as a real bug.
+
+## Learn next
+
+The web's other classic injection: [XSS](/t/xss). The discipline of thinking about attacks in general: [threat model](/t/threat-model).

@@ -5,12 +5,12 @@ category: data-and-databases
 kind: concept
 summary: A transaction model that guarantees Atomicity, Consistency, Isolation, and Durability — the contract that keeps databases reliable under failures and concurrency.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["database", "transactions", "acid"]
 prerequisites: ["database", "sql"]
 related: ["relational-model"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ ACID is why your bank balance is consistent across simultaneous transfers, why a
 - PostgreSQL, MySQL/InnoDB, SQL Server, Oracle, SQLite — all ACID.
 - Most NoSQL stores started without transactions and added them later: MongoDB, DynamoDB, and others now support transactions on a subset of operations.
 - A long-running transaction can hold locks for minutes — a common production foot-gun.
+
+- A single bank transfer often involves a dozen database rows across accounts, ledgers, audit logs, and idempotency keys — all of which must commit or roll back together.
 
 ## Common misconceptions
 

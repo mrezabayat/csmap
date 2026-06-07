@@ -5,13 +5,13 @@ category: data-and-databases
 kind: concept
 summary: A model of data as a set of relations (tables of tuples) — the mathematical foundation under SQL databases.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["database", "relational"]
 prerequisites: ["database"]
 related: ["sql", "indexing"]
 nextSteps: ["normalization"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -46,6 +46,8 @@ The relational model is the most successful data abstraction in computing. Nearl
 - An `orders` table has a `customer_id` foreign key pointing at the `customers` table.
 - "Find all customers in France who ordered last month" is one SQL query joining three relations.
 - BigQuery, Snowflake, and Redshift are warehouse-scale relational stores that absorbed the model and added massive parallelism.
+
+- The same business question — "top 10 customers by lifetime value last year" — can be answered with one well-written SQL query that would take 200 lines of imperative code.
 
 ## Common misconceptions
 

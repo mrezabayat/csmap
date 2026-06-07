@@ -5,12 +5,12 @@ category: networks-and-internet
 kind: protocol
 summary: A connectionless, "fire and forget" transport protocol. Faster than TCP but with no delivery, ordering, or reliability guarantees.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["udp", "networking"]
 prerequisites: ["packet", "ip-address"]
 related: ["tcp"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -49,6 +49,8 @@ A surprising amount of the modern internet — video calls, online games, DNS, a
 - **DNS** queries are usually a single UDP packet each direction.
 - **WebRTC** video and audio use UDP (via SRTP) so a momentary loss doesn't stall the call.
 - **QUIC** / HTTP/3 are UDP-based replacements for TCP / HTTP/2.
+
+- Apple's iCloud Private Relay relays user traffic over QUIC (UDP-based) instead of TCP to make connections faster and harder to fingerprint per-network.
 
 ## Common misconceptions
 

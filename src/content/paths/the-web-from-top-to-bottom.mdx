@@ -1,0 +1,40 @@
+---
+title: The Web from Top to Bottom
+summary: Trace a single HTTPS request from the browser down through HTTP, TLS, TCP, UDP, IP, packets, and routing — the whole stack in one walk.
+audience: intermediate
+topics:
+  - ref: web-browser
+    section: Application
+  - ref: http
+    section: Application
+  - ref: rest-api
+    section: Application
+    optional: true
+  - ref: https
+    section: Encryption
+  - ref: tls
+    section: Encryption
+  - ref: public-key-cryptography
+    section: Encryption
+    optional: true
+  - ref: tcp
+    section: Transport
+  - ref: udp
+    section: Transport
+  - ref: ip-address
+    section: Internet
+  - ref: packet
+    section: Internet
+  - ref: router
+    section: Internet
+  - ref: dns
+    section: Naming
+  - ref: osi-model
+    section: The big picture
+    optional: true
+updated: 2026-06-07
+---
+
+This is the counterpart to "Internet from the Bottom Up" — same stack, traversed the other direction. You start at the browser, see what HTTP and HTTPS actually do, drop into the transport layer, then the network layer, then the naming system that knits it all together.
+
+The point isn't to memorise the layers; it's to internalise that a browser tab opening a page is dozens of named protocols coordinating, and to know which layer to look at when something breaks.

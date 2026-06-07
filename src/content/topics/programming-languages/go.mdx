@@ -1,0 +1,62 @@
+---
+title: Go
+aliases: ["golang", "go-lang"]
+category: programming-languages
+kind: language
+summary: A small, garbage-collected, compiled language with first-class concurrency, designed at Google for building reliable network services.
+level: intermediate
+status: draft
+importance: important
+tags: ["go", "language", "concurrency"]
+prerequisites: ["programming-language"]
+related: ["garbage-collection", "thread", "microservices"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Go** (sometimes written "Golang" because that's the search term that finds anything) is a deliberately small programming language designed to make writing reliable, concurrent server software fast and approachable. It compiles to a single statically-linked binary, has a fast garbage collector, includes "goroutines" (lightweight threads), and is opinionated about formatting and project structure so teams don't argue.
+
+## More detail
+
+Go was designed at Google by Rob Pike, Ken Thompson, and Robert Griesemer (announced 2009, 1.0 in 2012) explicitly to address the pain of large C++ and Java codebases for backend services.
+
+Defining choices:
+
+- **Small language** — fits in your head; very few features compared to Java, C++, Scala. New versions add things slowly.
+- **Static typing** with type inference for locals.
+- **Garbage collected**, low-pause collector (sub-millisecond targets achieved).
+- **Goroutines** — go-routine `go someFunc()` launches a lightweight task on Go's scheduler; you can have millions concurrently.
+- **Channels** — typed pipes between goroutines, with `select` for choosing among multiple channels.
+- **Interfaces are structural** — anything that implements the methods *is* the interface, no `implements` keyword.
+- **No exceptions** — errors are values, returned explicitly: `if err != nil { return err }`.
+- **`gofmt`** — one canonical formatting; no style debates.
+- **Single statically-linked binary** — easy deployment to containers or bare metal.
+
+What's deliberately absent:
+
+- Generics weren't added until Go 1.18 (2022), 13 years in.
+- No exceptions, no inheritance, no operator overloading, no implicit type conversion, no macros, no metaprogramming.
+
+The result is code that's plain to read, easy to refactor, easy to deploy, and slightly more verbose than equivalents in Python or Rust.
+
+## Why it matters
+
+A huge fraction of modern cloud-native infrastructure is written in Go: Docker, Kubernetes, Terraform, Prometheus, Grafana, etcd, CockroachDB, InfluxDB, HashiCorp's whole stack, the Cilium and Envoy ecosystems. If you operate a Kubernetes cluster, almost every binary on it is Go.
+
+## Real-world examples
+
+- **Kubernetes** — ~2 million lines of Go, the reference example of building distributed systems in Go.
+- **Docker / Moby** — original implementation drove much of Go's early popularity.
+- **Discord** uses Go for many backend services (and rewrote some hot paths to Rust to avoid GC pauses — the case studies are public and worth reading).
+- **Cloudflare** wrote much of their internal proxy and DNS infrastructure in Go before migrating some pieces to Rust for similar reasons.
+
+## Common misconceptions
+
+- **"Goroutines are threads."** They're lightweight tasks multiplexed onto OS threads by Go's scheduler. You can run millions of them in a process.
+- **"Go has no generics."** It did not until 2022; it does now.
+- **"Go is for microservices."** It's a great language for them, but it's also used for CLIs (`gh`, `kubectl`, `terraform`), batch tools, and databases.
+
+## Learn next
+
+The memory model under the hood: [garbage collection](/t/garbage-collection). The unit Go's goroutines multiplex onto: [thread](/t/thread). The architecture pattern Go is famously good at: [microservices](/t/microservices).

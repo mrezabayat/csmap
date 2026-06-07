@@ -5,27 +5,62 @@ category: networks-and-internet
 kind: protocol
 summary: A reliable, ordered, stream-based transport protocol on top of IP. The plumbing under most internet traffic.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
 tags: ["tcp", "networking"]
 prerequisites: ["ip-address", "packet"]
 related: ["http", "udp"]
 nextSteps: ["tls"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+**TCP** (Transmission Control Protocol) is the layer that turns the unreliable, packet-by-packet world of IP into a reliable, ordered byte stream between two computers. You hand it a stream of bytes; it slices them into segments, sends them, retransmits any that get lost, reassembles them on the other end in the right order, and hides every hiccup from your application. Almost every protocol you've heard of — HTTP, SSH, email, databases — rides on top of TCP.
 
 ## More detail
 
+TCP gives applications four guarantees IP alone doesn't:
+
+1. **Reliability** — lost segments are detected (via acknowledgements and timeouts) and retransmitted.
+2. **Order** — segments that arrive out of order are reassembled before delivery.
+3. **Flow control** — the receiver advertises a window; the sender never overwhelms it.
+4. **Congestion control** — algorithms (CUBIC, BBR, …) react to packet loss and round-trip time so a single connection doesn't crush the network.
+
+A connection is established with the **three-way handshake**:
+
+```
+client  → SYN  →     server
+client  ← SYN-ACK ←  server
+client  → ACK  →     server
+```
+
+After that, both sides can send. Connections close with FIN exchanges (or with RST on errors).
+
+Important characteristics:
+
+- Stream, not message. TCP doesn't preserve message boundaries; the application has to frame.
+- Setup cost. Three-way handshake means at least one round-trip before any data flows. TLS adds another. QUIC (UDP-based) was designed partly to collapse these.
+- "Head-of-line blocking": a single lost segment stalls every byte behind it on that connection.
+- TCP versions evolve (TCP Fast Open, ECN, modern congestion controllers) but the on-wire format is essentially unchanged in decades.
+
 ## Why it matters
+
+TCP is the contract every reliable internet application depends on. Even now that HTTP/3 has shifted to QUIC/UDP, TCP still carries the vast majority of internet traffic: web, email, SSH, databases, file transfer, RPCs. Tuning TCP (buffer sizes, congestion control choice, keep-alives) is one of the few low-level levers that shifts real performance.
 
 ## Real-world examples
 
+- An HTTP/1.1 or HTTP/2 page load is a single TCP connection (or a handful) carrying many HTTP requests.
+- An `ssh` session is one persistent TCP connection.
+- A PostgreSQL or Redis connection is a TCP stream framing the database protocol on top.
+- A Netflix stream over HTTP/2 is TCP underneath; the same stream over HTTP/3 swaps TCP for QUIC.
+
 ## Common misconceptions
+
+- **"TCP guarantees delivery to the user."** TCP guarantees delivery to the *receiving OS's TCP buffer*. If the application crashes before reading, the bytes are lost as far as the user is concerned.
+- **"TCP preserves messages."** It does not — `send(...)` calls may be coalesced or split arbitrarily. Application protocols frame their own messages (length prefix, delimiter, or framed protocols like HTTP).
+- **"TCP and UDP are interchangeable."** They sit at the same layer but answer opposite questions. TCP is the right default; UDP is what you reach for when TCP's costs hurt more than its guarantees help (real-time media, DNS, QUIC).
 
 ## Learn next
 
-See [HTTP](/t/http), which is usually carried over TCP (and increasingly QUIC/UDP).
+The encrypted overlay almost always added on top: [TLS](/t/tls). The faster, unreliable sibling: [UDP](/t/udp). The application protocol that defined the modern web: [HTTP](/t/http).

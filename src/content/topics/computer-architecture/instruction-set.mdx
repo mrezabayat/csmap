@@ -5,13 +5,13 @@ category: computer-architecture
 kind: concept
 summary: The contract between a CPU and the programs that run on it — the menu of operations a processor can perform.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["isa", "architecture"]
 prerequisites: ["cpu"]
-related: ["logic-gates"]
+related: ["logic-gates", "risc-vs-cisc"]
 nextSteps: ["cpu-pipeline", "register"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -45,6 +45,8 @@ The ISA is the boundary between hardware and software. Picking it is one of the 
 
 - Apple switched its Macs from x86-64 (Intel) to ARM64 in 2020 — every app had to be recompiled or emulated.
 - WebAssembly is a portable, virtual ISA designed for the web.
+
+- The Apple Silicon Macs run x86-64 Intel binaries via Rosetta 2, which AOT-compiles them to ARM64 on first launch — a real-world demonstration of ISA portability via translation.
 
 ## Common misconceptions
 

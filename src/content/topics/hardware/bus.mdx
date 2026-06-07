@@ -5,12 +5,12 @@ category: hardware
 kind: concept
 summary: A set of wires (or differential lanes) that carries data, addresses, or control signals between components inside a computer.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["hardware", "interconnect"]
 prerequisites: ["cpu", "memory"]
 related: []
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ Bus bandwidth and latency define how fast components can cooperate. Many perform
 - Connecting an Nvidia GPU via PCIe vs. NVLink: NVLink is ~5× the bandwidth for GPU-to-GPU traffic.
 - An NVMe SSD plugged into a slower PCIe slot runs at a fraction of its potential.
 - USB 3 vs USB 2 device speeds differ by a factor of 10× due to the underlying bus.
+
+- PCIe Gen 5 doubled per-lane bandwidth to 32 GB/s and is what makes modern NVMe SSDs realistic — older buses would have been the bottleneck.
 
 ## Common misconceptions
 

@@ -5,12 +5,12 @@ category: networks-and-internet
 kind: concept
 summary: A small, self-describing chunk of data that travels across a network. The internet's fundamental unit of communication.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["networking", "packets"]
-related: ["router", "tcp", "udp"]
+related: ["router", "tcp", "udp", "osi-model"]
 nextSteps: ["ip-address"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -50,6 +50,8 @@ Packetisation is what makes the internet work as one shared, resilient network. 
 - `ping` sends ICMP packets and measures round-trip time.
 - `tcpdump` and Wireshark show you the actual packets crossing a network interface.
 - A "packet loss" reading on a video call means some packets didn't arrive — the codec hides the gaps as best it can.
+
+- A 4K video call sends ~600 packets per second per direction. Most are 1 KB or smaller — bandwidth isn't the bottleneck, packet rate often is.
 
 ## Common misconceptions
 

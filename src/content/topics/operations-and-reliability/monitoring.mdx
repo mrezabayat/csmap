@@ -5,13 +5,13 @@ category: operations-and-reliability
 kind: concept
 summary: Continuously observing a running system — collecting metrics, alerting on anomalies — so problems are caught before users notice.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["ops", "monitoring", "observability"]
 prerequisites: ["deployment"]
 related: ["sre"]
 nextSteps: ["logging", "incident-response"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -50,6 +50,8 @@ Monitoring is the difference between "we're flying blind" and "we know what's ha
 - A spike in 5xx errors after a deploy pages the on-call engineer, who rolls back.
 - A latency histogram showing p99 climbing for hours while p50 stays flat — usually a tail-latency problem.
 - A dashboard during an incident is where most people watch what's happening; without it the team is reduced to messages and guesses.
+
+- The Cloudflare dashboard during the 2017 "Cloudbleed" incident is a public case study in monitoring done well — engineers spotted, isolated, and rolled back the bad config in under an hour.
 
 ## Common misconceptions
 

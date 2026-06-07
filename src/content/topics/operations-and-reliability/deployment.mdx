@@ -1,28 +1,70 @@
 ---
 title: Deployment
+aliases: ["deploy", "deploys", "rollout"]
 category: operations-and-reliability
 kind: concept
 summary: The act of getting new versions of software running in production safely, predictably, and without downtime.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
 tags: ["deployment", "ops"]
 prerequisites: ["version-control"]
 related: ["git", "ci-cd"]
 nextSteps: ["monitoring", "sre"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+**Deployment** is everything that happens between "the code is merged" and "users are running it". For a static site that might be one file copy. For a global service serving millions of users it can be a multi-step orchestration involving canaries, traffic shifts, automated health checks, and a one-click rollback if anything looks wrong. Good deployment makes shipping boring: small, frequent, reversible.
 
 ## More detail
 
+A deployment has three rough phases:
+
+1. **Build artefact** — compile, bundle, containerise. The output is a deterministic, signed artefact that can be installed identically anywhere.
+2. **Ship** — copy the artefact to the target hosts (or push it to a registry the targets pull from).
+3. **Activate** — start the new version, route traffic to it, drain the old, retire it.
+
+Common deployment strategies, ordered roughly by safety:
+
+| Strategy | What it does | Trade-off |
+|---|---|---|
+| **In-place** | Stop, replace binary, start | Brief downtime |
+| **Rolling** | Replace instances one at a time | Mixed versions briefly serve users |
+| **Blue / green** | Run two full environments; flip traffic at once | Doubles infra during rollout |
+| **Canary** | Send a small slice of traffic to the new version, ramp if healthy | Best balance; requires metrics |
+| **Shadow** | Mirror traffic to new version, discard responses | Lets you load-test in prod |
+| **Feature flag** | Deploy disabled; enable per user / cohort | Decouples deploy from release |
+
+Healthy modern deployments share a few traits:
+
+- **Automated**, end-to-end, no manual scp.
+- **Versioned**, immutable artefacts (a container image's digest is the version).
+- **Observable** — every deploy emits an event the dashboards mark.
+- **Reversible** — rolling back is a one-click action, not an emergency.
+- **Gradual** when scale demands it (canary or progressive rollout).
+- **Idempotent** — re-running a deploy is safe.
+
+The classical separation between "deploy" and "release" is worth knowing. **Deploy** = the bits are in production. **Release** = users see them. Feature flags let teams do many deploys per day with releases gated by experiment results or marketing schedules.
+
 ## Why it matters
+
+How often a team deploys (and how confidently) is one of the strongest predictors of organisational performance — the DORA research repeatedly finds elite performers deploy on-demand, many times per day, with low change-failure rate and short mean time to restore. The lever you pull to get there is the deployment pipeline.
 
 ## Real-world examples
 
+- A serverless function: `git push`, the platform builds, the new code is live in seconds.
+- A Kubernetes deployment: a YAML update triggers a rolling update with readiness probes, gating each replica on a health check.
+- A major bank: a deploy is a multi-day choreography with change boards, approvals, and a freeze window before holidays. Not bad — just a different cost/risk balance.
+- Amazon famously deploys to production thousands of times per day across thousands of services.
+
 ## Common misconceptions
 
+- **"Deploys cause incidents, so we should deploy less."** Counter-intuitively, the opposite. *Big, infrequent* deploys cause more incidents than *small, frequent* ones, because each contains more change. Smaller deploys = smaller blast radius = faster diagnosis.
+- **"Deploy = release."** They can be the same in simple setups, but separating them via feature flags is the foundation of modern continuous delivery.
+- **"Zero-downtime deployment is just for big sites."** Modern platforms make it the default — even a small SaaS benefits from rolling or canary deploys to avoid 30-second outages on every push.
+
 ## Learn next
+
+The pipeline that produces deploys: [CI/CD](/t/ci-cd). What watches the deploy after it lands: [monitoring](/t/monitoring). The wider engineering discipline that thinks about this: [SRE](/t/sre).

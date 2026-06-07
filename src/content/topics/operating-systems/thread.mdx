@@ -5,14 +5,14 @@ category: operating-systems
 kind: concept
 summary: A single line of execution inside a process — the unit the CPU actually runs. A process can have many threads that share memory.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "concurrency"]
 prerequisites: ["process"]
 related: []
 partOf: ["operating-system"]
 nextSteps: ["scheduler"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ Modern CPUs have many cores; the only way to use them is concurrency. Threads (o
 - A web server uses one thread per request (Java) or one goroutine per request (Go).
 - A video game uses separate threads for physics, rendering, and audio.
 - A spreadsheet recalculates formulas on a background thread so typing stays smooth.
+
+- Every native iOS or Android app starts on a main thread that owns the UI; everything that takes more than a few milliseconds has to happen on a background thread to avoid jank.
 
 ## Common misconceptions
 

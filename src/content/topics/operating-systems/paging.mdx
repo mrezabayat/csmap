@@ -1,0 +1,63 @@
+---
+title: Paging
+aliases: ["demand paging", "page swapping"]
+category: operating-systems
+kind: concept
+summary: The mechanism that moves fixed-size pages of memory between RAM and disk on demand — the engine inside virtual memory.
+level: intermediate
+status: draft
+importance: important
+tags: ["memory", "virtual-memory", "os"]
+prerequisites: ["virtual-memory"]
+related: ["kernel", "memory"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Paging** divides memory into fixed-size chunks (typically 4 KB) called **pages** and lets the OS move them between RAM and disk on demand. If a program reaches for a page that isn't currently in RAM, the CPU stops, the OS finds room, loads the page from disk (or from a swap file), and the program continues — usually without ever knowing.
+
+## More detail
+
+The CPU's MMU maintains a **page table** for each process: a mapping from virtual page number to physical frame number (or "not present"). When code touches a virtual address:
+
+1. The CPU asks the MMU for the physical address.
+2. If the page is mapped, the access proceeds at full speed (often with a TLB hit, single-cycle).
+3. If the page is *not* present, the CPU raises a **page fault** exception.
+4. The kernel's page fault handler decides what to do:
+   - **Minor fault** — the page is in memory but not yet mapped (e.g., shared with another process, fresh allocation). Just map it.
+   - **Major fault** — the page is on disk in swap / a backing file. Read it back into a free frame, then map it.
+   - **Invalid** — segmentation fault; the process is killed.
+
+Key concepts:
+
+- **Demand paging** — only load a page when first accessed; don't preload anything.
+- **Page replacement** — when RAM is full and you need to bring in a new page, pick a victim to evict. LRU, clock, LRU-K, working set, etc.
+- **Swapping** vs **paging** — historically "swap" meant moving entire processes; "paging" means moving individual pages. Today they're used interchangeably.
+- **Thrashing** — when there's so little RAM that the system spends most of its time paging in and out. Symptom: disk light constantly on, everything molasses-slow.
+
+Modern wrinkles:
+
+- **Huge pages** (2 MB on x86) reduce TLB pressure but reduce paging granularity.
+- **zRAM / zswap** compress pages in memory instead of writing to disk — sometimes faster than the disk.
+- **NVMe SSDs** make swap viable again; old wisdom about "swap is always bad" was from spinning-disk days.
+- **PSI** (Pressure Stall Information) on Linux tells you when paging is hurting performance, with much more nuance than just looking at "swap used".
+
+## Why it matters
+
+Paging is what makes computers run programs bigger than their RAM, what isolates processes from each other, and what backs file-mapped memory (`mmap`), shared libraries, and copy-on-write fork. When tuning a database or a high-traffic service, paging behaviour is often the difference between fast and unusable.
+
+## Real-world examples
+
+- PostgreSQL relies on the OS page cache for much of its caching: `shared_buffers` is the database's own cache, but a much larger working set typically lives in the kernel's page cache via paging.
+- macOS's "memory pressure" indicator is basically a paging-pressure indicator — yellow means the kernel is compressing memory to avoid swap; red means it's actively swapping.
+- The Linux OOM killer fires when paging can no longer keep up: someone has to die so the system can keep running.
+
+## Common misconceptions
+
+- **"Any swap is bad."** Some swap usage is healthy — it lets the kernel evict cold pages to make room for hot file cache. *Active* swapping under load is what's bad.
+- **"Paging is slow."** Reading a page from disk is slow (microseconds on SSD, milliseconds on HDD). A *minor* page fault is fast — microseconds. Conflating them obscures what's actually happening.
+
+## Learn next
+
+The bigger abstraction paging implements: [virtual memory](/t/virtual-memory). The hardware paging interacts with: [memory](/t/memory).

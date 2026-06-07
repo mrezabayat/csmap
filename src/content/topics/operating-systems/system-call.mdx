@@ -1,0 +1,52 @@
+---
+title: System Call
+aliases: ["syscall", "system calls"]
+category: operating-systems
+kind: concept
+summary: The mechanism a user-space program uses to ask the OS kernel to do something privileged — open a file, send a packet, allocate memory, fork a process.
+level: intermediate
+status: draft
+importance: important
+tags: ["os", "kernel", "syscall"]
+prerequisites: ["kernel", "process"]
+related: ["context-switch", "interrupt"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **system call** is how a normal program asks the operating system to do something it can't do itself. Reading a file, opening a network connection, allocating memory, starting a new process — none of those happen in your code. Your code makes a system call and the kernel does the privileged work on your behalf.
+
+## More detail
+
+User-space code runs in a restricted CPU mode that can't touch hardware, kernel memory, or other processes. To get anything done, it has to ask the kernel via a controlled gate — the system call.
+
+The mechanics are roughly:
+
+1. The program loads arguments into registers (and a "syscall number" naming what it wants).
+2. It executes a special instruction (`syscall` on x86-64, `svc` on ARM64) that switches the CPU to kernel mode.
+3. The kernel reads the syscall number, dispatches to the right handler, and validates every argument the user provided.
+4. The handler does the work, sets a return value, and switches back to user mode.
+
+System calls are expensive (~hundreds of nanoseconds each on modern hardware) because the mode switch has to save and restore CPU state plus invalidate parts of the cache. High-performance servers (databases, packet routers) work hard to minimise syscalls per request — batching, sendfile, io_uring, eBPF.
+
+The Linux kernel exposes ~400 syscalls; macOS and Windows have similar counts. Common ones include `open`, `read`, `write`, `close`, `mmap`, `fork`, `execve`, `clone`, `socket`, `bind`, `epoll_wait`.
+
+## Why it matters
+
+System calls are the line between "your program" and "everything else". Every interesting thing a program does — I/O, networking, concurrency, security — eventually crosses this line. Understanding the cost lets you write fast code; understanding the surface lets you understand how containers, sandboxes, and security policies work.
+
+## Real-world examples
+
+- `strace ls` shows you every system call a single `ls` makes — typically dozens before the first character hits the screen.
+- A 2018 Spectre mitigation (KPTI) doubled the cost of every syscall on affected Intel CPUs by isolating kernel page tables.
+- `io_uring` (Linux 5.1+) lets a program submit thousands of I/O operations with one syscall — Cloudflare reportedly saw 5× improvements on some workloads after adopting it.
+
+## Common misconceptions
+
+- **"Library functions are system calls."** `printf`, `malloc`, and `strlen` are user-space library functions; they *eventually* call syscalls (`write`, `brk`/`mmap`) but most of the work is in user space.
+- **"Syscalls are slow because the kernel is slow."** They're slow because *crossing the user/kernel boundary* is expensive — saving CPU state, switching page tables, invalidating caches.
+
+## Learn next
+
+What happens during the mode switch: [context switch](/t/context-switch). The hardware mechanism that triggers similar transitions for hardware events: [interrupt](/t/interrupt).

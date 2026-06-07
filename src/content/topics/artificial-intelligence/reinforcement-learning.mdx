@@ -1,0 +1,65 @@
+---
+title: Reinforcement Learning
+aliases: ["rl"]
+category: artificial-intelligence
+kind: concept
+summary: A branch of machine learning where an agent learns to act in an environment by trial-and-error, optimising a reward signal.
+level: intermediate
+status: draft
+importance: important
+tags: ["ml", "rl", "ai"]
+prerequisites: ["machine-learning"]
+related: ["neural-network", "supervised-learning"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Reinforcement learning (RL)** is the branch of machine learning where an agent learns *what to do* by acting in some environment and getting feedback in the form of rewards. Unlike supervised learning, there are no labels saying "the right answer was X" — there's only a score, often delayed, sometimes sparse. The agent has to figure out which earlier actions led to the reward and do more of them next time.
+
+## More detail
+
+The standard RL setup:
+
+- An **environment** has states, accepts actions, transitions to new states, and emits rewards.
+- An **agent** observes the state, picks an action via its **policy**, sees the reward and new state, updates its policy.
+- The goal is to maximise the **cumulative reward** over time.
+
+The math is usually framed as a **Markov Decision Process (MDP)**: states `S`, actions `A`, transition probabilities `P(s'|s,a)`, rewards `R(s,a)`, and a discount factor `γ` that values immediate rewards more than distant ones.
+
+Major algorithm families:
+
+- **Value-based** (Q-learning, DQN) — learn a value function `Q(s,a)`; act greedily. Famous DeepMind Atari paper used this.
+- **Policy gradient** (REINFORCE, PPO, GRPO) — directly optimise the policy via gradient ascent on expected reward.
+- **Actor-critic** (A3C, SAC, TD3) — combine a policy ("actor") with a value estimator ("critic").
+- **Model-based** — learn a model of the environment, plan within it. Sample-efficient but harder.
+
+The exploration-vs-exploitation dilemma is fundamental: try new actions to learn, or use what you know to maximise reward. Mostly addressed via epsilon-greedy, softmax policies, or entropy bonuses.
+
+In the 2020s RL had a quieter run-up in mainstream ML — supervised learning was eating the world — but two areas are very much alive:
+
+- **Game-playing AI** (AlphaGo, AlphaStar, OpenAI Five, AlphaZero) — superhuman play in Go, StarCraft, Dota 2, chess, shogi.
+- **RLHF / RLAIF for LLMs** — using human (or AI) preference data to fine-tune a language model so its outputs are more aligned with what people want. The PPO-then-DPO-then-GRPO progression has driven most of the chatbot quality improvements since GPT-3.5.
+
+Practical RL is famously hard: reward shaping, sample efficiency, instability, exploration, off-policy correction. "RL is brittle" is a recurring complaint even in the most prominent papers.
+
+## Why it matters
+
+RL underpins the most spectacular AI demos of the 2010s and 2020s (AlphaGo) and the alignment layer of modern LLMs (RLHF). It's also the natural framework for any agent-style system — robotics, game AI, recommendation systems, autonomous driving — where actions have consequences over time.
+
+## Real-world examples
+
+- **AlphaGo (2016)** defeated world champion Lee Sedol via deep RL + MCTS; one of the most influential AI demonstrations in history.
+- **AlphaZero (2017)** learned chess, shogi, and Go from self-play, no human games, in 24 hours. Surpassed every previous engine.
+- **RLHF** is what made ChatGPT feel like a usable assistant — base GPT-3 produced text; the RLHF tuning taught it to be helpful, harmless, and honest.
+- **DeepMind's MuZero** learned to play games without even knowing their rules — a pure model-based RL story.
+- **Tesla and Wayve's** self-driving stacks use end-to-end RL-influenced training for driving policy.
+
+## Common misconceptions
+
+- **"RL is general AI."** It's a powerful framework but rarely sample-efficient enough to drop into real-world problems without significant tuning.
+- **"RLHF is the same as RL."** RLHF uses RL machinery (PPO, GRPO) on top of human preference data; the "environment" is just "given this prompt, score this completion". It's RL with training wheels and a domain-specific reward model.
+
+## Learn next
+
+The default ML setup RL is often contrasted with: [supervised learning](/t/supervised-learning). The model family RL agents usually use: [neural network](/t/neural-network).

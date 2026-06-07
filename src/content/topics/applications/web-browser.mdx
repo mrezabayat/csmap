@@ -5,12 +5,12 @@ category: applications
 kind: technology
 summary: A program that fetches web pages over HTTP, parses HTML/CSS/JavaScript, and renders them as the interactive sites you see.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["web", "browser"]
 prerequisites: ["http"]
 related: ["dns", "mobile-app"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -39,6 +39,8 @@ The browser is the most important application platform of the last twenty years 
 - Chrome, Safari, Firefox, Edge.
 - An Electron app is a Chromium browser bundled with a Node.js runtime.
 - Many "native" mobile apps embed a system web view to render parts of their UI.
+
+- Chrome's V8 engine compiles JavaScript through three tiers (Ignition interpreter → SparkPlug baseline JIT → TurboFan optimizing JIT) — moving hot code up the tiers as it stays hot.
 
 ## Common misconceptions
 

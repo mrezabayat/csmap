@@ -1,0 +1,78 @@
+---
+title: Message Queue
+aliases: ["mq", "message broker"]
+category: distributed-systems-and-cloud
+kind: technology
+summary: A durable middleman that lets services send and receive messages asynchronously — decoupling producers from consumers, smoothing load, and surviving outages.
+level: intermediate
+status: draft
+importance: important
+tags: ["queue", "messaging", "distributed"]
+prerequisites: ["distributed-system"]
+related: ["microservices", "eventual-consistency"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **message queue** is a durable buffer between producers ("here, do this") and consumers ("ok, I'll handle it when I can"). Producers don't have to wait for consumers; consumers don't have to be available the moment a message arrives. Messages sit in the queue until somebody picks them up. This is the foundation of most asynchronous, decoupled, scalable backend architectures.
+
+## More detail
+
+Two main styles:
+
+- **Queue (point-to-point)** — each message is delivered to exactly one consumer in a group. Used for work distribution: 10 worker processes pulling jobs off a queue.
+- **Pub/sub (topic)** — each message is broadcast to all subscribers. Used for event notification: 5 services each reacting to "order placed".
+
+Many modern brokers (Kafka, NATS) support both.
+
+Common features:
+
+- **Durability** — messages survive broker restarts (written to disk, often replicated).
+- **At-least-once delivery** — message will be delivered, possibly more than once. Consumers must be idempotent.
+- **Ordering** — within a partition / queue, often FIFO. Across partitions, no.
+- **Dead-letter queue** — messages that fail repeatedly go to a quarantine queue for human inspection.
+- **Consumer groups** — multiple workers share the load of one queue.
+- **Backpressure** — slow consumers signal producers to slow down.
+- **Replay** — log-based brokers (Kafka) let you rewind and re-process old messages.
+
+The 2026 landscape:
+
+| Broker | Style | Best for |
+|---|---|---|
+| **Kafka** | Log-based pub/sub | Event streaming, replay, very high throughput |
+| **RabbitMQ** | AMQP queue + pub/sub | Flexible routing, work queues |
+| **NATS / NATS Jetstream** | Pub/sub + streams | Lightweight, low-latency, multi-tenant |
+| **Redis Streams** | Lightweight log | When you already have Redis |
+| **AWS SQS / SNS** | Managed queue + pub/sub | "Just give me a queue" on AWS |
+| **AWS Kinesis** | Managed log stream | Kafka-ish on AWS |
+| **Google Pub/Sub** | Managed pub/sub | GCP equivalent |
+| **Cloudflare Queues** | Managed queue at edge | Cloudflare Workers integration |
+
+Common patterns built on message queues:
+
+- **Job processing** (Sidekiq, BullMQ, Celery, RQ) — web request enqueues, worker processes.
+- **Event sourcing** — every change as an event in an immutable log.
+- **CQRS** — separate write path (events) from read path (materialised views).
+- **Saga** — distributed transactions as a sequence of compensable events.
+- **Outbox pattern** — write events to the same database transaction as the data change, then publish to queue from a separate process.
+
+## Why it matters
+
+Almost every non-trivial backend has a message queue somewhere — even if it's just a Redis list serving as a job queue. They're the standard way to decouple services, smooth traffic spikes, and survive partial outages without dropping work.
+
+## Real-world examples
+
+- **LinkedIn invented Kafka** to handle their activity stream and now process trillions of events per day across the industry.
+- **Stripe** uses a heavily-customised internal queue for webhook delivery — retried with exponential backoff for up to 3 days.
+- **Discord** moves messages through several queues before they hit your client, allowing the system to absorb huge traffic spikes (e.g. major game launches).
+- **AWS S3 → SQS → Lambda** is a canonical event-driven pipeline: upload to S3 emits an event, queued, processed by Lambda.
+
+## Common misconceptions
+
+- **"Queues guarantee exactly-once delivery."** Most provide at-least-once; exactly-once requires consumer-side idempotency (or careful transactional integration).
+- **"Messaging makes the system more reliable."** It changes the failure mode. Now you can have orphaned messages, head-of-line blocking, poison messages, replay storms — different problems, not fewer.
+
+## Learn next
+
+The architecture style queues unlock: [microservices](/t/microservices). The consistency story that follows from async: [eventual consistency](/t/eventual-consistency).

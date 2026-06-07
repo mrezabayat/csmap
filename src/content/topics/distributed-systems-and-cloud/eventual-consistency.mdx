@@ -1,0 +1,84 @@
+---
+title: Eventual Consistency
+aliases: ["eventual consistency model"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A consistency model where replicas of data are temporarily allowed to disagree, with the guarantee that they will converge once writes stop.
+level: intermediate
+status: draft
+importance: important
+tags: ["distributed", "consistency"]
+prerequisites: ["replication", "distributed-system"]
+related: ["cap-theorem", "consensus"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Eventual consistency** is the trade-off where, after a write, different replicas might briefly return different values — but if you stop writing, they all converge on the same answer eventually (usually within milliseconds). The benefit: lower latency, higher availability, scales beautifully. The cost: your application has to be OK with seeing stale data sometimes.
+
+## More detail
+
+A formal definition: in the absence of new writes, all reads will eventually return the most recent value.
+
+How long "eventually" takes depends on the system:
+
+- **Tens of milliseconds** — typical for a healthy Cassandra cluster.
+- **Sub-second** — typical for DNS, well-running CDN cache invalidations.
+- **Seconds** — typical for cross-region replication in many cloud databases.
+- **Minutes** — possible for low-traffic edge cache invalidation.
+- **Hours** — happens during partitions; healed by anti-entropy / repair on reconnect.
+
+The spectrum of consistency models from strongest to weakest:
+
+| Model | Guarantee |
+|---|---|
+| Linearizability | Every read returns the most recent write; reads/writes look like they happened at a single global instant. |
+| Sequential consistency | All processes see writes in the same order; not necessarily real-time. |
+| Causal consistency | Causally-related operations are seen in order; concurrent ones may not be. |
+| Read-your-writes | A user sees their own writes immediately, but not necessarily others'. |
+| Monotonic reads | If you've seen value V, you'll never go back to an older value. |
+| Eventual consistency | All replicas converge eventually; no other ordering guarantee. |
+
+Many real-world systems offer **tunable consistency** per request: write at QUORUM and read at QUORUM gives strong consistency on a Cassandra-style system; read at ONE gives eventual consistency with lower latency.
+
+Conflict resolution strategies when replicas disagree:
+
+- **Last-write-wins (LWW)** — pick the write with the latest timestamp. Simple, can lose updates.
+- **Vector clocks** — track causal history; surface conflicts to the application.
+- **CRDTs** (Conflict-free Replicated Data Types) — datatypes whose operations commute, so concurrent updates merge deterministically. The basis of Yjs, Automerge, Riak's counters.
+- **Application-level merge** — let the application decide (e.g., "concatenate both messages" for chat history).
+
+Where eventual consistency shines:
+
+- DNS (the canonical example).
+- CDN cache.
+- Social media feeds and counters.
+- Shopping cart contents (Amazon famously is eventually consistent for the cart).
+- Background analytics.
+
+Where it doesn't:
+
+- Financial transactions, payments, inventory deduction.
+- Account creation (unique-username checks).
+- Authorisation decisions.
+
+## Why it matters
+
+Most distributed databases default to some form of eventual consistency because it's what allows them to be both available during partitions and fast across regions. Understanding which of your data is OK with eventual consistency (and which isn't) is a core distributed-systems design skill.
+
+## Real-world examples
+
+- **DNS** is eventually consistent — a record change propagates over hours as TTLs expire.
+- **Amazon's cart** is eventually consistent; in their famous "Dynamo" paper, they explained that "the customer might briefly see two different shopping carts; this is preferable to refusing the request entirely".
+- **Google Docs** uses CRDT-like collaborative editing so multiple editors' changes converge automatically.
+- **Cassandra at scale** (Netflix, Discord, Apple) operates at eventual consistency for nearly all reads, falling back to QUORUM for the few that need stronger guarantees.
+
+## Common misconceptions
+
+- **"Eventually consistent means slow to update."** Usually it's the opposite — eventually consistent reads are faster because they don't wait for a quorum.
+- **"Eventually consistent = unreliable."** It's a different reliability model. Strong consistency systems are *unavailable* during partitions; eventually-consistent ones stay available with stale reads.
+
+## Learn next
+
+The trade-off that drove the model: [CAP theorem](/t/cap-theorem). The strong-consistency alternative: [consensus](/t/consensus).

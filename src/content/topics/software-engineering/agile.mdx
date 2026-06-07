@@ -1,0 +1,71 @@
+---
+title: Agile
+aliases: ["agile development", "agile methodology"]
+category: software-engineering
+kind: concept
+summary: A family of iterative software development practices emphasising short cycles, working software, and adapting to change over upfront planning.
+level: beginner
+status: draft
+importance: important
+tags: ["agile", "process"]
+related: ["ci-cd", "code-review"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Agile** is a way of building software in short loops: plan a tiny slice, build it, ship it, see how it landed, adjust, repeat. The opposite is the older "waterfall" model where you wrote a 300-page spec, built the whole thing, and then discovered six months later that you'd misunderstood what users wanted. Agile, done well, replaces that with a continuous conversation between the team and reality.
+
+## More detail
+
+The term was crystallised in the 2001 **Agile Manifesto**, four short value statements:
+
+> Individuals and interactions over processes and tools
+> Working software over comprehensive documentation
+> Customer collaboration over contract negotiation
+> Responding to change over following a plan
+
+— with the explicit footnote that the right side has value but the left side is valued more.
+
+Specific named methodologies under the agile umbrella:
+
+- **Scrum** — sprints (typically 1-2 weeks), defined roles (Product Owner, Scrum Master, Dev Team), ceremonies (planning, standup, retrospective, review).
+- **Kanban** — continuous flow on a board with WIP limits; no fixed-length iterations.
+- **XP (Extreme Programming)** — pair programming, TDD, continuous integration, small releases. The technical practices that aged best.
+- **SAFe / LeSS / Disciplined Agile** — scaled agile for large organisations.
+
+Common practices across methodologies:
+
+- **User stories** — small, user-centric work items.
+- **Daily standup** — 15-minute team sync.
+- **Retrospective** — regular reflection on what's working and what isn't.
+- **Continuous integration / delivery** — every change is integrated and shippable.
+- **Backlog grooming** — keep the upcoming work list clean and prioritised.
+
+The dark side:
+
+- "Agile" has become a brand and a job title; many organisations practice "Cargo Cult Agile" — adopting the ceremonies without the values.
+- Heavyweight scaling frameworks (SAFe) often add the bureaucracy agile was supposed to remove.
+- Daily standups can drift into status meetings that should be a Slack message.
+
+The 2020s pushback: **post-agile**, **shape-up** (Basecamp), **continuous delivery** (Accelerate / DORA). The thread: focus on outcomes (deploy frequency, lead time, change-failure rate, mean time to recovery) over rituals.
+
+## Why it matters
+
+Agile changed the default way software is built across the industry. Even teams that don't say "agile" out loud have adopted iteration, short feedback loops, and continuous integration — all originally agile ideas. Knowing the vocabulary lets you participate in any modern team.
+
+## Real-world examples
+
+- **Spotify's** mid-2010s "Spotify model" (squads, tribes, chapters, guilds) was hugely influential, even though Spotify themselves have since moved past most of it.
+- **Basecamp's Shape Up** — a deliberate alternative to Scrum: six-week cycles, written pitches, betting tables. Influential among smaller teams.
+- The **DORA / Accelerate** research (annual State of DevOps report) shows that the practices most correlated with organisational performance are technical (CI/CD, monitoring, trunk-based development) rather than ceremonial.
+- Many high-performing teams in 2026 don't sprint at all — they do continuous flow (Kanban-ish) with backlog grooming and weekly demos. Often labelled "agile" loosely; mechanically quite different from Scrum.
+
+## Common misconceptions
+
+- **"Agile means no planning."** It means short planning cycles, not zero. Good agile teams plan constantly — they just plan one iteration at a time, not the whole project up front.
+- **"Agile and waterfall are the only options."** There's a continuum. Most modern teams blend agile practices with longer-form roadmapping.
+
+## Learn next
+
+The technical practice that makes iteration possible: [CI/CD](/t/ci-cd). The collaboration practice agile teams rely on: [code review](/t/code-review).

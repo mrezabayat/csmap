@@ -3,15 +3,38 @@ title: OS Concepts
 summary: The minimum viable mental model of an operating system — processes, threads, scheduling, memory, files, and the kernel that ties it together.
 audience: intermediate
 topics:
-  - operating-system
-  - process
-  - thread
-  - scheduler
-  - memory
-  - virtual-memory
-  - file-system
-  - kernel
-updated: 2026-06-04
+  - ref: operating-system
+    section: The big picture
+  - ref: process
+    section: Running programs
+  - ref: thread
+    section: Running programs
+  - ref: scheduler
+    section: Running programs
+  - ref: mutex
+    section: Running programs
+    optional: true
+  - ref: context-switch
+    section: Running programs
+    optional: true
+  - ref: memory
+    section: Memory
+  - ref: virtual-memory
+    section: Memory
+  - ref: paging
+    section: Memory
+    optional: true
+  - ref: file-system
+    section: Storage
+  - ref: kernel
+    section: The privileged core
+  - ref: system-call
+    section: The privileged core
+    optional: true
+  - ref: interrupt
+    section: The privileged core
+    optional: true
+updated: 2026-06-07
 ---
 
 The operating system is the layer of software you almost never see but constantly depend on. This path covers the seven ideas that, together, explain how a modern OS shares one machine between many programs safely and efficiently.

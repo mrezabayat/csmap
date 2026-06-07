@@ -1,0 +1,61 @@
+---
+title: Parsing
+aliases: ["parser", "parsers"]
+category: programming-languages
+kind: concept
+summary: Turning a stream of characters into a structured tree a program can analyse — the front-end of every compiler, query engine, and data format.
+level: intermediate
+status: draft
+importance: important
+tags: ["parsing", "compilers", "language-theory"]
+prerequisites: ["programming-language"]
+related: ["compiler", "interpreter"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Parsing** is the act of taking flat text — source code, a JSON payload, a SQL query, a CSV row — and turning it into a structured tree (or other data structure) the program can reason about. Every compiler, every database, every web framework parses something. It's one of the oldest and best-studied problems in computer science.
+
+## More detail
+
+A parsing pipeline typically has two stages:
+
+1. **Lexing / tokenisation** — split the input into tokens (`int`, `+`, `42`, `(`).
+2. **Parsing proper** — match the token stream against a grammar to produce a syntax tree.
+
+Major families:
+
+- **Recursive descent** — write one function per grammar rule that consumes its expected tokens. Handwritten parsers (TypeScript, V8, the Rust compiler) are usually recursive descent because they give the best error messages.
+- **LL(k) / Predictive** — parses top-down with k tokens of lookahead. Many generator-produced parsers fall here.
+- **LR / LALR** — parses bottom-up; can handle a broader class of grammars but error messages are harder to make good. yacc / bison / GNU's many parsers use this.
+- **PEG (Parsing Expression Grammar)** — composable, deterministic; tools like Tree-sitter and Pest are based on it.
+- **Combinators** — small parser functions composed with operators (Haskell's Parsec, Rust's nom).
+- **GLR / Earley** — handle ambiguous grammars; used in natural-language tools, some IDEs.
+
+A few key concepts:
+
+- **AST (abstract syntax tree)** — the tree the parser emits, stripped of syntactic noise.
+- **Concrete syntax tree** — closer to source, includes whitespace and parens; useful for tooling that preserves formatting.
+- **Error recovery** — what happens after the parser hits a syntax error? Good parsers recover and continue so IDEs can highlight every error, not just the first.
+- **Incremental parsing** — re-parsing just the changed region. Critical for IDEs working on million-line files. Tree-sitter pioneered this.
+
+## Why it matters
+
+Every text-based interface needs a parser. Compilers, IDEs, type checkers, linters, formatters, debuggers, AI code tools, query engines, data validators, configuration loaders — all parsing. A great parser makes everything downstream easier; a bad parser turns "fix this typo" into "rewrite the front end".
+
+## Real-world examples
+
+- **Tree-sitter** powers syntax highlighting and structural editing in GitHub, Neovim, Helix, Zed, and many other editors — by giving an incremental parser per language.
+- **JSON parsers** are surprisingly subtle; the JSON spec is short but real-world implementations differ on edge cases like duplicate keys and trailing commas.
+- **`pg_query`** lets you parse PostgreSQL syntax outside the database — used by static analysis, ORM linting, and pgFormatter.
+- **GraphQL** spec includes a precise grammar; clients and servers re-implement the same parser in every language.
+
+## Common misconceptions
+
+- **"Parsing is mostly solved."** The *theory* is solved; the *practice* of building parsers with great error messages, fast recovery, and incremental re-parsing is still active research.
+- **"Regular expressions are enough."** Regex can recognise regular languages; programming languages and most data formats are at least context-free, requiring a real parser. Trying to "parse HTML with regex" is the canonical Stack Overflow disaster.
+
+## Learn next
+
+The bigger pipeline parsers feed into: [compiler](/t/compiler). What runs the resulting trees: [interpreter](/t/interpreter).

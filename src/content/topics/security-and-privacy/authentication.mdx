@@ -5,13 +5,13 @@ category: security-and-privacy
 kind: concept
 summary: Proving *who* a user is — by something they know (password), have (token, phone), or are (biometric).
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["security", "auth"]
 prerequisites: ["cryptography"]
-related: []
+related: ["oauth"]
 nextSteps: ["authorization", "password-hashing"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -55,6 +55,8 @@ Authentication is the single highest-stakes piece of code in most applications. 
 - "Sign in with GitHub" is OAuth 2.0 / OIDC.
 - A passkey replaces a password with a private key locked in your phone's secure enclave.
 - A leaked password database is a disaster only if the passwords were hashed weakly.
+
+- Passkeys are now supported by Google, Apple, Microsoft, Amazon, and increasingly every major service — by 2026 it's realistic to never type a password into the big sites again.
 
 ## Common misconceptions
 

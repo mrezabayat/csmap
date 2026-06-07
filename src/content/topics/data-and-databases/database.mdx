@@ -4,13 +4,13 @@ category: data-and-databases
 kind: concept
 summary: An organised collection of data with a system around it that lets you store, retrieve, update, and query it efficiently.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["database", "storage"]
 prerequisites: ["storage"]
 related: ["indexing", "transaction-acid"]
 nextSteps: ["sql", "relational-model"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -39,6 +39,8 @@ Almost every non-trivial application reads and writes to a database. Choosing on
 - A blog post lives in a row in a `posts` table.
 - A shopping cart might live in Redis for speed.
 - Bank transactions live in a relational database for ACID guarantees.
+
+- A modern e-commerce site typically runs *several* databases at once: PostgreSQL for orders, Redis for sessions, ElasticSearch for product search, and ClickHouse for analytics.
 
 ## Common misconceptions
 

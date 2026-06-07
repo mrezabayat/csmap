@@ -1,0 +1,63 @@
+---
+title: Embedding
+aliases: ["embeddings", "vector embedding"]
+category: artificial-intelligence
+kind: concept
+summary: A learned vector representation of an item — a word, an image, a user, a product — where geometric distance roughly equals semantic similarity.
+level: intermediate
+status: draft
+importance: important
+tags: ["ml", "embeddings", "vectors"]
+prerequisites: ["neural-network"]
+related: ["large-language-model", "transformer"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+An **embedding** is a way of representing something — a word, an image, a user, a song — as a list of numbers (typically a few hundred to a few thousand) such that *similar items have similar lists*. "cat" and "kitten" end up near each other in the vector space; "cat" and "thermodynamics" do not. Once you have embeddings, similarity becomes a math problem: cosine distance, dot product, k-nearest-neighbours.
+
+## More detail
+
+How embeddings get created:
+
+- **Word embeddings** (word2vec, GloVe, FastText) — train a shallow network to predict surrounding words; the input layer's weights become the embedding.
+- **Sentence / passage embeddings** (Sentence-BERT, OpenAI `text-embedding-3`, voyage-3) — run text through a transformer; pool token vectors into one fixed-length vector.
+- **Image embeddings** (CLIP, DINO) — train an image encoder, often jointly with a text encoder so cross-modal similarity makes sense.
+- **User / item embeddings** (collaborative filtering, matrix factorisation, two-tower models) — train so users who liked similar items have similar vectors.
+
+Once you have embeddings, you can:
+
+- **Search by meaning** — embed a query, find the nearest documents.
+- **Recommend** — find items similar to one a user liked.
+- **Cluster** — group similar items.
+- **Classify** — train a small linear head on top.
+- **Deduplicate** — find near-duplicate text, images, or code.
+- **RAG** (Retrieval-Augmented Generation) — embed a knowledge base; embed the user's question; retrieve top-k; stuff into the LLM's context.
+
+Modern embedding dimensions: 384 (small models), 768 (BERT-base), 1024-4096 (modern OpenAI / Cohere / Voyage models).
+
+**Vector databases** (pgvector, Pinecone, Weaviate, Qdrant, Chroma, Milvus, LanceDB) specialise in storing and searching billions of embeddings via approximate-nearest-neighbour indexes (HNSW, IVF, ScaNN). Modern PostgreSQL with `pgvector` handles up to millions of vectors comfortably; specialised stores go further.
+
+A subtle point: **embeddings are model-specific**. A vector from one model's "text-embedding-3-large" is not comparable to a vector from "voyage-3". Re-embed everything when you switch models.
+
+## Why it matters
+
+Embeddings are the bridge between LLMs and your data. RAG, semantic search, recommendations, duplicate detection, clustering, anomaly detection — almost every "use AI on our data" workflow runs through embeddings. They are also one of the cheapest, most reliable ML primitives: a single API call gives you a vector that opens up the whole geometry-of-meaning toolbox.
+
+## Real-world examples
+
+- **GitHub Code Search** (the 2023 rebuild) uses code embeddings + lexical search hybrid for semantic and exact-match code search.
+- **Spotify's recommendations** lean heavily on user and track embeddings to find "songs you might like".
+- **Pinterest** uses visual embeddings to suggest similar pins.
+- **Cursor, Continue, Aider, and most AI coding tools** embed the codebase and retrieve relevant snippets to feed the LLM at each prompt.
+- **OpenAI's text-embedding-3-large** is the default workhorse; smaller open models (BGE, GTE, Nomic Embed) are now competitive for many tasks at a fraction of the cost.
+
+## Common misconceptions
+
+- **"All embeddings are interchangeable."** They're tied to the specific model that produced them. Mixing vectors from different models is meaningless.
+- **"More dimensions = better."** Past a certain point, more dimensions cost compute and storage without improving retrieval quality. 768-1024 is plenty for many tasks; 4096 is overkill for most.
+
+## Learn next
+
+The model family that produces modern embeddings: [transformer](/t/transformer). What they power downstream: [large language model](/t/large-language-model)-based RAG.

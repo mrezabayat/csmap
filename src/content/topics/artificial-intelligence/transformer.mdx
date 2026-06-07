@@ -5,13 +5,13 @@ category: artificial-intelligence
 kind: concept
 summary: The neural-network architecture, introduced in 2017, that powers modern large language models, image generation, and most of contemporary AI.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["ml", "ai", "transformer", "attention"]
 prerequisites: ["neural-network"]
 related: ["training-and-inference"]
 nextSteps: ["large-language-model"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -53,6 +53,8 @@ Transformers are the foundation of the 2020s AI boom. Without them, ChatGPT, Cla
 - GPT, Claude, Gemini, Llama, Mistral — all decoder-only transformers, mostly.
 - Stable Diffusion's text encoder is a transformer; modern image models often have transformers in their core too.
 - AlphaFold-2's structure module is built from attention layers.
+
+- A single 8K-token context for an LLM does ~8K × 8K = 64 million attention scores per layer, per head. That's why context length costs grow quadratically and why "linear attention" research matters.
 
 ## Common misconceptions
 

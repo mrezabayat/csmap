@@ -1,0 +1,64 @@
+---
+title: Key-Value Store
+aliases: ["kv store", "key value store"]
+category: data-and-databases
+kind: technology
+summary: A database that maps keys to values with O(1) lookup — the simplest possible data store, and the most-deployed.
+level: beginner
+status: draft
+importance: important
+tags: ["nosql", "database", "cache"]
+prerequisites: ["database"]
+related: ["nosql", "hash-table"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **key-value store** is the database equivalent of a hash table: you `put(key, value)` and `get(key)`. That's almost the entire API. The value can be a string, a blob, JSON, or whatever you want — the store doesn't look inside. It's the simplest possible data store, and that simplicity is exactly why it scales so well.
+
+## More detail
+
+Where key-value stores show up:
+
+- **In-memory** (Redis, Memcached) — sub-millisecond access, used as cache, session store, queue, rate limiter, leaderboard.
+- **On-disk** (RocksDB, LevelDB, LMDB) — embedded; the storage engine inside many other databases.
+- **Distributed** (DynamoDB, Cassandra-as-KV, etcd, Consul) — keys spread across many machines via hashing.
+- **Hardware-style** (KV-SSD prototypes, key-value object stores like S3) — the "give me this key, give me back the bytes" pattern at every layer.
+
+What you can do:
+
+- `put(key, value)` — write
+- `get(key)` — read
+- `delete(key)` — remove
+- `expire(key, ttl)` — auto-delete after a duration (common in caches)
+- Sometimes: `incr(key)`, `append(key, value)`, transactions on a single key, scans, secondary indexes (varies by store)
+
+What you typically *cannot* do:
+
+- Query by something other than the key (no `WHERE value = ...`).
+- Join across keys.
+- Transactions spanning many keys (some stores have this, most don't).
+- Range queries (some sorted KV stores like BoltDB, FoundationDB, TiKV add this).
+
+The famous trade-off: the API is so narrow that scaling horizontally is straightforward (`hash(key)` picks the shard) and read/write latencies stay flat as data grows. You give up SQL's flexibility in exchange.
+
+## Why it matters
+
+Key-value stores are the foundation under almost every modern stack. Redis is one of the most-deployed databases on Earth. DynamoDB powers a huge fraction of AWS. etcd is the brain of every Kubernetes cluster. Knowing when to reach for a KV store (and what its limits are) is fundamental backend knowledge.
+
+## Real-world examples
+
+- **Twitter / X's timeline cache** is largely Redis; the user's home timeline is precomputed and stored under their user key.
+- **AWS** uses DynamoDB as the metadata store for many of its own services; the original 2007 paper described its design.
+- **etcd** stores all Kubernetes state — pods, services, secrets, config — as a key-value store with strong consistency via Raft.
+- **The HTTP cache in your browser** is essentially a key-value store on disk keyed by URL.
+
+## Common misconceptions
+
+- **"Key-value stores are just for caching."** They are often used as durable primary stores too — DynamoDB tables, etcd's database, Redis with persistence enabled.
+- **"Redis is single-threaded so it must be slow."** A single Redis instance handles ~100K-1M ops/s on a modest CPU because the single-threaded model eliminates locking overhead.
+
+## Learn next
+
+The broader category: [NoSQL](/t/nosql). The in-memory data structure key-value stores are essentially: [hash table](/t/hash-table).

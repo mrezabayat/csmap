@@ -1,0 +1,65 @@
+---
+title: Cache Coherence
+aliases: ["cache coherency"]
+category: computer-architecture
+kind: concept
+summary: The set of protocols that keep multiple CPU caches in sync so all cores see a consistent view of memory.
+level: advanced
+status: draft
+importance: important
+tags: ["cache", "concurrency", "architecture"]
+prerequisites: ["cache"]
+related: ["memory-hierarchy", "thread"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+Every CPU core has its own cache. If core A writes a value to memory and core B reads the same address, B's cache might still have the old value. **Cache coherence** is the hardware protocol that makes this look like it doesn't happen: it invalidates, updates, and synchronises caches so all cores agree on the value at any address. Without it, multithreaded programming would be far more painful.
+
+## More detail
+
+The dominant coherence protocol is **MESI** and its variants (MOESI, MESIF). Each cache line is in one of four states:
+
+- **Modified** — this cache has the only copy, and it's dirty (different from memory).
+- **Exclusive** — this cache has the only copy, and it matches memory.
+- **Shared** — multiple caches have a copy; all match memory.
+- **Invalid** — this cache line is stale; must re-read from memory or another cache.
+
+Whenever a core wants to read or write, the protocol broadcasts on the cache-coherence interconnect:
+
+- A **read miss** asks for the line; another core may supply it.
+- A **write** transitions to Modified; all other caches' copies become Invalid.
+
+This works invisibly at the hardware level. From a program's perspective, you read and write memory and the right value shows up — most of the time, and especially if you don't have data races.
+
+Why coherence matters to programmers:
+
+- **False sharing** — two cores writing to *different* variables that share a cache line ping-pong the line between caches; performance collapses. The fix is to pad data so each thread's hot variables land on different cache lines (`#[repr(align(64))]` in Rust, `alignas(64)` in C++).
+- **Memory model** — coherence gives you a consistent value per address, but not a consistent *ordering* of operations across addresses. That's what memory models (sequential consistency, release/acquire, etc.) define, and what `volatile`, `atomic`, and memory fences exist for.
+- **Atomic operations** — `compare_and_swap`, `fetch_add`, etc. are coherent by design but more expensive than a normal write because they have to coordinate.
+
+Modern complications:
+
+- **NUMA** (Non-Uniform Memory Access) — multi-socket systems where each socket has its own memory and the coherence protocol runs over inter-socket links. Latency varies by where the data lives.
+- **GPUs, accelerators** — much less coherent than CPUs; explicit synchronisation primitives.
+- **Persistent memory** (Intel Optane was the famous attempt) raises new coherence questions.
+
+## Why it matters
+
+Most multithreaded code "just works" because cache coherence handles the visibility problem. Where it stops being free — false sharing, atomics overhead, NUMA — is exactly where high-performance concurrent code lives. Understanding the mechanism is the difference between hand-waving about "thread-safe" and actually writing fast concurrent code.
+
+## Real-world examples
+
+- A common Java concurrency benchmark gotcha: a counter struct with multiple `volatile long`s suffers from false sharing; padding the struct with `@Contended` (or extra fields) can yield 10× speedups.
+- LMAX Disruptor's high-performance queue uses careful padding to avoid false sharing on its sequence counters — published as a case study showing 100 million ops/sec on commodity hardware.
+- The 2018 Meltdown / Spectre vulnerabilities exploited side effects of cache state changes (speculative loads warming the cache) — proving that even invisible coherence behaviour leaks information.
+
+## Common misconceptions
+
+- **"Cache coherence means my multithreaded code is correct."** It guarantees per-address consistency, not ordering. Data races still produce undefined behaviour at the language level even when the hardware is coherent.
+- **"Atomic operations are slow because of locks."** They're slow because they have to coordinate across cores via the coherence protocol. No software lock is involved.
+
+## Learn next
+
+The level of the hierarchy this protocol guards: [cache](/t/cache). The broader storage layout it sits inside: [memory hierarchy](/t/memory-hierarchy).

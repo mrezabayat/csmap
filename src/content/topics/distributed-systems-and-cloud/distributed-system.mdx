@@ -5,25 +5,64 @@ category: distributed-systems-and-cloud
 kind: concept
 summary: A system whose components run on multiple networked computers and coordinate by passing messages.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
 tags: ["distributed", "systems"]
 prerequisites: ["ip-address"]
 related: ["operating-system", "sharding"]
 nextSteps: ["consensus", "replication", "microservices"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+A **distributed system** is a system whose parts run on more than one computer and have to cooperate without any of them being in charge of the others. The components talk over a network — which means messages can be lost, delayed, duplicated, or reordered, and any individual machine can die at any moment. The whole discipline of distributed systems is about getting useful, correct work done despite that uncertainty.
 
 ## More detail
 
+The defining property of a distributed system isn't that it has many machines — it's that **no single component sees the whole truth**. There is no global clock, no shared memory, no operating system to mediate, and no observer who can stop time to take a consistent snapshot. Famously, Leslie Lamport quipped: "A distributed system is one in which the failure of a computer you didn't even know existed can render your own computer unusable."
+
+The eight **fallacies of distributed computing** (Deutsch and Gosling, 1990s) are the standard list of what newcomers assume that turns out to be false:
+
+1. The network is reliable.
+2. Latency is zero.
+3. Bandwidth is infinite.
+4. The network is secure.
+5. Topology doesn't change.
+6. There is one administrator.
+7. Transport cost is zero.
+8. The network is homogeneous.
+
+The core tools the field developed to cope:
+
+- **Replication** — keep copies of data on multiple machines so any one can fail.
+- **Consensus protocols** (Paxos, Raft, ZAB) — let machines agree on a single value even when some misbehave.
+- **Sharding** — split data so each machine owns a slice.
+- **Eventual consistency** — relax the requirement that everyone agrees *immediately*; accept that they will agree *eventually* in exchange for availability and latency.
+- **Idempotency** — design operations so retrying them doesn't double-charge.
+- **Logical clocks** (Lamport, vector) — order events without a global clock.
+- **Quorums** — require majorities to agree, so minorities can't fork the state.
+
+The **CAP theorem** (Brewer, 2000) summarises a fundamental trade-off: in the presence of a network partition, you must choose between consistency and availability.
+
 ## Why it matters
+
+Almost every system that's "in the cloud" is distributed — databases, queues, search engines, CDNs, microservices, the cloud platform itself. Even a single web app that talks to a managed database, a managed cache, and a payment gateway is participating in a distributed system, with all the failure modes that implies. Understanding the patterns is the difference between "works in the demo" and "stays up at 3 a.m. during an AWS regional incident".
 
 ## Real-world examples
 
+- **Google Spanner** — a globally-distributed, externally-consistent SQL database using GPS- and atomic-clock-synchronised time to bound clock skew.
+- **Amazon DynamoDB** — a leaderless, eventually-consistent key-value store. The original 2007 paper kicked off the NoSQL movement.
+- **Kubernetes** — every cluster is a distributed system; etcd (Raft) provides the consistent control plane.
+- **Cassandra**, **CockroachDB**, **Kafka**, **ZooKeeper**, **Consul**, **Redis Cluster** — all distributed.
+- **A single Slack message** crossing services is a distributed transaction across many components.
+
 ## Common misconceptions
 
+- **"Distributed = microservices."** Microservices is one *architecture* pattern; the broader distributed systems field includes databases, queues, file systems, and consensus regardless of architecture.
+- **"More replicas = more reliable."** Up to a point. Past that, the coordination overhead and the chance of a network partition dominate. Most production systems run 3 or 5 replicas, not 100.
+- **"Distributed transactions just work."** They are a research-grade problem. Most systems sidestep them with sagas, outboxes, eventual consistency, or by simply ensuring transactional state stays inside one shard.
+
 ## Learn next
+
+The agreement primitive: [consensus](/t/consensus). The two main scaling axes: [replication](/t/replication) and [sharding](/t/sharding). The architectural style that brought distributed systems concerns to every team: [microservices](/t/microservices).

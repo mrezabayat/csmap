@@ -1,0 +1,61 @@
+---
+title: Context Switch
+aliases: ["context-switching"]
+category: operating-systems
+kind: concept
+summary: The act of saving one thread's CPU state and loading another's so the same CPU core can run a different thread next.
+level: intermediate
+status: draft
+importance: important
+tags: ["os", "scheduler", "concurrency"]
+prerequisites: ["scheduler", "thread"]
+related: ["system-call", "interrupt"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A CPU core can run only one thread at a time. To create the illusion of running many threads at once, the operating system periodically pauses the current thread, saves its CPU state (registers, instruction pointer), loads another thread's saved state, and lets it run for a bit. That swap is a **context switch**. Modern OSes do thousands of them per second per core.
+
+## More detail
+
+What gets saved and restored:
+
+- **General-purpose registers** (16+ values on x86-64).
+- **Floating-point / SIMD registers** (much more state — often hundreds of bytes).
+- **Instruction pointer** (where to resume).
+- **Stack pointer** (each thread has its own stack).
+- **Page table** (if switching across processes, not just threads in the same process).
+
+A context switch happens for one of three reasons:
+
+1. **Preemption** — a timer interrupt fires; the scheduler decides another thread should run.
+2. **Blocking** — the current thread asked for something (file I/O, lock, network) that isn't ready, so it voluntarily yields.
+3. **Wakeup** — a higher-priority thread becomes runnable; the kernel preempts whatever was running.
+
+The cost is small but not negligible — typically 1-10 microseconds for a thread switch on the same process, more for a full process switch (which also flushes the TLB and disrupts the cache). High-throughput servers care a lot because at 100k requests per second, even microseconds add up.
+
+Strategies to reduce context switches:
+
+- **User-space scheduling** (goroutines, async runtimes, fibers) — multiplex many "tasks" onto fewer OS threads, switching in user space without the kernel involved.
+- **CPU pinning** — keep a thread on one core to preserve cache state.
+- **Avoid sync I/O** — async / event-loop patterns block fewer threads.
+
+## Why it matters
+
+Context switches are the price you pay for the illusion of concurrent execution on a finite number of cores. Knowing the cost helps you reason about why naive "spawn a thread per request" doesn't scale, why Node.js / async Rust win for high-concurrency I/O work, and why pinning matters on latency-critical systems.
+
+## Real-world examples
+
+- A pgbench run against PostgreSQL can spend 10–20% of CPU just on context switches when configured naively; pooling connections cuts this dramatically.
+- Linux's CFS scheduler uses a target latency of 6 ms with a minimum granularity of 0.75 ms — meaning ~8 context switches per second per runnable thread on a fully-loaded core.
+- Game engines often pin physics, audio, and render threads to specific cores to avoid scheduler-induced context switches that cause frame hitches.
+
+## Common misconceptions
+
+- **"Context switches are free."** Each one costs at least a few microseconds *plus* the cost of warming the cache back up. Cache effects often dominate.
+- **"All threads are equally expensive."** A user-space task (goroutine, async future) switches in nanoseconds because it doesn't cross into the kernel.
+
+## Learn next
+
+What forces context switches: the [scheduler](/t/scheduler) and [interrupts](/t/interrupt). The cousin mechanism that also switches modes: [system call](/t/system-call).

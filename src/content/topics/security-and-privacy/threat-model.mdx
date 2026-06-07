@@ -1,0 +1,78 @@
+---
+title: Threat Model
+aliases: ["threat modelling", "threat modeling"]
+category: security-and-privacy
+kind: concept
+summary: A structured way to think about who might attack a system, what they want, what they can do, and what defences make sense — done before bugs, not after.
+level: intermediate
+status: draft
+importance: important
+tags: ["security", "threat-model"]
+related: ["authentication", "xss", "sql-injection"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **threat model** is the answer to four questions about a system, written down before you ship:
+
+1. What are we building?
+2. What can go wrong?
+3. What are we going to do about it?
+4. Did we do a good job?
+
+Most security bugs are not "I forgot to validate input"; they're "I never thought about that attacker". Threat modelling is the discipline of thinking about them up front.
+
+## More detail
+
+A common methodology is **STRIDE** (Microsoft), classifying threats by type:
+
+| Letter | Threat | Example |
+|---|---|---|
+| **S**poofing | Pretending to be someone else | Stolen credentials, forged tokens |
+| **T**ampering | Modifying data | Editing requests, mutating storage |
+| **R**epudiation | Denying you did something | Lack of audit trail |
+| **I**nformation disclosure | Leaking data | Verbose error messages, side channels |
+| **D**enial of service | Making the system unavailable | Resource exhaustion, amplification |
+| **E**levation of privilege | Getting more permissions than allowed | Privilege escalation bugs |
+
+The lightweight version that fits in a regular design review: a **data flow diagram** (boxes for services, lines for data flows, trust boundaries marked) plus a list of threats per trust boundary.
+
+The opposite extreme: **PASTA** and **OCTAVE** for very large systems, with quantitative risk scoring.
+
+The **assume breach** mental model: don't assume your perimeter holds. Ask "if X were compromised, what damage could it do? What would we detect, and in how long?".
+
+Practical outputs of a good threat model:
+
+- A list of attacker personas (script kiddie, motivated insider, nation-state, supply-chain compromise).
+- A list of assets (data, money, reputation, availability).
+- A list of trust boundaries and what crosses them.
+- A list of mitigations, ordered by ROI.
+- A list of *accepted risks* — things you've considered but chosen not to mitigate, with rationale.
+
+Adam Shostack's four questions (from his book *Threat Modeling*) are now the most-cited framing in the field:
+
+1. What are we working on?
+2. What can go wrong?
+3. What are we going to do about it?
+4. Did we do a good job?
+
+## Why it matters
+
+Without a threat model, security work is bug-driven: you fix the issues someone found, and miss the ones nobody happened to look for. With one, you have a deliberate map of what you're defending against and why — making security something the team designs into the system, not something a pen-test catches in week 51 of 52.
+
+## Real-world examples
+
+- **AWS publishes threat models** for many of their services as part of architecture documentation; for example, the Lambda security architecture document.
+- **Signal's design papers** are essentially threat models written for the world to read — explicit about which attackers they defend against (network eavesdroppers, server operators) and which they don't (compromised endpoints).
+- The **NIST 800-154 / ISO 27005** standards formalise the practice for regulated industries.
+- **Cryptographers' security proofs** are threat models in mathematical form: they state what the attacker can do and prove the scheme is secure under those assumptions.
+
+## Common misconceptions
+
+- **"Threat modelling is a once-a-year compliance activity."** It works best continuously, as a lightweight ritual in design reviews, not as a 100-page document.
+- **"You need a security team to do threat modelling."** Any engineer can do useful threat modelling. The four-question framework fits on a whiteboard.
+
+## Learn next
+
+The most-common application-layer threats threat models worry about: [XSS](/t/xss) and [SQL injection](/t/sql-injection). The user-identity layer where most threats begin: [authentication](/t/authentication).

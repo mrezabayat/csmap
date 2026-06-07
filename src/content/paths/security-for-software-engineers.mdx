@@ -1,0 +1,35 @@
+---
+title: Security for Software Engineers
+summary: The security topics every backend or full-stack engineer needs to know — not security as a specialism, but the part that's table stakes for shipping public software.
+audience: intermediate
+topics:
+  - ref: cryptography
+    section: The toolkit
+  - ref: public-key-cryptography
+    section: The toolkit
+  - ref: tls
+    section: The toolkit
+  - ref: authentication
+    section: Who is this?
+  - ref: password-hashing
+    section: Who is this?
+  - ref: oauth
+    section: Who is this?
+    optional: true
+  - ref: authorization
+    section: What can they do?
+  - ref: sql-injection
+    section: Things attackers actually do
+  - ref: xss
+    section: Things attackers actually do
+  - ref: csrf
+    section: Things attackers actually do
+    optional: true
+  - ref: threat-model
+    section: Bringing it together
+updated: 2026-06-07
+---
+
+You don't have to be a security engineer to write secure software, but you do have to know the table-stakes basics: how passwords are stored, how TLS protects connections, why SQL queries should never concatenate user input, what authn / authz mean and how they differ. This path covers exactly that.
+
+It's deliberately practical: every topic ties to a thing you'll either build, configure, or be asked about in a security review.

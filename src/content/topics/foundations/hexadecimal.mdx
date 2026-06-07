@@ -1,0 +1,67 @@
+---
+title: Hexadecimal
+aliases: ["hex", "base 16"]
+category: foundations
+kind: concept
+summary: A base-16 numbering system used throughout computing because each hex digit corresponds exactly to 4 binary digits.
+level: beginner
+status: draft
+importance: important
+tags: ["binary", "numbers"]
+prerequisites: ["binary-numbers"]
+related: ["bits"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Hexadecimal** is base 16 instead of base 10. Its 16 digits are `0`-`9` and then `A`-`F` (for 10-15). It's everywhere in computing because one hex digit is exactly four bits — so you can read a hex string off a screen and convert it to or from binary in your head, four bits at a time.
+
+## More detail
+
+Each hex digit maps cleanly to four binary digits:
+
+| Hex | Binary | Decimal |
+|---|---|---|
+| 0 | 0000 | 0 |
+| 4 | 0100 | 4 |
+| 8 | 1000 | 8 |
+| A | 1010 | 10 |
+| F | 1111 | 15 |
+
+So a byte (8 bits) is exactly two hex digits, from `00` to `FF` (0 to 255). A 32-bit integer is 8 hex digits, a 64-bit one is 16.
+
+Conventions you'll see:
+
+- **`0x`** prefix — `0xFF` means 255 in hex in most programming languages.
+- **`#`** prefix — common in CSS for colors (`#1f6feb`).
+- **No prefix** — addresses in `objdump` output, memory dumps in debuggers.
+
+Why hex won over the alternatives:
+
+- **Decimal** doesn't map cleanly to bits.
+- **Octal** (base 8) maps to 3-bit groups; awkward for 8-bit-aligned hardware.
+- **Binary** is correct but unreadably long — `0b11111111` vs `0xFF`.
+
+Hex dominates wherever you need to look at bits without losing your mind: memory addresses, machine code, hash digests, network captures, RGB colors, encoded characters, hardware registers.
+
+## Why it matters
+
+Pretty much any time a computer wants to show you a number the size of a byte or larger in a way that maps to bits, it uses hex. Debugging crash dumps, reading docs for hardware registers, inspecting checksums, even picking a brand colour — all hex.
+
+## Real-world examples
+
+- A SHA-256 hash is 64 hex digits (256 bits / 4).
+- A Git commit ID is displayed as 7-40 hex characters.
+- An IPv6 address (`2001:0db8::1`) is groups of hex digits.
+- An RGBA colour like `#1F6FEBcc` packs four bytes: R=`1F`, G=`6F`, B=`EB`, A=`cc`.
+- A MAC address (`a4:5e:60:01:23:45`) is six hex bytes.
+
+## Common misconceptions
+
+- **"Hex is a different *kind* of number."** It's the same number, just written in base 16 instead of base 10. `0xFF` and `255` and `0b11111111` are all the same value.
+- **"Hex digits go up to G or H."** Just A-F. Six letters.
+
+## Learn next
+
+The underlying base computers use natively: [binary numbers](/t/binary-numbers). The smallest unit hex helps us read: [bits](/t/bits).

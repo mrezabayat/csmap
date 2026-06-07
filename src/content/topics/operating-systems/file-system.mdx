@@ -5,13 +5,13 @@ category: operating-systems
 kind: concept
 summary: The layer that organises raw storage into named files and directories, manages free space, and enforces permissions.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "filesystem", "storage"]
 prerequisites: ["storage", "operating-system"]
 related: ["kernel"]
 partOf: []
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -55,6 +55,8 @@ Almost every program reads or writes a file. The file system is what makes those
 - `ls`, `cd`, `mkdir`, `cp`, `mv`, `rm` — all file-system operations.
 - A "disk full" error is the file system saying it has no free blocks.
 - A USB stick that "needs to be repaired" is a file system whose metadata got inconsistent.
+
+- Modern macOS uses APFS snapshots so Time Machine backups are nearly instant — they record only what changed between snapshots, not the whole disk.
 
 ## Common misconceptions
 

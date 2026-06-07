@@ -1,0 +1,65 @@
+---
+title: JavaScript
+aliases: ["javascript", "ecmascript", "js"]
+category: programming-languages
+kind: language
+summary: A dynamically typed, multi-paradigm language created for the browser, now the most-deployed runtime on Earth — browsers, Node.js, Deno, Bun, and edge platforms.
+level: beginner
+status: draft
+importance: important
+tags: ["javascript", "language", "web"]
+prerequisites: ["programming-language"]
+related: ["web-browser", "type-system", "interpreter"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**JavaScript** is the programming language of the web. Every web browser ships a JavaScript engine; every modern website runs JavaScript in your tab. Outside the browser it's also the runtime for backend platforms (Node.js, Deno, Bun), serverless edge platforms (Cloudflare Workers, Vercel Functions), and a huge slice of build tooling. Despite a famously messy history, it's now one of the fastest dynamically-typed languages in production use.
+
+## More detail
+
+JavaScript was created by Brendan Eich at Netscape in 1995 in (legend has it) ten days. The language has since gone through:
+
+- **ES5** (2009) — `strict mode`, JSON, basic array methods.
+- **ES2015 / ES6** — `let` / `const`, classes, modules, arrow functions, promises, template literals. The watershed modernisation.
+- **ES2017+** — `async` / `await`, optional chaining, nullish coalescing, BigInt, top-level await, decorators, pattern matching (proposal stage in 2026).
+
+Core characteristics:
+
+- **Dynamically typed**, single-threaded with an event loop.
+- **First-class functions and closures** — almost everything is a function.
+- **Prototype-based OO** — `class` is sugar over prototype chains.
+- **`null` and `undefined`** — two flavours of "absent", a common pitfall.
+- **Type coercion** — `"5" + 3 === "53"` is the famous example; modern code uses `===` and `Number(...)` to avoid surprises.
+
+Engines and runtimes:
+
+- **V8** (Chrome, Edge, Node.js, Deno)
+- **JavaScriptCore / Nitro** (Safari, Bun)
+- **SpiderMonkey** (Firefox)
+- All are aggressive JITs that compile hot functions to machine code.
+
+The 2026 JavaScript ecosystem is enormous: bundlers (esbuild, Vite, Bun, Rolldown), package managers (npm, pnpm, yarn, bun), frameworks (React, Vue, Svelte, Solid, Astro), backends (Express, Fastify, Hono), testing (Vitest, Jest, Playwright), formatters (Prettier, Biome), linters (ESLint, oxlint, Biome).
+
+**TypeScript** is a superset that adds static types and compiles to JavaScript. Most new JavaScript projects in 2026 are actually TypeScript projects.
+
+## Why it matters
+
+JavaScript is the only language guaranteed to run in every web browser. That alone would make it important; the fact that it's also fast, has a vast ecosystem, and now runs on servers and edge networks makes it the closest thing computing has to a universal language.
+
+## Real-world examples
+
+- **VS Code**, **Slack**, **Discord**, **Figma**, **Notion**, **Linear** — all built with web technologies (JavaScript + HTML + CSS) packaged via Electron or similar.
+- **Node.js** powers backends at LinkedIn, Netflix, Walmart, PayPal, and many more.
+- **Cloudflare Workers** runs JavaScript in V8 isolates at the edge — millions of small functions, billions of requests per day.
+
+## Common misconceptions
+
+- **"JavaScript is slow."** Modern V8 can match Java for many workloads; JIT-compiled hot code is within 2-3× of C for numeric work.
+- **"JavaScript and Java are related."** They are not. The name was a marketing decision in 1995 to capitalise on Java's hype.
+- **"You need a framework."** Modern browsers support enough JavaScript and DOM features that small apps work fine with vanilla JS.
+
+## Learn next
+
+The runtime it grew up in: [web browser](/t/web-browser). The static-types layer most teams now use: [type system](/t/type-system). What actually runs JavaScript: an [interpreter](/t/interpreter) (well, a JIT-compiling interpreter).

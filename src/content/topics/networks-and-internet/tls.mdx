@@ -5,13 +5,13 @@ category: networks-and-internet
 kind: protocol
 summary: The protocol that encrypts and authenticates almost all secure traffic on the internet — the "S" in HTTPS, IMAPS, SMTPS, and many more.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["tls", "security", "networking"]
 prerequisites: ["tcp", "public-key-cryptography"]
 related: ["cryptography"]
 nextSteps: ["http"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -41,6 +41,8 @@ TLS is the bedrock of internet trust. Browsers refuse to load HTTP pages without
 - Every `https://` page in your browser.
 - A `git push` to GitHub uses HTTPS over TLS or SSH (a different protocol with similar guarantees).
 - Let's Encrypt issues 90-day TLS certificates for free, automated via ACME.
+
+- TLS 1.3's 0-RTT mode lets a returning client send application data with the very first packet, saving an entire round-trip — at the cost of a narrow replay-attack window.
 
 ## Common misconceptions
 

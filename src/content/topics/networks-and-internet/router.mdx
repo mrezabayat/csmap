@@ -5,12 +5,12 @@ category: networks-and-internet
 kind: technology
 summary: A device that forwards IP packets between networks, deciding which neighbour gets each packet on its way to the destination.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["networking", "router"]
 prerequisites: ["packet", "ip-address"]
 related: []
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -45,6 +45,8 @@ Without routers, every network would be an island. They are how a packet sent fr
 - The plastic box from your ISP is a router.
 - `traceroute` (or `mtr`) shows the chain of routers a packet passes through.
 - A BGP misconfiguration at a major ISP can take down chunks of the public internet for hours.
+
+- BGP misconfigurations have taken down major chunks of the internet several times in the last decade, including the 2021 Facebook outage where its routers withdrew themselves.
 
 ## Common misconceptions
 

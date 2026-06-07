@@ -1,0 +1,63 @@
+---
+title: Mutex
+aliases: ["mutual exclusion lock", "lock"]
+category: operating-systems
+kind: concept
+summary: A synchronization primitive that ensures only one thread at a time can hold it — the basic tool for protecting shared state from data races.
+level: intermediate
+status: draft
+importance: important
+tags: ["concurrency", "locking"]
+prerequisites: ["thread"]
+related: ["deadlock", "scheduler"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **mutex** ("mutual exclusion") is a lock. When a thread wants to touch shared data, it acquires the mutex; when it's done, it releases it. While one thread holds the mutex, any other thread that tries to acquire it has to wait. Used correctly, this prevents two threads from corrupting shared state by writing to it at the same time.
+
+## More detail
+
+The mutex API is small: `lock()` (acquire, blocking if needed) and `unlock()` (release). Most languages also offer `try_lock()` (return immediately if held).
+
+How a modern mutex works under the hood:
+
+1. **Fast path** — atomic compare-and-swap on a single memory word. If uncontended, the lock is acquired in nanoseconds without involving the kernel.
+2. **Slow path** — if the lock is held, the thread spins briefly (in case the holder is about to release) then makes a kernel syscall (`futex` on Linux, `WaitOnAddress` on Windows) to sleep until woken.
+3. **Wake** — when `unlock()` is called and others are waiting, the kernel wakes one of them.
+
+Variants and adjacent primitives:
+
+- **Recursive mutex** — same thread can lock it multiple times; must unlock the same number of times.
+- **Read–write lock** — many concurrent readers OR one exclusive writer.
+- **Spinlock** — busy-loops instead of sleeping; only safe in very specific kernel contexts.
+- **Semaphore** — counts permits; mutex is a semaphore with count 1.
+- **Condition variable** — used with a mutex to wait for a condition to become true.
+- **Atomic operations** — for the smallest cases (counters, flags), no mutex needed.
+
+Mutex hazards:
+
+- **Deadlock** — two threads each hold a lock the other wants.
+- **Lock contention** — many threads queue on one popular lock; throughput collapses.
+- **Lock ordering** — different code paths acquire locks in different orders, causing deadlocks intermittently.
+- **Forgetting to unlock** — RAII (Rust's `Drop`, C++'s `std::lock_guard`, Python's `with`) is the standard defence.
+
+## Why it matters
+
+Almost every multithreaded program touches mutexes — even those that don't use them directly, because the standard library does. Understanding the cost (contention is often the bottleneck in well-tuned services) and the failure modes (deadlock, priority inversion) is essential to writing correct concurrent code.
+
+## Real-world examples
+
+- The Linux kernel uses thousands of mutexes; lockdep, a built-in lock validator, has prevented countless cross-locking bugs by reporting on inconsistent lock ordering.
+- Python's Global Interpreter Lock (GIL) is, mechanically, one giant mutex around the Python interpreter — the reason Python threads don't parallelise CPU-bound work in CPython.
+- Database engines use fine-grained mutexes (often per-page or per-row) to allow concurrent transactions without serialising the whole engine.
+
+## Common misconceptions
+
+- **"Locking is slow."** Uncontended locking is a few nanoseconds; *contended* locking can stall a thread for milliseconds. The trick is to design for low contention, not to avoid locks.
+- **"Lock everything to be safe."** Over-locking causes deadlocks and serialises code that could have run in parallel.
+
+## Learn next
+
+The most common failure mode: [deadlock](/t/deadlock). What runs threads while they wait on locks: the [scheduler](/t/scheduler).

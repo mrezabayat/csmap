@@ -1,0 +1,27 @@
+---
+title: Concurrency 101
+summary: The smallest mental model of concurrent programming — processes, threads, the scheduler, locks, deadlock — and why your multithreaded code keeps breaking in weird ways.
+audience: intermediate
+topics:
+  - ref: process
+    section: Units of execution
+  - ref: thread
+    section: Units of execution
+  - ref: scheduler
+    section: Units of execution
+  - ref: context-switch
+    section: Units of execution
+    optional: true
+  - ref: mutex
+    section: Coordinating
+  - ref: deadlock
+    section: Coordinating
+  - ref: cache-coherence
+    section: Why it's so hard
+    optional: true
+updated: 2026-06-07
+---
+
+Most production bugs in multithreaded code come from misunderstanding a handful of concepts: how the OS schedules threads, how memory is shared (and isn't) between them, what locks actually guarantee, and how deadlocks happen. This path walks through those concepts in order.
+
+By the end you should know why "thread-safe" is a precise claim, why your fast lock is sometimes painfully slow, and why "just add another thread" usually doesn't help.

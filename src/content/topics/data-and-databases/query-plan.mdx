@@ -1,0 +1,73 @@
+---
+title: Query Plan
+aliases: ["execution plan", "query execution plan"]
+category: data-and-databases
+kind: concept
+summary: The step-by-step program a database derives from your SQL query before executing it — the lever you use to diagnose and fix slow queries.
+level: intermediate
+status: draft
+importance: important
+tags: ["database", "sql", "performance"]
+prerequisites: ["sql", "indexing"]
+related: ["database", "relational-model"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+When you give a database a SQL query, it doesn't run it directly — it first parses it, considers many possible ways to compute the answer, and picks the cheapest one. That chosen plan is the **query plan**: a tree of physical operations (scan this index, then join with that table, then sort). Reading the query plan is the single most important skill in tuning slow queries.
+
+## More detail
+
+In PostgreSQL the command is `EXPLAIN`:
+
+```sql
+EXPLAIN SELECT * FROM orders WHERE customer_id = 42;
+
+→ Index Scan using orders_customer_id_idx on orders
+    Index Cond: (customer_id = 42)
+```
+
+That's a plan with one node — an Index Scan. Bigger queries produce trees: nested loop joins, hash joins, merge joins, aggregates, sorts.
+
+Common operators to recognise:
+
+- **Seq Scan / Table Scan** — read every row. Fast for small tables, disaster for big ones.
+- **Index Scan** — walk a B-tree index. Fast for selective predicates.
+- **Index Only Scan** — index covers all columns needed; skip the table altogether.
+- **Bitmap Heap Scan** — combine multiple indexes for OR / AND.
+- **Nested Loop Join** — for each outer row, look up matches. Fast when outer is small or indexes are good.
+- **Hash Join** — build a hash table from one side, probe with the other. Fast for big joins with good memory.
+- **Merge Join** — both inputs sorted, walk in parallel. Fast on sorted data.
+- **Sort, Limit, Aggregate, GroupAggregate, HashAggregate** — self-explanatory.
+
+The optimiser's job is to enumerate plans and estimate their cost using statistics about table sizes, value distributions, and cardinalities. Bad statistics → bad plans. `ANALYZE` updates them.
+
+Most databases (PostgreSQL, MySQL, SQL Server, Oracle, SQLite) have `EXPLAIN` variants; `EXPLAIN ANALYZE` actually runs the query and reports timings alongside the plan — the gold standard for diagnosing real performance.
+
+Common red flags:
+
+- A `Seq Scan` on a million-row table for a `WHERE` that should be selective → missing index.
+- A row-count estimate that's off by 100× → stale statistics.
+- A nested loop with a huge outer side and no index on the inner → wrong join type.
+- A sort that spills to disk (in `EXPLAIN ANALYZE`'s "external merge" output) → `work_mem` too low.
+
+## Why it matters
+
+The difference between a query taking 30 ms and 30 seconds is almost always a plan issue, not a SQL issue. Reading query plans is the difference between guessing at performance and actually diagnosing it.
+
+## Real-world examples
+
+- A common pattern: a query suddenly slows down after a deploy because table size crossed the optimiser's heuristic threshold and it switched from index scan to seq scan with stale stats. `ANALYZE` fixes it.
+- PostgreSQL's `auto_explain` extension can log the plan of any query that takes longer than a configured threshold — a great production debugging tool.
+- pganalyze, EXPLAIN.dalibo.com, and similar tools visualise plans to make subtree costs and bottlenecks obvious.
+- The `pg_hint_plan` extension lets you force a specific plan when the optimiser keeps getting it wrong (a last resort).
+
+## Common misconceptions
+
+- **"Adding an index always speeds up a query."** Only if the optimiser uses it. With stale stats or a wrong choice of index, it may still seq-scan.
+- **"Rewriting the SQL is the way to fix performance."** Often it's about indexes, statistics, or `work_mem` / `effective_cache_size` config. The SQL might be fine.
+
+## Learn next
+
+What the optimiser uses to choose between plans: [indexing](/t/indexing). The language whose execution plans you'll read: [SQL](/t/sql).

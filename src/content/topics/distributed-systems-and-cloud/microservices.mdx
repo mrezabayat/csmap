@@ -5,13 +5,13 @@ category: distributed-systems-and-cloud
 kind: concept
 summary: An architectural style that builds an application as many small, independently-deployable services, each owning its own data and talking over a network.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["architecture", "microservices"]
 prerequisites: ["distributed-system", "http"]
-related: ["deployment"]
+related: ["deployment", "message-queue"]
 nextSteps: ["container"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -52,6 +52,8 @@ Microservices, when right-sized, let large organisations move quickly without co
 - Amazon's "two-pizza team" rule famously aligns team size with service ownership.
 - Netflix is the canonical microservices case study.
 - Shopify ran a monolith for years and proudly still mostly does — successfully.
+
+- Uber publicly walked back parts of its microservices architecture in 2020, consolidating ~2,200 services into larger ones because the operational overhead exceeded the agility benefit.
 
 ## Common misconceptions
 

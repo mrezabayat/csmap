@@ -5,12 +5,12 @@ category: distributed-systems-and-cloud
 kind: concept
 summary: Splitting data across multiple machines by some key, so the working set per machine — and the request load — stays manageable as the system grows.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["distributed", "sharding", "scalability"]
 prerequisites: ["distributed-system", "database"]
 related: ["replication"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -49,6 +49,8 @@ Sharding is how databases scale beyond what one machine can hold or serve. The c
 - A messaging app shards messages by `chat_id` so all a chat's messages live together.
 - An e-commerce site shards orders by `customer_id` so a single customer's history is one query.
 - Reddit's comment storage is sharded by `link_id` (the post the comment is on).
+
+- Instagram famously shards photos by user ID, which means every photo a single user posts is on the same shard — fast for profile views, fast for personal feeds, slow for global trending lists.
 
 ## Common misconceptions
 

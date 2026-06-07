@@ -1,0 +1,63 @@
+---
+title: Memory Hierarchy
+aliases: ["memory pyramid"]
+category: computer-architecture
+kind: concept
+summary: The layered set of storage in a computer — from registers to disk — trading size for speed.
+level: intermediate
+status: draft
+importance: important
+tags: ["memory", "cache", "architecture"]
+prerequisites: ["memory", "cache"]
+related: ["cpu", "storage", "virtual-memory"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A computer's storage is a pyramid. At the top are a tiny number of CPU registers — femtoseconds to access, dozens of bytes total. Below them, increasingly larger and slower: L1 cache, L2, L3, main memory (DRAM), SSD, hard disk, network storage. Each level is about an order of magnitude bigger and slower than the one above. Understanding this hierarchy is the single biggest lever for writing fast code.
+
+## More detail
+
+A realistic 2026 hierarchy on a server-class CPU:
+
+| Level | Size | Latency | Bandwidth |
+|---|---|---|---|
+| Registers | Few hundred bytes | < 1 ns (free) | per cycle |
+| L1 cache (per core) | 32-96 KB | ~1 ns (4 cycles) | ~1 TB/s |
+| L2 cache (per core) | 0.5-2 MB | ~3-5 ns | ~500 GB/s |
+| L3 cache (shared) | 16-256 MB | ~10-20 ns | ~200 GB/s |
+| DRAM | 16-1024 GB | ~100 ns | ~50-100 GB/s |
+| NVMe SSD | TBs | ~50-200 µs | ~7 GB/s |
+| Network SSD (cloud) | "unlimited" | ~1-5 ms | varies |
+| HDD (cold) | TBs | ~10 ms | ~200 MB/s |
+| Tape / glacier | EBs | seconds-hours | varies |
+
+The key implication: **memory access pattern dominates performance** for most non-trivial code. A program with great asymptotic complexity can be slower than a worse one if it stresses caches badly.
+
+Concepts that follow from the hierarchy:
+
+- **Locality** — spatial (nearby addresses) and temporal (recently used addresses) both speed things up.
+- **Cache lines** — caches transfer in 64-byte chunks; touching one byte pulls 64.
+- **Working set** — the bytes a program actively uses; if it fits in L2, it'll be much faster than if it spills to DRAM.
+- **Memory-mapped files** (`mmap`) — let the kernel page disk data in on demand; integrates storage into the same hierarchy.
+- **Virtual memory** — the abstraction that lets each process see a flat address space despite a fragmented hierarchy underneath.
+
+## Why it matters
+
+In 2026, CPU clock speeds have plateaued and most algorithms have already been optimised. The biggest remaining performance wins come from making code cache-friendly: smaller working sets, sequential access, structure-of-arrays layouts, prefetching, avoiding pointer chasing. Knowing the hierarchy is what makes that intuition possible.
+
+## Real-world examples
+
+- ClickHouse and other columnar databases gain ~10× over row-oriented databases on analytic queries because columnar layout is dramatically cache-friendlier when scanning one column over millions of rows.
+- The famous "linked list vs array" performance gap is almost entirely cache: arrays access memory sequentially; linked lists pointer-chase, missing the cache on each hop.
+- DPDK and io_uring exist partly to bypass the kernel and keep network traffic in user-space caches without round-trips that flush them.
+
+## Common misconceptions
+
+- **"Memory access is fast."** Compared to disk, yes. Compared to a register or L1 cache, an L3 miss to DRAM is 100× slower.
+- **"More RAM always helps."** Only until your working set fits; past that, more RAM does nothing for performance and only avoids paging.
+
+## Learn next
+
+The intermediate fast layer most code lives or dies on: [cache](/t/cache). The illusion the OS builds on top: [virtual memory](/t/virtual-memory).

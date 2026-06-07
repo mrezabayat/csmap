@@ -1,0 +1,70 @@
+---
+title: Stack and Queue
+aliases: ["stack", "queue", "stacks and queues"]
+category: foundations
+kind: concept
+summary: Two of the simplest data structures — a stack is last-in-first-out, a queue is first-in-first-out. Both show up everywhere from CPU instructions to background job systems.
+level: beginner
+status: draft
+importance: important
+tags: ["data-structures"]
+prerequisites: ["data-structure"]
+related: ["linked-list", "recursion"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **stack** is a pile of plates: you push a plate on top, and the one you take off is the most recent you put there. Last-in, first-out (LIFO).
+
+A **queue** is a line at the supermarket: people join the back, the cashier takes from the front. First-in, first-out (FIFO).
+
+That's it. Two of the simplest data structures in computing, and yet they're underneath an enormous amount of working software.
+
+## More detail
+
+**Stack** core operations:
+
+- `push(x)` — add `x` to the top.
+- `pop()` — remove and return the top element.
+- `peek()` / `top()` — look at the top without removing.
+
+All O(1). Implementations: a dynamic array (most common — just `append` / pop from the back), or a singly-linked list with the head as top.
+
+**Queue** core operations:
+
+- `enqueue(x)` — add `x` to the back.
+- `dequeue()` — remove and return the front.
+
+All O(1). Implementations: a doubly-linked list, or a ring buffer in an array (faster, cache-friendly).
+
+Variants:
+
+- **Deque** ("double-ended queue") — push and pop at both ends. Python's `collections.deque`, Rust's `VecDeque`, Java's `ArrayDeque`.
+- **Priority queue** — dequeue always returns the highest-priority element; usually a binary heap (O(log n) operations).
+- **Circular buffer / ring buffer** — fixed-size FIFO; loses oldest items when full. Used in audio buffers, kernel ring buffers, lock-free messaging.
+- **Concurrent queue** — designed for many producers / consumers (Java's `LinkedBlockingQueue`, Rust's `crossbeam::queue`).
+
+Both stacks and queues are *abstract data types* — they're defined by their operations, not by any one implementation.
+
+## Why it matters
+
+Stacks and queues are the building blocks of an enormous amount of system behaviour. The CPU's call stack is a stack. The scheduler's runnable threads sit in a queue. Background job systems (Sidekiq, Celery, Bull, BullMQ, SQS, Kafka, RabbitMQ, …) are queues with extra features. Browser history is a stack (Back) plus a stack (Forward).
+
+## Real-world examples
+
+- **The call stack** — every function call pushes a frame; every return pops one. The "stack trace" you see in an error is a snapshot.
+- **Undo / Redo** — undo is a stack of past actions; redo is the second stack you push to as you pop undo.
+- **Tree / graph traversal** — depth-first uses a stack (often the call stack via recursion), breadth-first uses a queue.
+- **Job queues** — Sidekiq (Ruby), Celery (Python), Kafka (Java/Scala), SQS (AWS), BullMQ (Node) all let producers enqueue work for workers to dequeue.
+- **Expression evaluation** — Reverse Polish Notation calculators are stack-based; Java/.NET bytecode VMs are stack machines.
+- **Backtracking algorithms** — solving Sudoku, n-queens, search — naturally fit a stack (often the recursion stack).
+
+## Common misconceptions
+
+- **"A queue is just a list."** Operationally yes, but treating it as a list (with O(n) front access) gives terrible performance. Use a proper queue type.
+- **"Stack overflow is a Stack Overflow website joke."** It's a real error: a program made so many nested function calls that the call stack ran out of room (usually because of unbounded recursion).
+
+## Learn next
+
+What stacks and queues are often built from: [linked list](/t/linked-list). The control-flow pattern that uses a stack implicitly: [recursion](/t/recursion).

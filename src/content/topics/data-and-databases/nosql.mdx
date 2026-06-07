@@ -1,0 +1,64 @@
+---
+title: NoSQL
+aliases: ["non-relational database", "no-sql"]
+category: data-and-databases
+kind: concept
+summary: An umbrella term for databases that don't follow the relational model — key-value stores, document stores, wide-column stores, graph databases.
+level: intermediate
+status: draft
+importance: important
+tags: ["nosql", "database"]
+prerequisites: ["database"]
+related: ["key-value-store", "sharding"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**NoSQL** ("Not Only SQL") is the loose label for databases that aren't relational. The category covers wildly different systems: key-value stores like Redis, document stores like MongoDB, wide-column stores like Cassandra, graph databases like Neo4j, search engines like ElasticSearch. The thing they share is "we made a deliberate trade against the relational model to get something else" — usually scale, flexibility, or a specific data shape.
+
+## More detail
+
+The major NoSQL families:
+
+| Family | Example | Best at | Trade-off |
+|---|---|---|---|
+| Key-value | Redis, DynamoDB, etcd | O(1) lookup by key | No queries beyond key |
+| Document | MongoDB, Couchbase, Firestore | Nested JSON-like objects | Joins are awkward |
+| Wide-column | Cassandra, ScyllaDB, HBase | Massive horizontal scale | Limited query model |
+| Graph | Neo4j, Neptune, ArangoDB | Multi-hop traversals | Smaller ecosystems |
+| Search | ElasticSearch, OpenSearch, Meilisearch | Full-text, faceted search | Eventually consistent |
+| Time-series | InfluxDB, TimescaleDB, ClickHouse | Append-heavy time data | Specialised query model |
+
+The NoSQL movement (~2009-2014) was a reaction to two real pains:
+
+1. **Horizontal scale** — single-master relational DBs hit a ceiling; sharding them was painful. Stores like Cassandra and DynamoDB were designed from day one to scale across hundreds of nodes.
+2. **Schema flexibility** — early-stage apps changed shape constantly; "just dump JSON" was faster than `ALTER TABLE`.
+
+The story since then is convergence:
+
+- **Relational DBs got better at scale** — PostgreSQL with logical replication, partitioning, and now `pg_vector`; CockroachDB, Spanner, YugabyteDB, TiDB providing horizontal SQL.
+- **NoSQL DBs got more relational** — MongoDB added transactions, schema validation, joins (`$lookup`). DynamoDB added transactions.
+- **PostgreSQL ate parts of the NoSQL world** — JSONB is a competitive document store; full-text search is built-in; extensions cover time-series, vectors, geo.
+
+In 2026 the choice is rarely "SQL vs NoSQL" wholesale; it's "use the right store for each workload" — typically PostgreSQL as the system-of-record, Redis for cache / queue, search engine for full-text, time-series DB for metrics.
+
+## Why it matters
+
+Knowing what NoSQL stores *do well* and where they hurt prevents the classic mistake of either (a) shoving everything into PostgreSQL when you have a million-event-per-second telemetry stream, or (b) building everything on MongoDB and then trying to do joins.
+
+## Real-world examples
+
+- **Twitter / X** uses many stores: relational + Cassandra for tweets + Redis for the timeline cache + Manhattan (in-house key-value) for various services.
+- **Netflix** is a heavy Cassandra user for many of its account / watch-progress stores.
+- **The original DynamoDB paper** (Amazon, 2007) kicked off much of the NoSQL movement.
+- **Instagram** runs PostgreSQL at huge scale by sharding heavily — a "relational gets you most of the way" counter-story.
+
+## Common misconceptions
+
+- **"NoSQL means no schema."** Most production NoSQL workloads have a strict, implicit schema in application code; the DB just doesn't enforce it. That's a feature for prototyping and a liability at scale.
+- **"NoSQL is faster than SQL."** For a single key lookup, sometimes. For complex queries with joins, SQL is usually faster and simpler.
+
+## Learn next
+
+The most basic NoSQL family: [key-value store](/t/key-value-store). The horizontal-scale story that drove the movement: [sharding](/t/sharding).

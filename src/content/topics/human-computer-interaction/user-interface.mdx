@@ -1,28 +1,65 @@
 ---
 title: User Interface
-aliases: ["UI"]
+aliases: ["UI", "user interfaces"]
 category: human-computer-interaction
 kind: concept
 summary: The surface where a person and a computer meet — what users see, touch, hear, and act on.
 level: beginner
-status: stub
+status: reviewed
 importance: core
 tags: ["ui", "design"]
 related: ["gui", "command-line-interface"]
 nextSteps: ["ux", "accessibility"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+The **user interface** of a system is everything the user perceives and manipulates: the buttons, screens, voices, lights, gestures, keys, and text. It's the boundary between human intent and machine action. Everything else in the product — the database, the algorithms, the network calls — only exists for the user to the extent it shows up in the UI.
 
 ## More detail
 
+User interfaces come in many kinds, often layered:
+
+- **Graphical UI (GUI)** — windows, icons, menus, pointers. The default for desktops, laptops, phones.
+- **Command-line interface (CLI)** — text in, text out. Dense, fast, scriptable.
+- **Touch UI** — direct manipulation on a screen. Gestures (tap, pinch, swipe) as first-class input.
+- **Voice UI** — spoken commands and replies (Alexa, Siri, Google Assistant).
+- **Conversational UI** — text chat, increasingly powered by LLMs.
+- **Tangible / physical UI** — knobs, sliders, dials on hardware.
+- **VR / AR / spatial UI** — three-dimensional, body-aware interfaces.
+- **No UI** — programmatic interfaces (an API is a UI for developers).
+
+Cross-cutting concerns every UI has to handle:
+
+- **Affordance**: does it look like what it does? A button should look pressable; a link should look clickable.
+- **Feedback**: did the action succeed? Was anything happening during the slow bit?
+- **State**: where am I, where can I go, where have I been?
+- **Errors**: when something fails, the message should help the user recover.
+- **Consistency**: similar things look and behave similarly across the product.
+- **Accessibility**: works with screen readers, keyboards, varied physical abilities, varied cognitive styles.
+- **Performance**: a UI that responds in less than 100 ms feels instant; past 1 s, users start losing the thread.
+- **Internationalisation**: text expands by 30%+ in other languages; right-to-left layouts mirror; dates and numbers vary by locale.
+
+A UI is built in **layers**: a design system (tokens, primitives), components (buttons, modals, tables), screens (login, settings), and flows (signup, checkout). Mature products invest heavily in the design system because consistency is what lets the rest scale.
+
 ## Why it matters
+
+A great UI makes a mediocre product usable; a bad UI makes a great product unusable. UI is also where most accessibility and inclusivity decisions land — get it right and you serve users with screen readers, keyboard-only navigation, low vision, and motor differences as well as everyone else.
 
 ## Real-world examples
 
+- Apple's **Human Interface Guidelines** and Google's **Material Design** are the canonical reference UI design systems for iOS and Android.
+- A bank's **mobile app** is a stack of UIs — a touch UI for everyday users, a desktop GUI for staff, a CLI / API for systems integration.
+- **Discord** is essentially the same chat UI on web, desktop (Electron), and mobile — that consistency is intentional.
+- **Excel** has barely changed its core spreadsheet UI in 30 years because the model works; the rest of the product evolved around it.
+
 ## Common misconceptions
 
+- **"UI = graphic design."** The graphic design is one layer. UI also covers interaction, motion, feedback, accessibility, performance, error handling, and the underlying conceptual model.
+- **"More features = better UI."** Often the opposite. Each added control is one more decision the user has to make and one more thing to learn.
+- **"You can fix a UI by polishing it."** Visual polish can't save a UI built on the wrong conceptual model. The model has to be right first.
+
 ## Learn next
+
+The discipline of designing the experience around the UI: [UX](/t/ux). The dominant graphical idiom: [GUI](/t/gui). The text-based alternative: [command-line interface](/t/command-line-interface). The non-negotiable cross-cutting concern: [accessibility](/t/accessibility).

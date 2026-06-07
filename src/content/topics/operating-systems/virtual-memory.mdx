@@ -5,14 +5,14 @@ category: operating-systems
 kind: concept
 summary: A technique that gives each process the illusion of a private, contiguous memory space — built from page tables that map virtual addresses to physical RAM.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "memory", "architecture"]
 prerequisites: ["memory", "process"]
-related: []
+related: ["paging"]
 partOf: ["operating-system"]
 nextSteps: ["kernel"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -48,6 +48,8 @@ Without virtual memory, programs would clash over physical addresses, a single r
 - Run `top` or Task Manager: the "Virtual" or "VSZ" column is how much address space each process has reserved; "Resident" is how much is actually in RAM.
 - A `Segmentation fault` or `Access violation` is the CPU telling the OS that a process touched a virtual address with no valid mapping.
 - The operating system can run an 8 GB program on a 4 GB machine by paging cold pages out to disk (slowly).
+
+- A 64-bit process can `mmap` a multi-gigabyte database file and treat it as memory; the kernel pages it in on demand, never loading the whole thing.
 
 ## Common misconceptions
 

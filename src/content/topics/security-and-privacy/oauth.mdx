@@ -1,0 +1,70 @@
+---
+title: OAuth
+aliases: ["oauth 2.0", "oauth2"]
+category: security-and-privacy
+kind: protocol
+summary: A standard for delegated authorization — letting an app act on a user's behalf at another service without ever seeing the user's password.
+level: intermediate
+status: draft
+importance: important
+tags: ["oauth", "auth", "security"]
+prerequisites: ["authentication", "authorization"]
+related: ["tls"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**OAuth 2.0** is the standard that powers "Sign in with Google", "Connect your GitHub", and "Allow this app to post to Twitter on your behalf". An app (the *client*) wants to access your resources at another service (the *resource server*); OAuth defines the dance that lets the user grant that access without ever giving the app their password. It's a protocol for delegated authorisation — not strictly for sign-in, though that's how most people experience it.
+
+## More detail
+
+The actors in OAuth 2.0:
+
+- **Resource Owner** — the user.
+- **Client** — the app asking for access.
+- **Authorization Server** — issues access tokens (often the same domain as the resource server).
+- **Resource Server** — the API holding the user's data.
+
+The most common flow today is **Authorization Code with PKCE**:
+
+1. The user clicks "Sign in with Google" in the client app.
+2. The client redirects them to Google's authorisation server with a random `code_verifier` they hash and send as `code_challenge`.
+3. Google authenticates the user, asks them to approve the requested scopes, and redirects back to the client with an `authorization code`.
+4. The client exchanges the code + the original `code_verifier` for an `access token` (and usually a `refresh token`).
+5. The client calls Google's APIs with `Authorization: Bearer <access token>`.
+
+Older variants you'll see in docs (mostly deprecated for new work):
+
+- **Implicit flow** — token returned in URL fragment; deprecated, vulnerable.
+- **Resource Owner Password Credentials** — user gives password to client; defeats the point of OAuth.
+- **Client Credentials** — for service-to-service, not user delegation.
+
+**OpenID Connect (OIDC)** is a thin layer on top of OAuth that adds proper *authentication* (the `id_token`, a signed JWT with user identity). "Sign in with Google / Apple / Microsoft" buttons are all OIDC + OAuth.
+
+Common pitfalls:
+
+- **Treating OAuth as authentication** — OAuth alone proves "this user authorised this token", not "this user is here right now". Use OIDC if you need identity.
+- **Storing access tokens in localStorage** — XSS-exploitable. Prefer HTTP-only cookies.
+- **Missing PKCE** — required for public clients (browser, mobile); without it, the auth-code flow is vulnerable to interception.
+- **Wide scopes** — apps requesting more than they need is a privacy footgun and a user-trust issue.
+
+## Why it matters
+
+OAuth is the universal protocol for cross-app permissions. Every "log in with..." button, every "connect your Calendar to Zoom", every desktop app that talks to GitHub, every personal access token, every CI deploy key — OAuth or OAuth-like. Understanding it well prevents an entire class of security bugs.
+
+## Real-world examples
+
+- The annual **OAuth + OIDC interop testing** at IETF gatherings catches small spec ambiguities; the spec has been refined dozens of times.
+- **GitHub Apps and OAuth Apps** both use OAuth, with subtle differences — GitHub Apps install per-org with fine-grained permissions; OAuth Apps act as the user.
+- **The 2021 Codecov breach** abused OAuth integration tokens that had been silently exfiltrated, allowing attackers to access many downstream CI environments. Token hygiene matters.
+- **Apple's Sign in with Apple** is OAuth + OIDC with an extra layer of privacy (anonymous email forwarding).
+
+## Common misconceptions
+
+- **"OAuth is for authentication."** It's for authorisation. Use OIDC on top if you also need authentication.
+- **"OAuth tokens are passwords."** They're more like time-limited, scoped capabilities — much safer than passwords, but treat them with similar care.
+
+## Learn next
+
+The user identity layer: [authentication](/t/authentication). The decision-on-each-request layer: [authorization](/t/authorization). The transport that makes OAuth safe: [TLS](/t/tls).

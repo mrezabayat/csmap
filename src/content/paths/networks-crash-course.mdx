@@ -3,11 +3,25 @@ title: Networks Crash Course
 summary: The minimum useful mental model of how computers find each other and exchange data on the internet.
 audience: intermediate
 topics:
-  - ip-address
-  - dns
-  - tcp
-  - http
-updated: 2026-06-04
+  - ref: ip-address
+    section: Addressing
+  - ref: dns
+    section: Addressing
+  - ref: tcp
+    section: Transport
+  - ref: udp
+    section: Transport
+    optional: true
+  - ref: http
+    section: Application
+  - ref: https
+    section: Application
+  - ref: rest-api
+    section: Application
+  - ref: cdn
+    section: Bonus
+    optional: true
+updated: 2026-06-07
 ---
 
 If you can explain what an IP address is, what DNS does, how TCP differs from UDP, and what an HTTP request looks like, you can debug most "the internet is broken" problems on your own. This short path covers exactly that.

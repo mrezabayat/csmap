@@ -1,0 +1,63 @@
+---
+title: Rust
+aliases: ["rust-lang"]
+category: programming-languages
+kind: language
+summary: A modern systems language with C-like performance, no garbage collector, and a borrow checker that guarantees memory safety at compile time.
+level: intermediate
+status: draft
+importance: important
+tags: ["rust", "language", "systems"]
+prerequisites: ["programming-language"]
+related: ["c", "type-system", "garbage-collection"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Rust** is a systems programming language that promises C-like speed, no garbage collector, and *memory safety guaranteed by the compiler*. The trick is a unique type system (most famously the "borrow checker") that proves at compile time that your program never has dangling pointers, data races, or use-after-free bugs. The trade-off: the compiler is strict, and learning to satisfy it takes time.
+
+## More detail
+
+Rust started at Mozilla (Graydon Hoare, 2006), reached 1.0 in 2015, and has been at the top of Stack Overflow's "most loved language" survey for nearly a decade. It's now used in the Linux kernel, Windows, Firefox, AWS Firecracker, Dropbox storage, Discord backend, and countless newer tools.
+
+Core ideas:
+
+- **Ownership** — every value has exactly one owner; when the owner goes out of scope, the value is dropped (deterministic, no GC).
+- **Borrowing** — you can pass references but the compiler tracks them: many immutable references *or* one mutable reference at any time.
+- **Lifetimes** — annotations that prove references don't outlive their referents.
+- **No null** — use `Option<T>` instead. No exceptions — use `Result<T, E>`.
+- **Pattern matching** — exhaustive `match` over enums (sum types).
+- **Traits** — generic interfaces with monomorphisation for zero-cost abstraction.
+- **`unsafe`** — escape hatch for low-level code, scoped to specific blocks.
+
+The toolchain is famously good:
+
+- **cargo** — package manager, build tool, test runner, doc generator, formatter, linter all in one.
+- **rust-analyzer** — fast, accurate IDE support.
+- **clippy** — opinionated linter with thousands of useful rules.
+- **rustfmt** — official formatter, no config debates.
+
+Async story: `async` / `await` syntax, with runtimes (tokio, smol, embassy) chosen per use case. The language deliberately stayed runtime-agnostic.
+
+## Why it matters
+
+Rust is the first serious challenger to C / C++ for systems programming in decades. The combination of memory safety without GC, zero-cost abstractions, and modern tooling addresses real production problems: ~70% of high-severity Microsoft and Google security bugs over a decade were memory-safety bugs that Rust would have prevented at compile time. Rust adoption is now a serious organisational lever for security and reliability.
+
+## Real-world examples
+
+- **Linux kernel** added Rust support in 2022; new drivers are landing in Rust.
+- **Cloudflare's Pingora** (HTTP proxy serving most of their traffic) is Rust, replacing nginx.
+- **Discord** rewrote its read-states service from Go to Rust to eliminate GC pauses.
+- **ripgrep, fd, bat, eza, zoxide, lazygit-adjacent tools** — much of the modern CLI renaissance is Rust binaries.
+- **AWS Firecracker** (the microVM technology under Lambda and Fargate) is Rust.
+
+## Common misconceptions
+
+- **"Rust is impossible to learn."** It's harder than Go or Python but not impossibly so. Most teams report 2-3 months to productivity.
+- **"Rust is always faster than C."** Comparable, sometimes faster due to easier safe parallelism, sometimes slower because the borrow checker forces a different design.
+- **"You can't write unsafe code in Rust."** You can, with `unsafe { ... }`; you just opt out of the borrow checker's guarantees for those blocks.
+
+## Learn next
+
+The other dominant systems language: [C](/t/c). The type system Rust takes to its logical extreme: [type system](/t/type-system). What Rust pointedly does *not* have: [garbage collection](/t/garbage-collection).

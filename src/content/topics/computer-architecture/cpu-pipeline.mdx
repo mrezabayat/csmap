@@ -5,12 +5,12 @@ category: computer-architecture
 kind: concept
 summary: An assembly-line technique for executing instructions — split each instruction into stages and overlap many in flight at once.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["cpu", "architecture", "pipeline"]
 prerequisites: ["cpu", "instruction-set"]
 related: ["cache", "register"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -46,6 +46,8 @@ Pipelining is the technique that lets a 3 GHz CPU actually do a few billion oper
 - A modern x86 CPU has ~14–16 pipeline stages.
 - A branch misprediction on a deeply pipelined CPU can cost ~15 cycles — the entire pipeline has to be flushed.
 - Spectre and similar attacks abuse the speculative execution that pipelines need.
+
+- Spectre and Meltdown (2018) were attacks against the speculative execution that pipelines depend on — patches cost up to 30% of throughput in some workloads.
 
 ## Common misconceptions
 

@@ -1,0 +1,58 @@
+---
+title: Interrupt
+aliases: ["irq", "hardware interrupt"]
+category: operating-systems
+kind: concept
+summary: A hardware signal that pauses the CPU mid-instruction so the OS can react to an event — a keystroke, a packet, a timer tick.
+level: intermediate
+status: draft
+importance: important
+tags: ["os", "kernel", "hardware"]
+prerequisites: ["kernel"]
+related: ["system-call", "context-switch"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+An **interrupt** is the hardware equivalent of "excuse me, this needs attention right now." A device — keyboard, network card, timer chip — raises a signal on the CPU's interrupt line. The CPU finishes the current instruction, jumps to a handler the OS registered for that interrupt, deals with the event, and returns to whatever it was doing. Interrupts are how an OS finds out anything has happened in the outside world.
+
+## More detail
+
+Two flavours:
+
+- **Hardware interrupts (IRQs)** raised by devices: timer, NIC, disk, keyboard, USB, GPU.
+- **Software interrupts / exceptions** raised by the CPU itself: page fault, divide by zero, illegal instruction, syscall (on architectures that use the legacy mechanism).
+
+The mechanism:
+
+1. Device asserts an interrupt line.
+2. The interrupt controller (APIC on x86, GIC on ARM) priorities and routes the interrupt to a CPU core.
+3. The CPU saves the bare minimum state, jumps to the kernel's interrupt handler for that vector.
+4. The handler usually does the *minimum* — acknowledge the device, queue work for later — and returns quickly.
+5. The "later" work (bottom half / softirq / tasklet / DPC) runs with interrupts re-enabled.
+
+Why "minimum"? While an interrupt handler runs, **other interrupts on the same line are usually masked**. A slow handler delays everything else — typing latency, packet loss, audio glitches.
+
+Modern systems also use **interrupt coalescing** and **NAPI-style polling**: at high packet rates a NIC stops interrupting per packet and instead lets the kernel poll its receive queue. This is the difference between a 10 Gbps line maxing out a CPU on interrupts vs. saturating the line cleanly.
+
+Interrupt vectors are numbered and registered in an **IDT** (interrupt descriptor table) on x86 or **vector table** on ARM. Each entry maps a vector number to a handler function in the kernel.
+
+## Why it matters
+
+Interrupts are the OS's eyes and ears. Every keypress, every network packet, every disk completion, every timer tick is one. The performance and correctness of interrupt handling is what separates a responsive OS from a janky one — and is also the source of an entire class of difficult bugs (race conditions between handlers and threads, missed wakeups, IRQ storms).
+
+## Real-world examples
+
+- The Linux kernel routes IRQs across cores via `irqbalance` so one core doesn't become an "interrupt processing core" that drops everything else.
+- A 100 Gbps NIC at line rate raises millions of interrupts per second if not coalesced — which is why drivers default to polling under load.
+- macOS's "no nap" CPU mode (used by GarageBand and pro-audio apps) prevents IRQ-induced wakeups from disrupting real-time audio threads.
+
+## Common misconceptions
+
+- **"Interrupts are slow."** A single interrupt is nanoseconds-fast — the cost is *what the handler does* and what it blocks while it runs.
+- **"An interrupt always preempts."** The kernel can mask interrupts during critical sections; some handlers run with interrupts disabled, which is exactly when you can lose interrupts.
+
+## Learn next
+
+The related kernel-mode crossing for software-initiated events: [system call](/t/system-call). The state-saving cost paid on each transition: [context switch](/t/context-switch).

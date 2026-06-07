@@ -4,13 +4,13 @@ category: operating-systems
 kind: concept
 summary: The privileged core of an operating system — the only software that talks to hardware directly and the gatekeeper that protects every program from every other.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "kernel"]
 prerequisites: ["operating-system", "process"]
 related: ["scheduler", "virtual-memory"]
 partOf: []
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -47,6 +47,8 @@ The kernel is the most security-sensitive code in the whole system. A bug in ker
 - Linux 6.x is the kernel running most servers and Android phones.
 - The Apple `xnu` kernel powers macOS, iOS, watchOS, and tvOS.
 - The Windows NT kernel is the basis of all modern Windows, including Xbox.
+
+- A driver loaded into the Linux kernel can crash the whole machine — which is why Linux is steadily moving non-critical drivers into userspace (FUSE filesystems, DRM render workers, USB-over-IP).
 
 ## Common misconceptions
 

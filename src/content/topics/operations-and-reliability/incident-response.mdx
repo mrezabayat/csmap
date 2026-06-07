@@ -5,13 +5,13 @@ category: operations-and-reliability
 kind: concept
 summary: The structured way teams handle production incidents — from detection through resolution to a blameless postmortem.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["ops", "incidents", "sre"]
 prerequisites: ["monitoring"]
 related: ["logging"]
 nextSteps: ["sre"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -53,6 +53,8 @@ Every non-trivial service has incidents. The difference between a team that ship
 
 - A bad deploy at 09:55 → rolled back at 10:02 → root cause analysis later that week → guardrail in CI to prevent the same change shape. That's a healthy incident response.
 - A months-long outage handled by a single overworked engineer with no postmortem? Symptoms of a process problem, not a tech problem.
+
+- Honeycomb publishes its postmortems publicly as a learning resource — a great way to study how a healthy engineering org thinks during and after an outage.
 
 ## Common misconceptions
 

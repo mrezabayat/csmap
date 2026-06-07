@@ -5,12 +5,12 @@ category: programming-languages
 kind: concept
 summary: Automatic memory management — the runtime tracks which allocated objects are still in use and frees the rest, so programmers don't have to.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["memory", "runtime"]
 prerequisites: ["programming-language", "memory"]
 related: ["interpreter"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ Garbage collection lets most application code stop thinking about memory entirel
 - The JVM's G1 GC keeps pause times under ~200 ms for most workloads.
 - Go advertises sub-millisecond GC pauses by collecting concurrently.
 - A long-running Node.js server's "RSS keeps climbing" is often a memory leak hiding from the GC — usually a closure or cache holding references it shouldn't.
+
+- ZGC and Shenandoah (modern JVM collectors) target pause times under 1 ms even on heaps in the hundreds of gigabytes — a feat unthinkable a decade ago.
 
 ## Common misconceptions
 

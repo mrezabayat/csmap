@@ -5,12 +5,12 @@ category: distributed-systems-and-cloud
 kind: concept
 summary: Keeping copies of the same data on multiple machines for availability, durability, and read scaling.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["distributed", "replication"]
 prerequisites: ["distributed-system"]
 related: ["consensus", "sharding"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -45,6 +45,8 @@ Replication is the foundation under high availability. Cloud databases promise "
 - A Postgres primary with two read replicas: one writer, two readers, automatic failover.
 - DynamoDB Global Tables replicate writes across continents.
 - A blockchain is leaderless replication taken to an extreme.
+
+- Cassandra's tunable consistency (`ANY`, `ONE`, `QUORUM`, `ALL`) lets the same cluster behave like an AP system for some queries and a CP system for others, on a per-request basis.
 
 ## Common misconceptions
 

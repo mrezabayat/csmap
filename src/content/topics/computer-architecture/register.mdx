@@ -5,12 +5,12 @@ category: computer-architecture
 kind: concept
 summary: A handful of tiny, lightning-fast storage cells inside the CPU — the only memory most instructions actually read from or write to.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["registers", "cpu", "architecture"]
 prerequisites: ["cpu", "instruction-set"]
 related: ["cache", "cpu-pipeline"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -40,6 +40,8 @@ Registers are the choke point of execution. Every cycle the CPU does something, 
 - A C function with too many local variables spills to the stack, costing memory accesses on every call.
 - Hand-written assembly often outperforms compiler output by carefully managing which values live in which register.
 - Calling conventions (which registers a function may clobber, which it must preserve) are a core part of every ABI.
+
+- Modern x86 chips internally use ~180+ physical integer registers but only expose 16 architectural ones — register renaming under the hood removes false dependencies you can't see.
 
 ## Common misconceptions
 

@@ -1,0 +1,62 @@
+---
+title: C
+aliases: ["c-language", "c programming language"]
+category: programming-languages
+kind: language
+summary: A compact, portable systems programming language designed in the early 1970s — the implementation language of Unix and, to this day, of most operating systems, compilers, and infrastructure.
+level: intermediate
+status: draft
+importance: important
+tags: ["c", "language", "systems"]
+prerequisites: ["programming-language"]
+related: ["compiler", "memory"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**C** is the language that operating systems, compilers, embedded firmware, and most performance-critical infrastructure are written in. It's small, fast, portable, and unforgiving: there's no garbage collector, no memory safety, no string class — you manage memory by hand and the compiler trusts you completely. That trade-off (great power, great responsibility) made it the default systems language for fifty years.
+
+## More detail
+
+Dennis Ritchie created C at Bell Labs (1972) to rewrite Unix. The design goals were portability (the same C code should compile on different machines) and giving the programmer direct access to the machine without forcing assembly.
+
+Defining characteristics:
+
+- **Manual memory management** — `malloc` / `free`, no GC, no bounds checking.
+- **Pointers** — first-class, arithmetic on them is allowed, foot-guns abound.
+- **Static typing** — but weak: types coerce eagerly and silently.
+- **Tiny standard library** — much smaller than modern languages; "do everything yourself" by design.
+- **Preprocessor** — `#include`, `#define`, `#ifdef`. Crude but ubiquitous.
+- **No exceptions, no closures, no generics** — you build all of those by hand if you need them.
+
+Standards: K&R (1978), ANSI C89, C99, C11, C17, C23. Most embedded code is still C99; most kernels target a slightly newer subset.
+
+The compiler family:
+
+- **gcc** — the GNU C compiler; the default on Linux and most Unix.
+- **clang** — LLVM-based; better diagnostics, used by Apple, FreeBSD, and increasingly elsewhere.
+- **MSVC** — Microsoft's compiler for Windows.
+- **tcc**, **chibicc** — small or pedagogical compilers.
+
+Common safety footguns: buffer overflows, use-after-free, double-free, integer overflow, uninitialised reads, dangling pointers, signed-overflow undefined behaviour. Modern projects mitigate with `-fsanitize=address`, fuzzing, static analysis, and increasingly *Rust* for new code.
+
+## Why it matters
+
+The Linux kernel, the BSDs, parts of macOS and Windows, almost every database engine, OpenSSL, SQLite, Redis, Postgres, most language runtimes (CPython, Ruby, PHP, V8, JVM), almost all embedded firmware — all written in C. Even when you don't write C, the code you depend on is written in it.
+
+## Real-world examples
+
+- **SQLite** is ~150 KB of C source code that runs in every smartphone, browser, and embedded device on Earth — the most-deployed database in the world.
+- **The Linux kernel** is ~30 million lines of C and counting.
+- **Redis** started as a few thousand lines of C and grew into one of the most-deployed in-memory databases.
+- **The CPython interpreter** is C; PEP-7 (the C style guide) is still the standard for new contributions.
+
+## Common misconceptions
+
+- **"C is obsolete."** It is the most-deployed systems language by an enormous margin and will be for decades. Even where Rust is adopted, it usually coexists with C.
+- **"C is hard."** The *language* is small. What's hard is *writing correct C* without modern tooling — UBSan, ASan, fuzzers, and a strict compiler are essentials, not luxuries.
+
+## Learn next
+
+What turns C source into binaries: [compiler](/t/compiler). The machine resource C makes you manage directly: [memory](/t/memory).

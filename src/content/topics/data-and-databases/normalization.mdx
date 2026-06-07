@@ -5,12 +5,12 @@ category: data-and-databases
 kind: concept
 summary: A discipline for arranging tables to eliminate redundancy and update anomalies — the design counterpart to the relational model.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["database", "modelling"]
 prerequisites: ["relational-model"]
 related: ["sql", "indexing"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -40,6 +40,8 @@ A well-normalised schema makes updates simple and prevents the database from tel
 - A spreadsheet with "customer name" repeated on every order row is 1NF but not 3NF. A schema with a `customers` table referenced by `customer_id` is 3NF.
 - A data warehouse may store a denormalised "wide" table per business question because it is loaded once and read many times.
 - A bug where customers see two different addresses for themselves is often a denormalisation that drifted out of sync.
+
+- The 1973 paper that introduced 3NF is one of the most influential computer science papers ever; everything from PostgreSQL to Airtable still organises data on its principles.
 
 ## Common misconceptions
 

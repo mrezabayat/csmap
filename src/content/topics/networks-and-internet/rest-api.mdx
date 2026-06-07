@@ -1,0 +1,65 @@
+---
+title: REST API
+aliases: ["rest", "restful api"]
+category: networks-and-internet
+kind: concept
+summary: An architectural style for HTTP-based APIs that models the world as named resources accessed via standard verbs — the dominant way services talk to each other on the web.
+level: beginner
+status: draft
+importance: important
+tags: ["api", "http", "rest", "web"]
+prerequisites: ["http"]
+related: ["https"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **REST API** is a way of designing HTTP-based APIs around **resources** (a user, an order, a comment) and the standard HTTP verbs (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`). To list users you `GET /users`; to fetch one you `GET /users/42`; to create one you `POST /users`; to delete one you `DELETE /users/42`. It's not a strict standard — it's a set of conventions — but it dominates how the web's APIs work.
+
+## More detail
+
+The term comes from Roy Fielding's 2000 dissertation defining **REST** (REpresentational State Transfer). The strictly-defined version is a six-constraint architectural style; the everyday meaning is much looser:
+
+- **Resource-based URLs** — `/users/42/orders/7`, not `/getUserOrder?u=42&o=7`.
+- **Standard HTTP verbs** — `GET` (safe, idempotent), `POST` (create), `PUT` (replace, idempotent), `PATCH` (partial update), `DELETE` (idempotent).
+- **HTTP status codes** — `200`, `201 Created`, `204 No Content`, `400 Bad Request`, `404 Not Found`, `409 Conflict`, `429 Too Many Requests`, `500 Internal Server Error`.
+- **JSON payloads** — overwhelmingly. (Some APIs use XML, Protocol Buffers, or HTML.)
+- **Statelessness** — each request carries everything needed; no server-side session memory.
+
+What gets called "REST" in practice often isn't fully restful (it's missing HATEOAS, the "hypermedia" constraint that says the response should tell you what you can do next). Pragmatic teams call this **REST-ish** or **HTTP API**.
+
+Common challenges:
+
+- **Versioning** — `/v1/users` vs. `/v2/users`, or header-based versioning. No consensus.
+- **Pagination** — offsets, cursors, link headers, opaque tokens. Standards vary.
+- **Filtering and sorting** — query parameters, ad-hoc per API.
+- **Bulk operations** — REST is awkward at "update 100 users in one call".
+- **N+1 problem** — fetching a list and then per-item details often needs many requests, motivating GraphQL.
+
+Alternative API styles:
+
+- **GraphQL** — one endpoint, clients query exactly the fields they need; solves the over/under-fetching of REST.
+- **gRPC** — Protocol Buffers + HTTP/2; strongly typed, fast, popular for service-to-service.
+- **JSON-RPC, XML-RPC, SOAP** — older RPC styles; still alive in enterprise corners.
+- **WebSockets / Server-Sent Events** — for push and streaming where REST falls short.
+
+## Why it matters
+
+The vast majority of public APIs in 2026 are REST-ish over HTTPS. Knowing the conventions — and the trade-offs against GraphQL and gRPC — is core knowledge for any backend or frontend developer working with services.
+
+## Real-world examples
+
+- **The Stripe API** is the canonical "elegant REST API" reference: well-named resources, consistent pagination, helpful error responses.
+- **The GitHub API** is a useful contrast: started REST, added GraphQL, now both coexist.
+- **The Twilio, Slack, Discord, and Spotify APIs** are all REST-ish HTTPS APIs with JSON payloads.
+- **OpenAPI** (formerly Swagger) is a standard for describing REST APIs; the same definition generates docs, clients, and server scaffolding.
+
+## Common misconceptions
+
+- **"REST is a standard."** It's an architectural style. There's no spec to comply with; conventions vary widely across APIs.
+- **"REST APIs must be stateless from the client's perspective."** They're stateless server-side; the client typically holds an auth token across requests.
+
+## Learn next
+
+The protocol REST rides on: [HTTP](/t/http). The encryption it runs over: [HTTPS](/t/https).

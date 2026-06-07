@@ -1,30 +1,56 @@
 ---
 title: Public-Key Cryptography
-aliases: ["asymmetric cryptography"]
+aliases: ["asymmetric cryptography", "asymmetric crypto"]
 category: security-and-privacy
 kind: concept
 summary: Cryptography using a pair of mathematically linked keys — one you share, one you keep secret. The basis of TLS, signatures, and modern authentication.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
-tags: ["crypto", "security"]
+tags: ["crypto", "security", "pki"]
 prerequisites: ["cryptography"]
-related: []
-updated: 2026-06-04
+related: ["tls", "authentication"]
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+**Public-key cryptography** is the trick that lets two strangers agree on a shared secret over a public wire, and lets a sender prove they wrote a message without ever sharing a password. Each party has **two** mathematically linked keys: a **public key** they can publish to the world, and a **private key** they keep secret. Anyone can encrypt to the public key — only the holder of the matching private key can decrypt. Conversely, the private key can sign a message, and anyone with the public key can verify the signature.
 
 ## More detail
 
+The breakthrough (Diffie–Hellman, 1976; RSA, 1977; elliptic curves, 1985) was finding maths where the operations are easy in one direction and infeasible in reverse. Two families dominate today:
+
+- **RSA** — security rests on integer factorisation being hard. Old, well understood, slow, with relatively large keys (2048+ bits).
+- **Elliptic Curve Cryptography (ECC)** — security rests on the elliptic-curve discrete log problem. Modern, fast, with tiny keys (256 bits matches RSA-3072). **Curve25519** (key exchange) and **Ed25519** (signatures) are the contemporary defaults.
+
+Three jobs public-key crypto does for you:
+
+1. **Key exchange** — derive a shared symmetric key over a public network. Ephemeral Diffie–Hellman (`ECDHE`) is the standard. After the exchange, both sides switch to a fast symmetric cipher (AES-GCM, ChaCha20-Poly1305) for the actual data — public-key crypto is far too slow to use directly on bulk traffic.
+2. **Digital signatures** — the private key signs, the public key verifies. Used for software signing, signed commits, `git commit -S`, signed JWTs, certificate authorities signing TLS certificates.
+3. **Encryption to a recipient** — encrypt with their public key, only they can decrypt. Used by PGP / GPG, age, and most end-to-end encrypted messaging schemes (combined with key-exchange and ratchets).
+
+A persistent challenge is **authenticity of the public key itself**. If an attacker substitutes their public key for the recipient's, the encryption works perfectly — for the attacker. Solutions include **certificate authorities** (the web's PKI), **web-of-trust** (PGP), and **trust on first use + key pinning** (SSH, many messaging apps).
+
+A coming concern is **post-quantum cryptography**. Sufficiently powerful quantum computers would break RSA and ECC. NIST has standardised post-quantum schemes (ML-KEM for key encapsulation, ML-DSA for signatures) and rollout has begun in TLS via hybrid suites.
+
 ## Why it matters
+
+Public-key crypto is the reason the modern internet works at all. Every `https://` connection negotiates keys with a server you've never spoken to before; every signed software update verifies a publisher's signature; every passkey authenticates with a fresh signed challenge. Without it, the only way to talk securely would be to share a secret in advance — which obviously doesn't scale to billions of strangers.
 
 ## Real-world examples
 
+- A browser opening `https://wikipedia.org` does an ECDHE key exchange to derive a session key, then verifies Wikipedia's server certificate via the CA chain (more signatures).
+- `git commit -S` signs your commit with your Ed25519 or RSA key; GitHub displays a "verified" badge after checking the signature with your public key.
+- **Passkeys** (WebAuthn) sign a fresh challenge from the server with a per-site private key locked inside your device's secure enclave.
+- **Signal**'s end-to-end encryption uses X3DH (a public-key handshake) followed by the Double Ratchet (a stream of symmetric keys derived from it).
+
 ## Common misconceptions
+
+- **"Public-key crypto is used for encryption."** It's used for *key exchange* and *signatures* far more than direct encryption. Direct encryption is too slow for anything bigger than a key.
+- **"A longer RSA key is always more secure."** It's more conservative, but ECC at 256 bits gives equivalent security with much less work. Algorithm choice matters more than size.
+- **"My private key is safe if I encrypt it with a password."** Only as safe as the password and the KDF. Hardware-backed keys (Secure Enclave, YubiKey, TPM) are dramatically stronger.
 
 ## Learn next
 
-See [cryptography](/t/cryptography) for the wider context.
+See [cryptography](/t/cryptography) for the bigger toolbox, [TLS](/t/tls) for public-key crypto in action on the web, and [authentication](/t/authentication) for the user-facing layer it underpins.

@@ -1,0 +1,64 @@
+---
+title: WebSocket
+aliases: ["websockets", "ws"]
+category: networks-and-internet
+kind: protocol
+summary: A protocol that upgrades an HTTP connection into a full-duplex, persistent channel for sending messages back and forth in real time.
+level: intermediate
+status: draft
+importance: important
+tags: ["websocket", "realtime", "web"]
+prerequisites: ["http", "tcp"]
+related: ["https"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **WebSocket** is an upgrade from an ordinary HTTP request into a persistent, two-way channel between a browser (or any client) and a server. After the upgrade, either side can send messages whenever it wants, with low latency, without the request-response overhead of HTTP. It's the standard way to do real-time push in the browser: chat, live updates, multiplayer games, collaborative editing.
+
+## More detail
+
+The handshake:
+
+1. Client sends an HTTP `GET` request with `Upgrade: websocket` and a random `Sec-WebSocket-Key`.
+2. Server responds with HTTP `101 Switching Protocols` and a derived `Sec-WebSocket-Accept`.
+3. The TCP connection (now established as `ws://`) is repurposed: both ends start sending WebSocket frames instead of HTTP messages.
+
+After that:
+
+- Either side can send a message at any time (full-duplex).
+- Messages are framed as text or binary.
+- The connection stays open until either side closes it (or the network drops it).
+- Optional sub-protocols (negotiated in the handshake) define what the messages mean — STOMP, MQTT-over-WS, GraphQL Subscriptions, custom JSON.
+
+`wss://` is WebSockets over TLS — the production default, equivalent to HTTPS-ing the upgrade.
+
+WebSockets are bidirectional but **don't recover from connection drops on their own**. Production code needs reconnect logic, ideally with exponential backoff and message resumption. Libraries like Socket.IO, SignalR, and PartyKit add this on top.
+
+Alternatives:
+
+- **Server-Sent Events (SSE)** — one-way server → client over plain HTTP, simpler, auto-reconnects natively.
+- **Long polling** — fallback for environments that block WS; the request just hangs until there's data.
+- **WebTransport** — newer, over QUIC, supports unreliable datagrams too. Promising; not yet ubiquitous.
+
+## Why it matters
+
+Anything in a browser that needs "the server tells me about new things without me asking" usually uses WebSockets. The pattern is so common that the major frameworks (React + Convex / Liveblocks / PartyKit, Phoenix LiveView, Rails Hotwire) have first-class support for it.
+
+## Real-world examples
+
+- **Slack, Discord, WhatsApp Web** — chat over WebSockets.
+- **Google Docs, Figma, Linear, Notion** — real-time collaborative editing over WebSockets (often with a custom CRDT or operational transform layer on top).
+- **Trading platforms** — live price feeds over WebSockets (or proprietary protocols).
+- **Multiplayer browser games** (slither.io, agar.io, krunker) — game state over WebSockets, sometimes with WebRTC for peer-to-peer.
+
+## Common misconceptions
+
+- **"WebSockets replace HTTP."** They complement it — the initial handshake is HTTP, and most apps use both: HTTP for fetches, WebSockets for push.
+- **"WebSockets are always the right answer for real-time."** Sometimes Server-Sent Events or HTTP/2 push or even long polling is simpler and good enough.
+- **"WebSockets work everywhere."** Some corporate proxies and old infrastructure block them; production apps usually keep a long-polling fallback.
+
+## Learn next
+
+The protocol WebSockets upgrade from: [HTTP](/t/http). The transport they rely on for ordering: [TCP](/t/tcp). The encryption layer for `wss://`: [HTTPS](/t/https).

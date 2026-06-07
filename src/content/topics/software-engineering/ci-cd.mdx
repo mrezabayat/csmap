@@ -5,13 +5,13 @@ category: software-engineering
 kind: concept
 summary: An automated pipeline that builds, tests, and ships code on every change — so the path from "git push" to "in production" is short, repeatable, and safe.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["ci-cd", "automation", "devops"]
 prerequisites: ["version-control", "git", "testing"]
 related: []
 nextSteps: ["deployment"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -58,6 +58,8 @@ CI/CD turns "release day" into "every day". It catches bugs while the diff is sm
 - A typical PR opens, runs ~3 minutes of CI, gets reviewed, gets merged, and is in production within an hour.
 - Large companies (Amazon, Google) deploy thousands of times per day across their services.
 - A canary deploy shifts 5% of traffic to the new version first; if metrics stay healthy, it rolls forward.
+
+- Spotify deploys to production thousands of times a day; their entire pipeline (build, test, canary, full rollout) is measured in minutes, not hours.
 
 ## Common misconceptions
 

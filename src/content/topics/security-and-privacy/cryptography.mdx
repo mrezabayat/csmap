@@ -5,12 +5,12 @@ category: security-and-privacy
 kind: concept
 summary: The science of keeping information secret and verifying it has not been tampered with — built from math and careful engineering.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["crypto", "security"]
 related: ["password-hashing", "authentication"]
 nextSteps: ["public-key-cryptography", "tls"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -43,6 +43,8 @@ Without cryptography, there is no e-commerce, no online banking, no secure messa
 - HTTPS uses TLS, which uses AEAD ciphers plus public-key cryptography.
 - `git` signs commits using GPG or SSH keys.
 - Apple's iMessage uses end-to-end encryption with per-device keys.
+
+- The 2017 ROCA vulnerability broke millions of Estonian national ID smartcards because a hardware RSA key generator chose primes from a too-small subset — a reminder that the *implementation* matters as much as the algorithm.
 
 ## Common misconceptions
 

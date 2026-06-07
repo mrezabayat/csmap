@@ -1,0 +1,72 @@
+---
+title: Technical Debt
+aliases: ["tech debt"]
+category: software-engineering
+kind: concept
+summary: A metaphor for the long-term cost of cutting corners — small short-term wins that compound into a heavy maintenance burden.
+level: beginner
+status: draft
+importance: important
+tags: ["tech-debt", "quality"]
+related: ["refactoring", "code-review"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Technical debt** is what you take on when you ship something faster than you "should" — by skipping tests, copy-pasting instead of abstracting, ignoring a flaky warning, leaving a TODO. Like financial debt, that shortcut buys you speed today but you pay interest tomorrow, every time someone has to work near that code. Manageable if you pay it down; ruinous if it just compounds.
+
+## More detail
+
+The metaphor was introduced by Ward Cunningham in 1992. He was clear it was about *deliberate, well-understood* shortcuts taken to learn faster — not about sloppy code. Steve McConnell later expanded the taxonomy:
+
+- **Deliberate / strategic** — "we know this is hacky; we'll fix it next quarter". The only kind Cunningham endorsed.
+- **Deliberate / reckless** — "we know this is hacky; we don't care".
+- **Inadvertent / strategic** — "we now know we should have done it differently; we're learning".
+- **Inadvertent / reckless** — "we didn't even know there was a better way".
+
+The "interest" you pay:
+
+- **Slower changes** — every modification near the debt takes longer.
+- **More bugs** — fragile code breaks in surprising ways.
+- **Higher onboarding cost** — new engineers spend longer figuring out the system.
+- **Loss of confidence** — people work around the debt rather than through it.
+
+Strategies for managing tech debt:
+
+- **Boy Scout Rule** — leave the code cleaner than you found it. Many tiny refactors continuously.
+- **Track it** — a debt registry / "engineering backlog" / Jira labels so it's visible to product.
+- **Budget time for it** — 10-20% of capacity is a common rule of thumb.
+- **Pay before extending** — refactor an area before adding a new feature to it.
+- **Strangler pattern** for big legacy systems — wrap the old, route new functionality through new code, gradually retire the old.
+
+When debt is OK to take:
+
+- Validating a hypothesis (does this product idea work at all?).
+- Hitting a deadline that genuinely matters (regulatory, demo, launch).
+- The code you're cutting corners on will likely be deleted soon.
+
+When debt is *not* OK:
+
+- Foundational code that everything else will depend on.
+- Code in the security or correctness path.
+- "Just temporarily" — most temporary code becomes permanent.
+
+## Why it matters
+
+Technical debt is often the single biggest reason teams slow down over time. Productively talking about it — both with engineers and with product managers — is essential to keeping a long-lived codebase healthy. It also gives the team vocabulary for "we said yes too fast" without sounding accusatory.
+
+## Real-world examples
+
+- The Twitter "**fail whale**" era of the late 2000s was substantially a tech-debt story: Ruby on Rails monolith hit scale limits; the team spent years migrating critical paths to Scala / JVM and breaking the monolith apart.
+- The **Y2K bug** was a half-century of accumulated technical debt around two-digit year fields — costing the industry an estimated $300-600 billion to mitigate.
+- **The Healthcare.gov launch (2013)** is a textbook tech-debt story: many integrated systems, no end-to-end testing, no real load testing, fragile components — the launch failed publicly and required a months-long emergency cleanup.
+
+## Common misconceptions
+
+- **"All technical debt is bad."** Strategic debt taken consciously to learn faster is often the right call. The problem is unacknowledged, untracked debt.
+- **"We'll fix it in the rewrite."** Rewrites famously underestimate how much knowledge is buried in the old code. Strangling the old system gradually almost always beats a full rewrite.
+
+## Learn next
+
+The mechanical practice of paying it down: [refactoring](/t/refactoring). The collaborative practice that often catches it early: [code review](/t/code-review).

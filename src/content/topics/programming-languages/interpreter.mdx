@@ -4,12 +4,12 @@ category: programming-languages
 kind: tool
 summary: A program that reads source code (or bytecode) and executes it directly, without first producing a standalone binary.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["interpreter", "runtime"]
 prerequisites: ["programming-language"]
 related: ["compiler"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ Interpreters power most of the web's server side (Node, Python, Ruby), most data
 - **Node.js** runs JavaScript on the V8 JIT.
 - **JVM** runs `.class` bytecode for Java, Kotlin, Scala, Clojure.
 - **bash** interprets shell scripts line by line.
+
+- Excel itself is an interpreter: each cell's formula is parsed and re-evaluated on every change, with surprisingly clever incremental recomputation.
 
 ## Common misconceptions
 

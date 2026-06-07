@@ -5,12 +5,12 @@ category: artificial-intelligence
 kind: concept
 summary: The two distinct phases of a machine-learning model's life — learning its parameters (training) and using them to make predictions (inference).
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["ml", "ai", "inference", "training"]
 prerequisites: ["machine-learning"]
 related: ["neural-network", "supervised-learning"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -52,6 +52,8 @@ Most people who deploy ML never train a model from scratch — they fine-tune or
 - ChatGPT was pre-trained for months on tens of thousands of GPUs. Each chat you have is inference.
 - An object-detection model on your phone runs inference in milliseconds; it was trained on a cluster for days.
 - A recommendation system retrains nightly and serves inferences continuously.
+
+- ChatGPT's inference bill reportedly runs into the hundreds of millions per year — vastly more than the (already huge) one-time training cost, which is why inference optimisation is such an active field.
 
 ## Common misconceptions
 

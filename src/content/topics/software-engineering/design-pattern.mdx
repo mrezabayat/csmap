@@ -5,12 +5,12 @@ category: software-engineering
 kind: concept
 summary: A named, reusable solution to a recurring design problem in code. A shared vocabulary that lets engineers describe structure without re-explaining it.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["patterns", "design"]
 prerequisites: ["programming-language"]
 related: ["testing"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -44,6 +44,8 @@ Names compress conversation. When a reviewer comments "this looks like a strateg
 - The "Repository" pattern wraps database access so domain code doesn't see SQL directly.
 - The Adapter pattern is what every "wrap their API in our interface" PR is doing.
 - Circuit Breaker around an external dependency stops cascading failures from one slow service.
+
+- React itself is essentially a programmatic incarnation of the Composite + Observer patterns; recognising the pattern explains why its mental model clicks for so many developers.
 
 ## Common misconceptions
 

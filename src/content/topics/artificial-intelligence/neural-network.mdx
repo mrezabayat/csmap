@@ -1,31 +1,64 @@
 ---
 title: Neural Network
-aliases: ["neural networks", "deep learning"]
+aliases: ["neural networks", "deep learning", "artificial neural network"]
 category: artificial-intelligence
 kind: concept
 summary: A family of machine learning models loosely inspired by the brain — layers of simple units that, together, can approximate complex functions.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
 tags: ["ml", "neural-network", "ai"]
 prerequisites: ["machine-learning"]
-related: ["large-language-model"]
+related: ["large-language-model", "gpu", "gradient-descent", "computer-vision"]
 nextSteps: ["transformer"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+A **neural network** is a stack of layers. Each layer is a pile of simple units ("neurons") that each take a weighted sum of their inputs, push it through a non-linear function, and pass the result on. Stack enough of these layers together, train the weights on a lot of data, and the network can learn to recognise faces, translate languages, generate images, or play games — without anyone writing the rules by hand. The "deep" in **deep learning** just means *many layers*.
 
 ## More detail
 
+A neuron computes `y = f(W · x + b)` — a weighted sum of inputs `x` with weights `W` and bias `b`, passed through a non-linear activation function `f` (ReLU is the default in 2026; older networks used sigmoid or tanh). The non-linearity is essential; without it, any stack of layers collapses into a single linear function.
+
+Training works the same way for almost every neural network in modern use:
+
+1. **Forward pass** — push input through the network, compare the output to the correct answer with a **loss function**.
+2. **Backpropagation** — use the chain rule of calculus to compute how much each weight contributed to the loss.
+3. **Gradient descent** — nudge every weight a tiny step in the direction that reduces the loss.
+4. Repeat for billions of training examples.
+
+Major architectural families:
+
+- **Multilayer perceptron (MLP)** — fully connected; the simplest deep model.
+- **Convolutional neural network (CNN)** — weight-sharing across spatial regions; the workhorse of computer vision for ~2012-2020.
+- **Recurrent neural network (RNN / LSTM / GRU)** — designed for sequences; replaced by transformers for most tasks.
+- **Transformer** — attention-based; the architecture under every modern large language model and a growing share of vision and audio models.
+- **Diffusion models** — iteratively denoise random noise into an image; the basis of Stable Diffusion and most modern image generators.
+
+Two practical realities that shape everything in deep learning:
+
+- **GPUs (and TPUs)** are essential. Training a useful model on CPUs would take centuries; GPUs do the dense matrix multiplications at the core of every layer in massively parallel batches.
+- **Data and compute scale beautifully.** The "scaling laws" of the last decade say performance keeps improving smoothly as you add more data, more parameters, and more compute. This is why the biggest models keep winning.
+
 ## Why it matters
+
+Neural networks are the engine of the current AI wave. ChatGPT, Claude, Gemini, Midjourney, Stable Diffusion, GitHub Copilot, AlphaFold — all neural networks at heart. They are also, increasingly, embedded in places you don't see: spam filters, photo enhancements, voice assistants, fraud detection, code completion. The architecture and the discipline of training them are now part of mainstream software engineering.
 
 ## Real-world examples
 
+- A **CNN** on your phone classifies photos of your dog faster than you can blink, all on-device.
+- A **transformer**-based **LLM** writes most of the code in some IDE extensions.
+- A **diffusion** model generates a never-before-seen image of a "raccoon astronaut on Mars" in seconds.
+- **AlphaFold-2** predicts protein structures and won a Nobel Prize for its authors — using a neural network with attention layers, trained on the Protein Data Bank.
+
 ## Common misconceptions
+
+- **"Neural networks work like the brain."** Loosely inspired by biology, but the maths is linear algebra and calculus, not biology. The analogy stops being useful past introductory teaching.
+- **"They reason."** They pattern-match very well, sometimes in ways that look like reasoning. Whether that *is* reasoning is a genuinely open philosophical question; what's clear is that they have no introspective access to *how* they produced an answer.
+- **"You need a PhD to use one."** Using one (calling an API, fine-tuning a pre-trained model, running inference) is now an everyday programming task. Inventing new architectures is the part that needs deep expertise.
 
 ## Learn next
 
-See [machine learning](/t/machine-learning) for the broader context.
+The architectural breakthrough that started the current wave: [transformer](/t/transformer). The technology built on top of transformers: [large language model](/t/large-language-model). The hardware that makes any of it tractable: [GPU](/t/gpu).

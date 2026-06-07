@@ -3,13 +3,28 @@ title: Cryptography Crash Course
 summary: A practical tour of the cryptography most engineers actually use — symmetric and public-key, TLS, password storage, and the auth flows on top.
 audience: intermediate
 topics:
-  - cryptography
-  - public-key-cryptography
-  - tls
-  - password-hashing
-  - authentication
-  - authorization
-updated: 2026-06-04
+  - ref: cryptography
+    section: The math
+  - ref: public-key-cryptography
+    section: The math
+  - ref: tls
+    section: In use on the wire
+  - ref: https
+    section: In use on the wire
+    optional: true
+  - ref: password-hashing
+    section: Storing secrets
+  - ref: authentication
+    section: Identity and access
+  - ref: authorization
+    section: Identity and access
+  - ref: oauth
+    section: Identity and access
+    optional: true
+  - ref: csrf
+    section: Common pitfalls
+    optional: true
+updated: 2026-06-07
 ---
 
 You don't need to invent cryptography to ship secure software, but you do need to know which tool answers which question. This path covers the toolkit (symmetric and public-key crypto), the protocol that makes the web safe (TLS), how to store passwords without making a future breach catastrophic, and how authn and authz fit together on top.

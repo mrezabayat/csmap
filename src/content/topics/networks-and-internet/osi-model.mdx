@@ -1,0 +1,55 @@
+---
+title: OSI Model
+aliases: ["osi", "seven-layer model"]
+category: networks-and-internet
+kind: concept
+summary: A seven-layer conceptual model for how networking protocols stack on top of each other — physical wires at the bottom, applications at the top.
+level: beginner
+status: draft
+importance: important
+tags: ["networking", "osi", "layers"]
+related: ["packet", "ip-address", "tcp", "http"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+The **OSI model** is a way of dividing networking into seven layers, each handling one job, with each layer relying on the layers below. The bottom is physical wires; the top is the application. It's a teaching tool, not a strict prescription — the real internet doesn't quite match it — but the vocabulary is universal in networking conversations.
+
+## More detail
+
+The seven layers, bottom-up:
+
+| # | Layer | What it does | Example |
+|---|---|---|---|
+| 1 | Physical | Voltages, light pulses, radio waves | Ethernet cable, Wi-Fi radio |
+| 2 | Data link | Framing between adjacent nodes | Ethernet frame, Wi-Fi 802.11 |
+| 3 | Network | Routing across networks | IP, ICMP |
+| 4 | Transport | End-to-end reliability and flow | TCP, UDP |
+| 5 | Session | Sessions, dialogues | (rarely used distinctly today) |
+| 6 | Presentation | Encoding, compression, encryption | TLS (kind of) |
+| 7 | Application | The actual protocol the user cares about | HTTP, SMTP, DNS, SSH |
+
+The internet's actual stack is closer to the four-layer **TCP/IP model**: Link, Internet, Transport, Application. The OSI model's session and presentation layers don't map cleanly to anything in real use.
+
+The most useful thing OSI gives you is the vocabulary: when an engineer says "this is a layer 7 problem" they mean it's at the application protocol level; "layer 4 load balancer" means it operates at the TCP / UDP level (doesn't inspect HTTP); "layer 2 switch" forwards Ethernet frames, doesn't route IP.
+
+## Why it matters
+
+The layered mental model is how you reason about almost any networking issue: where in the stack is the bug? where is the bottleneck? where is the encryption applied? Knowing the layers also helps you read tools (Wireshark, `tcpdump`, `traceroute`) and product docs (load balancers, firewalls, CDNs) without getting lost.
+
+## Real-world examples
+
+- A **layer 7 load balancer** (HAProxy, Envoy, Cloudflare) routes based on the HTTP request — host header, path, cookies.
+- A **layer 4 load balancer** (AWS NLB, kube-proxy) routes by IP + port only — much faster, no app awareness.
+- A **layer 2 attack** like ARP spoofing only works on the local network; routing across the internet would hide it.
+- TLS sits awkwardly across layers 5-7 in the OSI model — which is one reason the model is mostly a vocabulary tool, not a hard architecture.
+
+## Common misconceptions
+
+- **"The OSI model is the real architecture of the internet."** It is not — the internet uses the TCP/IP model. OSI is the teaching reference.
+- **"Every protocol lives in exactly one layer."** TLS, HTTP/3 over QUIC, and DNS-over-HTTPS all cut across layers. The model is a guideline.
+
+## Learn next
+
+The bottom of the stack: [packet](/t/packet). The transport layer: [TCP](/t/tcp) and [UDP](/t/udp). The most-used application protocol: [HTTP](/t/http).

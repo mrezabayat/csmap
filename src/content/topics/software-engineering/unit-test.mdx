@@ -1,0 +1,83 @@
+---
+title: Unit Test
+aliases: ["unit tests", "unit testing"]
+category: software-engineering
+kind: concept
+summary: A small, fast test that exercises one unit (function, class, module) in isolation — the foundation of the testing pyramid.
+level: beginner
+status: draft
+importance: important
+tags: ["testing", "quality"]
+prerequisites: ["testing"]
+related: ["integration-test", "ci-cd"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **unit test** is a test that exercises one small piece of code in isolation — a function, a class, a method — and asserts what it does. Unit tests are fast (milliseconds each), don't touch the network or the database, and run by the thousands. They form the broad base of the **testing pyramid**.
+
+## More detail
+
+What makes a good unit test:
+
+- **Fast** — milliseconds, ideally under 10 ms each. Slow unit tests destroy the development inner loop.
+- **Isolated** — no I/O, no shared state, no order-dependent results.
+- **Deterministic** — same input, same output, every time.
+- **Focused** — one behaviour per test; one reason to fail.
+- **Named clearly** — the name describes the behaviour, not the implementation. `it_rounds_to_two_decimal_places`, not `test_compute_total_2`.
+
+The **Arrange-Act-Assert** (AAA) pattern is the standard structure:
+
+```python
+def test_email_validator_rejects_missing_at_sign():
+    # Arrange
+    validator = EmailValidator()
+    # Act
+    result = validator.validate("not-an-email")
+    # Assert
+    assert result.is_invalid
+```
+
+Tools by language:
+
+| Language | Common unit-test runners |
+|---|---|
+| Python | pytest, unittest |
+| JavaScript / TypeScript | Vitest, Jest |
+| Java | JUnit, TestNG |
+| Rust | built-in `cargo test` |
+| Go | built-in `go test` |
+| Ruby | RSpec, Minitest |
+
+Two common variants:
+
+- **Test-Driven Development (TDD)** — write the test first, watch it fail, write the minimum code to make it pass, refactor.
+- **Property-based testing** — generate hundreds of random inputs satisfying a property and assert the property holds (Hypothesis in Python, fast-check in JS, proptest in Rust).
+
+What unit tests *can't* tell you:
+
+- Whether your services talk to each other correctly (that's [integration tests](/t/integration-test)).
+- Whether the user-visible flow works (that's E2E).
+- Whether the database query is correct (need a real database).
+
+The "**Testing Pyramid**" suggests: many unit tests, fewer integration tests, very few E2E tests.
+
+## Why it matters
+
+Unit tests are the cheapest, fastest feedback you can get on your code. They make refactoring possible — you can change the inside of a function freely as long as the tests still pass. They are also the only kind of test that scales to "every PR runs in under a minute".
+
+## Real-world examples
+
+- The Linux kernel runs **kunit** in-tree; small focused tests that catch regressions in core code paths.
+- TypeScript's compiler test suite is ~50,000 cases that run in seconds — the reason TS releases ship as confidently as they do.
+- Coverage reports (e.g. `istanbul`, `pytest-cov`) measure how much of your code your unit tests exercise; targeting 80% line coverage is a common rule of thumb (with caveats — see below).
+
+## Common misconceptions
+
+- **"100% coverage means correct code."** Coverage measures what *ran*; it doesn't measure whether the *assertions* are right. A test with no `assert` still gets coverage.
+- **"Unit tests can replace integration tests."** They complement them. Unit tests catch logic bugs; integration tests catch wiring bugs.
+
+## Learn next
+
+The next tier up the pyramid: [integration test](/t/integration-test). What runs your unit tests on every push: [CI/CD](/t/ci-cd).

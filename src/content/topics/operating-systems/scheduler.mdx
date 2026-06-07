@@ -5,14 +5,14 @@ category: operating-systems
 kind: concept
 summary: The part of the OS kernel that decides which thread runs on each CPU at any moment — balancing fairness, responsiveness, and throughput.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "scheduling"]
 prerequisites: ["process", "thread"]
 related: []
 partOf: ["operating-system"]
 nextSteps: ["kernel"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -47,6 +47,8 @@ The scheduler is the difference between a system that feels snappy and one that 
 - Linux's CFS schedules every thread on most servers and Android phones.
 - macOS and iOS use a priority scheduler with QoS (Quality of Service) classes you can set per task.
 - Game engines often pin their threads to specific cores to avoid scheduler decisions.
+
+- Mobile OS schedulers also factor in battery and thermal state, deliberately throttling background threads when the device is hot or unplugged.
 
 ## Common misconceptions
 

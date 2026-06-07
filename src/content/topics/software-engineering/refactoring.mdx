@@ -1,0 +1,72 @@
+---
+title: Refactoring
+aliases: ["refactor"]
+category: software-engineering
+kind: concept
+summary: Improving the internal structure of code without changing its external behaviour — the way you keep a codebase from rotting.
+level: beginner
+status: draft
+importance: important
+tags: ["refactoring", "quality"]
+related: ["testing", "design-pattern", "technical-debt"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Refactoring** means changing the *shape* of code without changing what it does. Rename a variable; extract a function; split a class; replace a switch statement with polymorphism — none of these add features or fix bugs. They make the code easier to understand, easier to change next time, easier to test. Done continuously, refactoring is what stops a codebase from rotting into legacy.
+
+## More detail
+
+The term was popularised by Martin Fowler's 1999 book *Refactoring: Improving the Design of Existing Code*. It catalogued dozens of named refactorings — small, mechanical, reversible transformations:
+
+- **Extract Function** — pull a block of code into its own named function.
+- **Inline Function** — the reverse.
+- **Rename Variable / Function / Class** — modern IDEs do this safely in seconds.
+- **Move Function** — relocate to a more appropriate module.
+- **Replace Conditional with Polymorphism** — turn a long `switch` into a class hierarchy or strategy.
+- **Introduce Parameter Object** — bundle related parameters into a class.
+- **Extract Class / Inline Class**, **Split Phase**, **Slide Statement**, …
+
+The discipline:
+
+1. Make sure tests pass.
+2. Do one tiny refactor.
+3. Run tests again.
+4. Commit.
+5. Repeat.
+
+The reason tests come first: refactoring without tests is *guessing whether you broke anything*. Tests are what let you change structure freely. The tighter the test suite, the bolder the refactor.
+
+Refactoring is best done **continuously** in small bites alongside feature work — the "Boy Scout Rule" of leaving the campsite cleaner than you found it. Massive "refactoring sprints" that touch huge swaths of code usually go badly: they're hard to review, hard to merge, and frequently introduce subtle bugs.
+
+Tools:
+
+- **IDE refactoring** (IntelliJ, VS Code, Rider, Cursor) — rename, extract, move, inline, all safe.
+- **AST-aware tooling** — `jscodeshift`, `comby`, Rust's `rust-analyzer` quickfixes, `ts-morph`.
+- **Linters and formatters** — Prettier, ESLint, ruff, Black, gofmt — enforce style continuously so it isn't an ad-hoc refactor every time.
+
+Not refactoring:
+
+- Adding a feature → not a refactor.
+- Fixing a bug → not a refactor.
+- Mixing a refactor with a behaviour change → confused PR; reviewers can't tell which change is which.
+
+## Why it matters
+
+Refactoring is what keeps a working codebase *workable*. Without it, every new feature is slightly harder than the one before; technical debt compounds; eventually nothing can be changed safely. With it, the codebase stays roughly as easy to evolve at year 5 as it was at year 1.
+
+## Real-world examples
+
+- The Linux kernel constantly refactors its core code paths to remove legacy patterns; "tree-wide cleanups" are normal patchsets.
+- Rust's compiler is famously well-refactored — the team treats large code reorganisations as first-class engineering work, often with multi-month plans.
+- **Working Effectively with Legacy Code** (Michael Feathers, 2004) is the canonical book on how to add tests to untested code as a prerequisite for safe refactoring.
+
+## Common misconceptions
+
+- **"Refactoring means rewriting."** It's the opposite — tiny, behaviour-preserving changes. Rewriting is high-risk; refactoring is low-risk.
+- **"You can refactor without tests."** You can, but you can't tell whether you broke anything. Pair "I have tests" with "I am refactoring", or don't.
+
+## Learn next
+
+The safety net that makes refactoring sustainable: [testing](/t/testing). The named shapes refactoring often reaches for: [design pattern](/t/design-pattern).

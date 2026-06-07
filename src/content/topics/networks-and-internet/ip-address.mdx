@@ -5,12 +5,12 @@ category: networks-and-internet
 kind: concept
 summary: A numeric identifier for a network interface — how computers find each other on the internet.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["ip", "networking"]
 related: ["packet", "router"]
 nextSteps: ["dns", "tcp", "udp"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -35,6 +35,8 @@ Everything on the internet is named by IP underneath. Names like `wikipedia.org`
 - `127.0.0.1` (and `::1`) — your own machine.
 - `8.8.8.8` — one of Google's public DNS servers.
 - `192.168.x.x`, `10.x.x.x` — typical home-router private ranges.
+
+- A single phone on cellular often has *three* IPs at once: a private IPv4 from the carrier's NAT, an IPv6 from the cellular network, and a private IPv4 on its local Wi-Fi.
 
 ## Common misconceptions
 

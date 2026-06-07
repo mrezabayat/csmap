@@ -5,13 +5,13 @@ category: distributed-systems-and-cloud
 kind: technology
 summary: A lightweight, isolated unit of computing — a process running with its own filesystem and namespaces, packaged with its dependencies.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["containers", "docker", "kubernetes"]
 prerequisites: ["operating-system", "process"]
-related: ["deployment"]
+related: ["deployment", "kubernetes", "serverless"]
 nextSteps: ["microservices"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -50,6 +50,8 @@ Containers gave us reproducible builds, repeatable deploys, and a unit of work t
 - A `Dockerfile` describes how to build an image; `docker run` starts a container from it.
 - A Kubernetes pod is one or more containers scheduled together on a node.
 - AWS Lambda runs your function in a Firecracker microVM, which behaves like a very strongly isolated container.
+
+- Cloud functions (AWS Lambda, Cloudflare Workers) sit on top of container or microVM technology — your function code is wrapped in a 50 ms cold-start container the platform reuses across invocations.
 
 ## Common misconceptions
 

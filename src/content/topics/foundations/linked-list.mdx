@@ -1,0 +1,68 @@
+---
+title: Linked List
+aliases: ["linked-lists"]
+category: foundations
+kind: concept
+summary: A data structure built from nodes that each point to the next, allowing O(1) insert and remove at any known node — and notably awful cache behaviour.
+level: beginner
+status: draft
+importance: important
+tags: ["data-structures"]
+prerequisites: ["data-structure"]
+related: ["stack-and-queue"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **linked list** is a chain: each element holds its data plus a pointer to the next element. Unlike an array, the elements don't need to be contiguous in memory — they can be scattered, glued together only by the pointers. That makes inserting and removing at any point in the chain cheap, but makes "find the 100th element" expensive.
+
+## More detail
+
+Variants:
+
+- **Singly linked** — each node points to the next.
+- **Doubly linked** — each node points to both next and previous; allows backward traversal and O(1) removal given just a node reference.
+- **Circular** — the last node points back to the first.
+
+The classical operation table vs. a dynamic array:
+
+| Operation                | Linked list | Dynamic array (vector) |
+|---|---|---|
+| Index access             | O(n)        | O(1) |
+| Insert at front          | O(1)        | O(n) |
+| Insert at back           | O(1)*       | O(1) amortised |
+| Insert in middle (known node) | O(1)   | O(n) |
+| Memory overhead per item | High (pointer + allocator overhead) | Low (just the data) |
+| Cache friendliness       | Poor         | Excellent |
+
+(*) only with a tail pointer.
+
+Modern reality: **arrays usually win**, often by a lot, because cache effects swamp the asymptotic advantages of linked lists. A 2010s rule of thumb that has only gotten more true: prefer `Vec<T>` / `ArrayList` / `[]T` to any kind of linked list unless you have a specific reason. Linus Torvalds's famous "good taste" Linux talk uses doubly-linked list deletion as the example — but even the kernel uses linked lists much less than newcomers expect.
+
+Where linked lists do shine:
+
+- **Splicing** two large lists into one is O(1).
+- **Intrusive linked lists** (the "next" pointer is a field of the data itself, no extra node allocation) are common in OS kernels, schedulers, allocators.
+- **Persistent data structures** (functional languages) often use linked lists as the simplest immutable sequence.
+- **Lock-free queues** are usually linked lists because individual nodes can be CAS'd in / out.
+
+## Why it matters
+
+Linked lists are the textbook example for explaining pointers, dynamic memory, and asymptotic analysis. They're also a great cautionary tale: textbook complexity isn't the same as real-world performance. Knowing both the theory and when arrays beat lists in practice is part of being a working engineer.
+
+## Real-world examples
+
+- The Linux kernel's `struct list_head` is an intrusive doubly-linked list used in hundreds of places.
+- LRU caches are often implemented as a hash table + doubly-linked list — the hash table for O(1) lookup, the list for O(1) reorder on access.
+- Java's `LinkedList` exists but the general advice in 2026 is "don't use it; use `ArrayList`".
+- Persistent / immutable lists in Clojure, Haskell, Erlang are linked lists by default (with structural sharing).
+
+## Common misconceptions
+
+- **"Linked lists are faster than arrays for insertion."** Only if you've already found the spot to insert at. Finding the spot is O(n) — versus O(log n) for a sorted array with binary search.
+- **"Linked lists save memory."** They often *use more* memory due to pointer overhead per node and allocator metadata.
+
+## Learn next
+
+The structures linked lists are often used to build: [stack and queue](/t/stack-and-queue). Why arrays often win despite the textbook complexity: cache-friendly data structures.

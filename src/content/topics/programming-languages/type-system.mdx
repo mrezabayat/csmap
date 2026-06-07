@@ -5,12 +5,12 @@ category: programming-languages
 kind: concept
 summary: A set of rules a programming language uses to assign and check the "kinds" of values, catching whole classes of bugs before the program runs.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["types", "languages"]
 prerequisites: ["programming-language"]
 related: ["compiler", "interpreter"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -45,6 +45,8 @@ Type systems are the cheapest, fastest test you have. A good one removes whole c
 - A typo in a field name in TypeScript fails the build instead of silently returning `undefined` at run time.
 - Rust's borrow checker is "just" an unusually expressive type system; it eliminates an entire class of memory bugs.
 - Python's optional type hints (PEP 484) let `mypy` catch errors that the interpreter wouldn't.
+
+- Modern TypeScript's type system is Turing-complete; people have used it to encode tic-tac-toe games and even an entire interpreter inside types.
 
 ## Common misconceptions
 

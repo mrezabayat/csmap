@@ -5,12 +5,12 @@ category: operations-and-reliability
 kind: field
 summary: A discipline pioneered at Google that applies software-engineering principles to operations — automation, SLOs, error budgets, blameless culture.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["sre", "ops"]
 prerequisites: ["monitoring"]
 related: ["incident-response", "logging", "deployment", "ci-cd"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -42,6 +42,8 @@ SRE made it possible to run very large, very reliable services without manual he
 - A team with a 99.9% latency SLO has ~43 minutes of error budget per month. A risky migration that costs 30 minutes leaves only 13 — risky changes pause until budget regenerates.
 - Google's SRE org famously caps "ops work" per engineer at 50%, with the rest spent on automation and engineering.
 - A "production readiness review" might block a launch because the service has no SLOs, no on-call rotation, or no rollback procedure.
+
+- Google's published SRE workbook is still the canonical reference; over 100,000 free downloads later, the concepts (SLO, error budget, blameless postmortem) have become industry standard far beyond Google.
 
 ## Common misconceptions
 

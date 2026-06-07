@@ -1,0 +1,66 @@
+---
+title: CAP Theorem
+aliases: ["cap"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: "A foundational result of distributed systems: under a network partition, a system can be either Consistent or Available, not both."
+level: advanced
+status: draft
+importance: important
+tags: ["distributed", "cap", "consistency"]
+prerequisites: ["distributed-system"]
+related: ["consensus", "replication", "eventual-consistency"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+The **CAP theorem** says: when a distributed system experiences a network partition (some nodes can't talk to others), it has to choose between two undesirable behaviours — either refuse to serve some requests (giving up Availability) or serve them with potentially stale or wrong data (giving up Consistency). You can't have both during a partition. C, A, and P stand for **Consistency**, **Availability**, and **Partition tolerance**, and the punchline is "pick at most two" — but in practice, P is forced on you by reality, so you really pick C or A.
+
+## More detail
+
+Formally:
+
+- **Consistency** (in CAP terms) = linearizability: every read returns the most recent write.
+- **Availability** = every request gets a non-error response.
+- **Partition tolerance** = the system keeps operating despite network partitions.
+
+Eric Brewer stated CAP as a conjecture in 2000; Gilbert and Lynch proved it in 2002.
+
+What it actually means in practice:
+
+- Network partitions in real distributed systems are inevitable (cables get cut, switches fail, regions fail). So your system must tolerate them.
+- During a partition, you choose:
+  - **CP**: refuse requests on the minority side until the partition heals. Examples: most databases with single-master writes, etcd, ZooKeeper.
+  - **AP**: keep serving on both sides; reconcile when the partition heals (with conflict resolution, last-write-wins, CRDTs). Examples: Cassandra by default, DynamoDB, Riak.
+- Outside partitions, you can have both C and A — CAP is specifically a *during-partition* trade-off.
+
+CAP is often criticised as **too binary**. The richer modern framing is **PACELC**: in the presence of a Partition, pick A or C; Else (no partition), pick Latency or Consistency. Latency-vs-consistency is a continuous, everyday trade-off that CAP doesn't capture.
+
+CAP is also often misapplied:
+
+- "MongoDB is CP" — only with the right configuration; with default reads, it's somewhere between.
+- "DynamoDB is AP" — partly; it offers strongly-consistent reads at higher cost and latency.
+- "PostgreSQL is CA" — only if you ignore partitions, which is fine on a single machine but meaningless on a replicated cluster.
+
+The real-world art is choosing your trade-offs **per data type, per access path**: strongly consistent for money transfers, eventually consistent for likes counts, available with conflict resolution for shared documents.
+
+## Why it matters
+
+CAP is the foundational vocabulary for talking about distributed-database trade-offs. Knowing it (and its limitations) lets you read database docs critically and pick the right store for each workload.
+
+## Real-world examples
+
+- **Amazon DynamoDB** lets each request choose: eventually-consistent reads are cheaper and lower-latency; strongly-consistent reads cost more and are slower.
+- **Cassandra**'s tunable consistency (`ONE`, `QUORUM`, `ALL`) is per-query CAP control: write to `QUORUM` and read `QUORUM` for strong consistency; both at `ONE` for max availability.
+- **Google Spanner** uses synchronised atomic clocks to achieve external consistency across continents — sometimes pitched as "CA in the absence of partitions, CP during one".
+- **etcd / ZooKeeper** are explicitly CP: during a partition, the minority side stops accepting writes; Kubernetes can't update cluster state while etcd is unavailable.
+
+## Common misconceptions
+
+- **"CAP means a system is CA or CP or AP."** P is non-negotiable in a real distributed system. The choice is C or A *during partitions*.
+- **"Consistency in CAP = ACID consistency."** No — CAP consistency means linearizability (one specific consistency model). ACID's C is a different (weaker) notion.
+
+## Learn next
+
+The relaxed consistency model AP systems live in: [eventual consistency](/t/eventual-consistency). The agreement primitive CP systems use: [consensus](/t/consensus).

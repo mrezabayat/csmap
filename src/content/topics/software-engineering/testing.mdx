@@ -5,13 +5,13 @@ category: software-engineering
 kind: concept
 summary: Writing code that runs your code to check it does what it should — the safety net that lets teams change software without breaking it.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["testing", "quality"]
 prerequisites: ["programming-language"]
 related: ["code-review"]
 nextSteps: ["ci-cd"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -58,6 +58,8 @@ Tests are how teams of humans modify a codebase confidently. They are also docum
 - A typo that swaps two arguments is caught by a unit test the moment you save.
 - An end-to-end test "user signs up and receives a welcome email" guards the most important flow in a SaaS product.
 - Property tests have found bugs in JSON parsers, encryption libraries, and core algorithms that example-based tests missed for years.
+
+- Property-based testing (QuickCheck, Hypothesis, fast-check) generates thousands of inputs that ordinary unit tests would never think of, and has found real bugs in PostgreSQL, OpenSSL, and many language standard libraries.
 
 ## Common misconceptions
 

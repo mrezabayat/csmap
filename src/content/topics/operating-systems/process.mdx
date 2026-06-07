@@ -5,14 +5,14 @@ category: operating-systems
 kind: concept
 summary: A running instance of a program, with its own memory, file handles, and CPU time — the unit the operating system schedules and isolates.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["os", "process"]
 prerequisites: ["operating-system", "memory"]
 related: []
 partOf: []
 nextSteps: ["thread", "scheduler"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -43,6 +43,8 @@ Processes are why a single computer can run a browser, a video call, a code edit
 - The `ps` / Task Manager / Activity Monitor list of running programs is a list of processes.
 - A web browser usually runs each tab as its own process for isolation.
 - A crashing app shows up as a process that exited with a non-zero status.
+
+- A serverless function invocation is, under the hood, a short-lived process the platform spins up to handle the request.
 
 ## Common misconceptions
 

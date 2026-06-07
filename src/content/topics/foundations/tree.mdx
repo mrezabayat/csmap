@@ -1,0 +1,67 @@
+---
+title: Tree
+aliases: ["tree data structure", "trees"]
+category: foundations
+kind: concept
+summary: A hierarchical data structure where each node has children but only one parent — the basis of file systems, search structures, DOMs, and ASTs.
+level: beginner
+status: draft
+importance: important
+tags: ["data-structures"]
+prerequisites: ["data-structure"]
+related: ["hash-table", "recursion"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **tree** is a data structure that looks like an upside-down tree: one **root** at the top, with **children** hanging off it, each of which can have its own children. Every node has exactly one parent (except the root, which has none). Trees are everywhere in computing because so much of the world is hierarchical.
+
+## More detail
+
+Terminology:
+
+- **Root** — the top node.
+- **Leaf** — a node with no children.
+- **Internal node** — a node with at least one child.
+- **Depth / level** — distance from root.
+- **Height** — longest root-to-leaf distance.
+- **Subtree** — any node plus all its descendants.
+
+Common variants:
+
+- **Binary tree** — each node has at most two children (left, right).
+- **Binary search tree (BST)** — a binary tree where left subtree is always smaller, right subtree larger. Lookup is O(log n) if balanced.
+- **Balanced trees** (AVL, red-black) — self-rebalancing BSTs; guarantee O(log n) operations.
+- **B-tree / B+ tree** — wide-fanout trees designed for disk and SSD storage. The backbone of every relational database index and most file systems.
+- **Heap** — a tree (usually binary) with the heap property; powers priority queues.
+- **Trie / radix tree** — keyed by string prefixes; used for autocomplete, IP routing, dictionaries.
+- **Quadtree / octree** — spatial trees for 2D/3D data; collision detection, image compression.
+
+Traversal patterns:
+
+- **Pre-order** — visit, then descend.
+- **In-order** — descend left, visit, descend right (for BST: yields sorted order).
+- **Post-order** — descend, then visit (for evaluating expressions, deleting subtrees).
+- **Breadth-first / level-order** — visit all nodes at depth k before depth k+1.
+
+## Why it matters
+
+Trees model hierarchy, and hierarchy is everywhere: file systems, JSON / XML / YAML documents, the DOM in a browser, scene graphs in 3D rendering, abstract syntax trees in compilers, B-tree indexes in databases, decision trees in ML, the chain-of-trust in TLS certificates, your company org chart.
+
+## Real-world examples
+
+- A SQL B-tree index lets a `WHERE id = ?` lookup over 100 million rows take ~3-4 disk reads.
+- A browser's **DOM tree** is what JavaScript manipulates and what CSS styles.
+- Git's content storage is a **Merkle tree** — each commit's hash depends on the tree's hash, which depends on every file's hash.
+- Decision trees (and random forests / gradient-boosted trees) win huge classes of tabular ML problems.
+- Filesystem directory hierarchies are trees (with symlinks being the not-quite-tree edge case).
+
+## Common misconceptions
+
+- **"Trees are always balanced."** Unbalanced BSTs degenerate to linked lists with O(n) operations. Self-balancing variants (AVL, RB, B+) fix this; naive BSTs do not.
+- **"Trees and graphs are the same."** A tree is a special case of a graph — connected, acyclic, with N-1 edges for N nodes. Graphs in general are more flexible (and harder).
+
+## Learn next
+
+The other foundational data structure for fast lookups: [hash table](/t/hash-table). The control-flow pattern most tree algorithms use: [recursion](/t/recursion).

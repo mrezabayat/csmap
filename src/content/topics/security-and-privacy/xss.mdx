@@ -1,0 +1,62 @@
+---
+title: XSS
+aliases: ["cross-site scripting", "cross site scripting"]
+category: security-and-privacy
+kind: concept
+summary: Cross-Site Scripting — a vulnerability where an attacker injects malicious JavaScript into a page that other users then run as if it came from the site.
+level: intermediate
+status: draft
+importance: important
+tags: ["xss", "web", "security", "vulnerability"]
+prerequisites: ["authentication"]
+related: ["csrf", "threat-model"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Cross-Site Scripting (XSS)** is when an attacker tricks a website into executing their JavaScript inside another user's browser. Because that script runs from the site's origin, it can read the victim's cookies, take actions on their behalf, change what they see — anything the site itself could do. XSS has been on the OWASP Top 10 for two decades because it keeps showing up.
+
+## More detail
+
+Three classical flavours:
+
+- **Reflected XSS** — the attacker crafts a URL that puts script into a query parameter the site echoes back unsanitised. Victim clicks the link; script runs in their browser.
+- **Stored XSS** — the attacker submits malicious script into a form (comment, profile bio, support ticket). The server stores it; every viewer who loads that page runs it.
+- **DOM-based XSS** — the page's own JavaScript reads from `location.hash` or `window.name` and feeds it into `innerHTML` or `eval`, executing the attacker's payload entirely client-side.
+
+The defences:
+
+1. **Output encoding** — when rendering user-supplied text into HTML, escape `< > & " '`. Template engines (React's JSX, Vue, Svelte, Jinja with autoescape) do this by default.
+2. **Content Security Policy (CSP)** — an HTTP header that tells the browser which scripts are allowed to run. `script-src 'self'` blocks inline scripts and remote scripts that the attacker would inject.
+3. **HTTP-only cookies** — set `HttpOnly` on session cookies so JavaScript can't read them. Limits XSS damage even if an injection succeeds.
+4. **Sanitisation libraries** — DOMPurify in the browser, bleach in Python, sanitize-html in Node — when you absolutely must render user-supplied HTML.
+5. **Don't use `innerHTML` with untrusted data** — use `textContent` instead; or use the DOM API to build elements safely.
+6. **Subresource Integrity (SRI)** — hashes on `<script>` tags ensure remote scripts haven't been tampered with.
+
+Modern framework defaults make naive XSS much rarer than 10 years ago — but it still appears constantly:
+
+- Markdown renderers that allow embedded HTML.
+- Rich-text editors that don't sanitise.
+- Dangerous APIs misused (`dangerouslySetInnerHTML`, `v-html`).
+- Third-party scripts you trust that get compromised.
+
+## Why it matters
+
+XSS is one of the most common, most exploitable web vulnerabilities. A single XSS in a popular site can steal session tokens for every user who visits a poisoned page. Defending against it well (mostly: don't compose HTML with strings, set CSP) is one of the highest-leverage things a web team does.
+
+## Real-world examples
+
+- **The 2005 Samy worm** infected over a million MySpace profiles in 20 hours by exploiting a stored XSS in profile editing. One of the largest organic worms in history.
+- **The 2018 British Airways breach** (380,000 customer cards) was traced to an XSS-style injection into a script that the BA payment page loaded — a third-party JS supply-chain compromise.
+- **HackerOne's annual reports** consistently show XSS as one of the most-paid bug bounty categories.
+- **Slack's strict CSP** blocked an XSS that would otherwise have been exploitable in 2019; the team's own postmortem credits CSP for limiting the blast radius.
+
+## Common misconceptions
+
+- **"My framework prevents XSS."** It prevents the common cases. The moment you use `dangerouslySetInnerHTML`, `v-html`, `bypassSecurityTrustHtml`, or render Markdown that allows raw HTML, you're back on your own.
+- **"XSS only affects the user's session."** With XSS, the attacker can do anything the user can — including changing their email, posting on their behalf, transferring money.
+
+## Learn next
+
+The companion web vulnerability: [CSRF](/t/csrf). The discipline of thinking about which attacks to defend against: [threat model](/t/threat-model).

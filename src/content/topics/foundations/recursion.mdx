@@ -5,12 +5,12 @@ category: foundations
 kind: concept
 summary: A way of solving a problem by having a function call itself on a smaller version of the same problem, until the base case is trivial.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["recursion", "algorithms"]
 prerequisites: ["algorithms"]
 related: ["data-structure", "big-o"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -48,6 +48,8 @@ Most beautiful algorithms are recursive when written naturally. Recognising self
 - A file-system traversal: process each entry; if it's a directory, recurse.
 - React renders a component tree by recursively rendering children.
 - Compilers walk syntax trees recursively to type-check and generate code.
+
+- Most parsers (including the one in your TypeScript / Rust / Swift compiler) are recursive-descent: each grammar rule is a function that recursively calls the rules it references.
 
 ## Common misconceptions
 

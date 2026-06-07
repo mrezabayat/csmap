@@ -5,12 +5,12 @@ category: data-and-databases
 kind: language
 summary: A declarative language for querying and manipulating relational databases — you say what you want, the database figures out how.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["sql", "database"]
 prerequisites: ["database", "relational-model"]
-related: ["indexing", "transaction-acid"]
-updated: 2026-06-04
+related: ["indexing", "transaction-acid", "query-plan", "orm"]
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -48,6 +48,8 @@ Knowing SQL well is the single highest-leverage skill for working with most appl
 - A web app builds a list of posts with a `SELECT` per request.
 - An analyst computes a monthly revenue report with window functions and CTEs.
 - A migration adds an index to speed up an existing query.
+
+- SQL window functions (`ROW_NUMBER()`, `LAG()`, `SUM(...) OVER (...)`) let you do analytics queries that would otherwise need a full application loop — often 10–100× faster.
 
 ## Common misconceptions
 

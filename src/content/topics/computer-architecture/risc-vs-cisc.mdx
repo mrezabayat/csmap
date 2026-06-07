@@ -1,0 +1,64 @@
+---
+title: RISC vs CISC
+aliases: ["risc", "cisc", "risc cisc"]
+category: computer-architecture
+kind: concept
+summary: Two philosophies of CPU instruction set design — Reduced Instruction Set Computing (small, simple, fast) versus Complex Instruction Set Computing (rich, do-more-per-instruction).
+level: intermediate
+status: draft
+importance: important
+tags: ["architecture", "isa"]
+prerequisites: ["instruction-set"]
+related: ["cpu-pipeline"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**CISC** (Complex Instruction Set Computing) designs the CPU to have many, often complex instructions — "multiply this memory location by the value of that register and write to a third address" in one instruction. **RISC** (Reduced Instruction Set Computing) does the opposite: small, simple, fixed-length instructions that each do one tiny thing. The CISC vs RISC debate was the architecture argument of the 1980s; the actual outcome is that modern chips borrow from both.
+
+## More detail
+
+The original distinction:
+
+| Property | CISC (e.g. x86) | RISC (e.g. ARM, MIPS, RISC-V) |
+|---|---|---|
+| Instruction count | Many hundreds | Few dozens (originally) |
+| Instruction length | Variable (1-15 bytes on x86) | Fixed (typically 4 bytes) |
+| Operations per instruction | Can touch memory, do arithmetic, write back | Usually load / store separately |
+| Decode complexity | High | Low |
+| Pipeline-friendly | Hard | Easy |
+
+The RISC pitch (Patterson, Hennessy, late 1970s onwards): a smaller, simpler instruction set means a simpler decoder, a deeper / cleaner pipeline, higher clock speeds, easier compiler optimisation. Compilers can synthesise complex sequences from simple instructions; CPUs shouldn't pay the silicon cost of supporting the complex ones natively.
+
+What happened in practice:
+
+- **x86 internally became RISC**. Modern x86 chips decode legacy CISC instructions into RISC-like "micro-ops" and execute those out of order. The architectural ISA stayed CISC for compatibility; the implementation went RISC.
+- **ARM added complex instructions**. Modern ARM has plenty of helpful complex instructions (vector / crypto / atomic) that look more CISC than its 1985 ancestor.
+- **RISC-V** revived the pure-RISC pitch with a fresh, royalty-free ISA designed for modular extension. It's making real inroads in embedded, education, and (slowly) in datacentre and consumer hardware.
+
+In 2026 the meaningful distinctions between major ISAs are:
+
+- **Encoding density** — CISC tends to be more compact in bytes per instruction.
+- **Power efficiency** — ARM and RISC-V tend to lead, partly due to design heritage, partly due to lighter legacy.
+- **Ecosystem** — x86 dominates Windows desktop and legacy server; ARM dominates mobile, increasingly Mac and cloud (AWS Graviton); RISC-V is rising.
+
+## Why it matters
+
+The RISC vs CISC distinction is the lens through which to read most CPU architecture discussions. It explains why x86 chips have such complex decoders, why ARM took over mobile and is taking over the data centre, and why RISC-V is interesting strategically (no royalties, open spec) even if it's a long way behind in tooling.
+
+## Real-world examples
+
+- The **Apple M-series** chips moved the Mac line from x86 to ARM in 2020, delivering huge performance-per-watt gains largely attributable to ARM's design heritage.
+- **AWS Graviton** ARM-based instances are now widely deployed and often outperform comparable Intel offerings on web / RPC workloads — at lower cost.
+- **RISC-V** went from research curiosity to shipping in billions of devices (Western Digital storage controllers, Espressif WiFi chips, NVIDIA GPU schedulers) within a decade.
+- The **Intel Itanium** project (2001-2010s) attempted a radically different ISA philosophy (VLIW); it lost the market to AMD's x86-64, a strong vote for compatibility over architectural purity.
+
+## Common misconceptions
+
+- **"RISC chips are always faster."** Not inherently — the ISA is one factor among many (process node, microarchitecture, cache, memory bandwidth).
+- **"x86 is doomed."** It still dominates Windows desktops and a huge installed base of servers. ARM is winning new workloads, not replacing all old ones.
+
+## Learn next
+
+The contract that defines either philosophy: [instruction set](/t/instruction-set). What both kinds of CPU use to extract speed: the [CPU pipeline](/t/cpu-pipeline).

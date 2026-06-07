@@ -5,12 +5,12 @@ category: security-and-privacy
 kind: concept
 summary: Deciding *what* an authenticated user is allowed to do — the system of permissions, roles, and policies that protects resources.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["security", "auth", "permissions"]
 prerequisites: ["authentication"]
 related: []
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -45,6 +45,8 @@ Most data breaches are not "the password was wrong" — they're "the system didn
 - A Google Doc has different permissions for "owner", "editor", "commenter", "viewer", plus per-link rules.
 - A Kubernetes RBAC policy controls which service accounts can list pods in which namespaces.
 - A `PUT /api/orders/42` that returns the right answer for the wrong user is an IDOR — an authorization bug.
+
+- Google Zanzibar (now open-sourced as OpenFGA / SpiceDB) introduced a permission model that handles billions of authorization checks per second across Drive, YouTube, and Calendar.
 
 ## Common misconceptions
 

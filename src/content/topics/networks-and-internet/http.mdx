@@ -5,12 +5,12 @@ category: networks-and-internet
 kind: protocol
 summary: The request/response protocol that powers the web — how browsers and servers talk to each other.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["http", "web", "protocol"]
 prerequisites: ["dns", "ip-address", "tcp"]
-related: ["tls"]
-updated: 2026-06-04
+related: ["tls", "rest-api", "websocket", "cdn"]
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -49,6 +49,8 @@ HTTP is the universal API of the modern internet. Web sites, mobile apps, micros
 - Loading `https://wikipedia.org` is one HTTP `GET` request (followed by many more for assets).
 - A REST API responds to `GET /api/users/42` with a JSON body.
 - A webhook is just an HTTP `POST` from one service to another.
+
+- A single browser tab opening Gmail can fire off hundreds of HTTP requests in the first second — a mix of HTML, JS modules, fonts, images, and API calls.
 
 ## Common misconceptions
 

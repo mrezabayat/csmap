@@ -1,0 +1,73 @@
+---
+title: Kubernetes
+aliases: ["k8s"]
+category: distributed-systems-and-cloud
+kind: technology
+summary: An open-source container orchestrator that manages where containers run, how they're scaled, how they're networked, and how they're restarted when things break.
+level: intermediate
+status: draft
+importance: important
+tags: ["kubernetes", "k8s", "container", "orchestration"]
+prerequisites: ["container"]
+related: ["microservices", "cap-theorem"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Kubernetes** ("k8s" because there are eight letters between K and s) is the most-used way to run containers in production at scale. You declare what you want to run ("3 copies of this container, 1 GB RAM each, exposed on port 80") and Kubernetes figures out which machines to put them on, restarts them when they crash, updates them gradually when you push a new version, and reschedules them when a machine dies.
+
+## More detail
+
+The core objects you'll meet:
+
+- **Pod** — one or more containers sharing network and storage; the smallest deployable unit.
+- **Deployment** — declares N replicas of a Pod template; handles rolling updates.
+- **Service** — stable virtual IP / DNS name that load-balances over the Pods backing it.
+- **Ingress** — routes external HTTP traffic to Services.
+- **ConfigMap / Secret** — config and credentials, mounted into Pods.
+- **Namespace** — isolation boundary for resources.
+- **StatefulSet** — like Deployment, but for stateful workloads (stable identity, ordered rollouts).
+- **DaemonSet** — one Pod per node (logging agents, monitoring exporters).
+- **Job / CronJob** — batch / scheduled work.
+
+The control plane:
+
+- **API server** — REST API; everything talks to it.
+- **etcd** — strongly-consistent KV store (Raft) holding all cluster state.
+- **Scheduler** — picks a node for each Pod based on resource needs and constraints.
+- **Controller manager** — runs reconciliation loops that drive actual state toward desired state.
+- **kubelet** — agent on each node that runs containers.
+
+The mental model is **declarative reconciliation**: you describe desired state via YAML; controllers continuously diff that against actual state and act to close the gap. Most "what does Kubernetes *do*?" comes down to this loop.
+
+The Kubernetes ecosystem is vast:
+
+- **Helm** — package manager for k8s manifests.
+- **Argo CD / Flux** — GitOps; sync cluster state from Git.
+- **Istio / Linkerd** — service meshes for service-to-service mTLS, retries, traffic splitting.
+- **Cert-manager** — automated TLS certificate management.
+- **Prometheus / Grafana** — metrics.
+- **OpenTelemetry** — traces and logs.
+
+Kubernetes is famously complex. The 2020s have seen a real conversation about whether the typical mid-size team needs it — or whether a managed PaaS (Fly, Render, Railway, Vercel) is the better fit.
+
+## Why it matters
+
+If you operate containers at any meaningful scale, you almost certainly touch Kubernetes — either directly or via a managed offering (EKS, GKE, AKS, DOKS). Even teams that deliberately avoid it benefit from understanding the model because so much modern tooling (Helm charts, Argo, OpenTelemetry, service meshes) presupposes it.
+
+## Real-world examples
+
+- **Google Borg** — k8s's internal predecessor at Google, which the 2014 k8s open-source release was loosely modelled on.
+- The **CNCF** (Cloud Native Computing Foundation) hosts Kubernetes and most of its ecosystem; CNCF events draw tens of thousands of attendees.
+- **OpenAI** runs much of its inference and training infrastructure on Kubernetes.
+- The 2020s era of "**we should have just used a $5 droplet**" backlash is real but partial — k8s remains the dominant pattern for serious multi-service workloads.
+
+## Common misconceptions
+
+- **"Kubernetes is a substitute for cloud."** It runs on cloud, on-prem, or hybrid; it's a workload manager, not a hosting service.
+- **"You need Kubernetes for microservices."** You can run microservices on simpler platforms (managed PaaS, ECS, Nomad, Fly Machines). K8s is one option, not the only one.
+
+## Learn next
+
+The packaging unit it manages: [container](/t/container). The architecture pattern it became famous serving: [microservices](/t/microservices).

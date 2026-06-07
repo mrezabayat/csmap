@@ -5,12 +5,12 @@ category: operations-and-reliability
 kind: concept
 summary: Recording discrete events from a running system, so the engineers operating it can reconstruct what happened — and when, and why.
 level: beginner
-status: draft
+status: reviewed
 importance: core
 tags: ["ops", "logging", "observability"]
 prerequisites: ["deployment"]
 related: ["monitoring", "incident-response"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -48,6 +48,8 @@ When a system breaks at 3 a.m., logs are usually how the on-call engineer recons
 - A 500 error in a single request, traced back through 7 services by a shared `trace_id`.
 - A retroactive analysis of "how many users hit this bug yesterday?" answered with a single log query.
 - A compliance audit asking "what did this admin do last Tuesday?" answered from access logs.
+
+- GDPR and HIPAA both treat log files containing personal data as in-scope for compliance, which is why most modern logging pipelines strictly redact at source rather than relying on downstream filtering.
 
 ## Common misconceptions
 

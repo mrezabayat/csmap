@@ -1,0 +1,74 @@
+---
+title: Serverless
+aliases: ["serverless functions", "faas"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A deployment model where you write functions or small services and the platform handles provisioning, scaling, and idling them — you pay per-request, not per-server.
+level: intermediate
+status: draft
+importance: important
+tags: ["serverless", "cloud", "faas"]
+prerequisites: ["distributed-system"]
+related: ["container", "microservices"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+**Serverless** is the deployment model where you don't manage any servers — you give the platform your code, and it spins up resources to run it on demand, scales to zero when idle, and only bills you for the work it actually did. The name is a slight misnomer (there are still servers, you just don't see them), but the experience is real: no capacity planning, no patching, no idle costs.
+
+## More detail
+
+Two flavours often conflated:
+
+- **Functions-as-a-Service (FaaS)** — you upload a function; the platform invokes it per request / event. AWS Lambda, Cloudflare Workers, Vercel Functions, Google Cloud Functions, Azure Functions.
+- **Serverless containers** — you upload a container; the platform runs and scales it. AWS Fargate, Google Cloud Run, Fly Machines, Cloud Run for Anthos. Closer to traditional deployment but with the same "scale to zero, pay per use" billing model.
+
+What makes something "serverless":
+
+- **No provisioning** — you don't pick instance counts or sizes.
+- **Pay per use** — billed per request / per compute-second, not per running hour.
+- **Scale to zero** — costs nothing when idle.
+- **Automatic horizontal scaling** — platform spins up parallel instances as needed.
+- **Managed runtime** — you don't patch the OS.
+
+The trade-offs:
+
+- **Cold starts** — first request after idle pays a startup tax. Sub-millisecond on Cloudflare Workers (V8 isolates); 100 ms-1 s on AWS Lambda (especially with VPC).
+- **Vendor lock-in** — APIs differ across platforms; serverless code is harder to move.
+- **Debugging** — distributed, ephemeral, and harder to attach a debugger to.
+- **Long-running work** — most platforms cap function duration (15 min on Lambda). Serverless is built for short, request-shaped work.
+- **Statefulness** — functions are stateless by design; persistent state goes in an external database or object store.
+- **Cost at scale** — serverless usually wins at low and medium scale and on bursty traffic, but a steady-state high-throughput service is often cheaper on reserved containers.
+
+The 2026 spectrum:
+
+| Model | When it shines |
+|---|---|
+| Edge functions (Cloudflare Workers, Vercel Edge) | Latency-critical, global, simple compute |
+| FaaS (Lambda, Functions) | Event-driven, sporadic workloads |
+| Serverless containers (Cloud Run, Fargate) | Existing container apps without server management |
+| Managed PaaS (Fly, Render, Railway) | Always-on apps, simpler than k8s |
+| Self-managed k8s | Full control, multi-service complex systems |
+| Bare VMs / bare metal | Maximum control, predictable steady-state cost |
+
+## Why it matters
+
+Serverless dramatically lowers the operational floor for new services: a few hundred lines of code, deployed in minutes, scaling automatically, costing pennies. The model is especially compelling for bursty workloads, side projects, internal tools, and event-driven processing.
+
+## Real-world examples
+
+- **AWS Lambda** invoked trillions of times across customers in the 2020s; deployed for everything from S3 event triggers to entire APIs.
+- **Cloudflare Workers** serves a meaningful fraction of internet requests with sub-millisecond cold starts via V8 isolates.
+- **Vercel** popularised front-end deployment with serverless functions for the API layer; the model now drives most React/Next.js production deployments.
+- The **Serverless Framework** and **SST** are open-source tools for managing serverless deployments across providers.
+
+## Common misconceptions
+
+- **"Serverless means no servers."** It means *you* don't run them. There are servers; you don't think about them.
+- **"Serverless is always cheaper."** True for low / spiky traffic. A continuously-busy service is often cheaper on reserved capacity.
+- **"Serverless is slow because of cold starts."** Modern edge platforms have sub-millisecond cold starts. Even AWS Lambda's cold starts are usually a non-issue for human-facing APIs.
+
+## Learn next
+
+The packaging unit serverless containers use: [container](/t/container). The architecture style serverless often serves: [microservices](/t/microservices).

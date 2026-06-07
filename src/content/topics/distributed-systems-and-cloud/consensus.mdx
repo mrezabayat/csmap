@@ -5,13 +5,13 @@ category: distributed-systems-and-cloud
 kind: concept
 summary: A protocol that lets a group of machines agree on a single value despite failures and network unreliability — the foundation under replicated databases and leader election.
 level: advanced
-status: draft
+status: reviewed
 importance: core
 tags: ["distributed", "consensus", "raft", "paxos"]
 prerequisites: ["distributed-system"]
 related: []
 nextSteps: ["replication"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -47,6 +47,8 @@ Consensus is what stops your distributed system from telling itself contradictor
 - **ZooKeeper** uses ZAB (a Paxos relative) for the same job.
 - **CockroachDB**, **TiDB**, **YugabyteDB** use Raft per shard for replicated SQL.
 - A blockchain's "agreement on the next block" is a consensus problem with Byzantine guarantees.
+
+- Cloudflare publicly attributed a 2020 outage to a Raft leader election bug in their internal routing system — consensus protocols are difficult enough that even experts ship subtle bugs.
 
 ## Common misconceptions
 

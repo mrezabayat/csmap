@@ -4,13 +4,13 @@ category: programming-languages
 kind: tool
 summary: A program that translates source code in one language into another — usually a high-level language into machine code or an intermediate form.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["compiler", "tooling"]
 prerequisites: ["programming-language"]
-related: []
+related: ["parsing"]
 nextSteps: ["interpreter"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -48,6 +48,8 @@ Compilers are how human-readable ideas become machine instructions. Good compile
 - **rustc** compiles Rust; **swiftc** compiles Swift; **go** compiles Go.
 - The TypeScript compiler (`tsc`) emits JavaScript.
 - WebAssembly is a compilation target many languages now share.
+
+- The Zig compiler is now used by some projects as a *C cross-compiler* because it bundles libc and runs on every platform, replacing the traditional gcc/clang dance.
 
 ## Common misconceptions
 

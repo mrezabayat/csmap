@@ -1,0 +1,57 @@
+---
+title: CDN
+aliases: ["content delivery network", "cdns"]
+category: networks-and-internet
+kind: technology
+summary: A global network of edge servers that caches and serves content close to users — making the web feel fast from anywhere on Earth.
+level: beginner
+status: draft
+importance: important
+tags: ["cdn", "performance", "networking"]
+prerequisites: ["http"]
+related: ["dns", "https"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+A **CDN** (Content Delivery Network) is a globally distributed network of servers that caches your content close to your users. When someone in Tokyo asks for a video stored in your Virginia data centre, the CDN serves it from a server in Tokyo (or close by), not from Virginia. The result: lower latency, less load on your origin, and resilience to traffic spikes.
+
+## More detail
+
+A CDN's job is conceptually simple but operationally enormous:
+
+1. **PoPs** (Points of Presence) — physical servers in hundreds of cities.
+2. **Anycast routing** — multiple PoPs advertise the same IP address; BGP routes the user to the closest one.
+3. **Cache** — recently requested files live on the PoP's local disk / SSD.
+4. **Origin fetch** — on a cache miss, the PoP pulls the file from your origin server, serves it to the user, and stores it for future requests.
+
+Caching is governed by HTTP headers (`Cache-Control`, `ETag`, `Last-Modified`, `Vary`). The CDN respects these and adds its own rules (purge APIs, cache tags, geo-targeting).
+
+Beyond static content, modern CDNs increasingly run **compute at the edge**:
+
+- **Edge Workers / Functions** — Cloudflare Workers, Vercel Edge Functions, Fastly Compute@Edge — small JavaScript / Wasm / Rust code that runs at every PoP, handling auth, A/B tests, redirects, even SSR.
+- **Image optimisation** — resize, recompress, convert format on the fly per device.
+- **Bot protection / DDoS mitigation** — absorb attack traffic before it reaches your origin.
+- **TLS termination** — handle handshakes globally; backend traffic to origin is often a single long-lived connection.
+
+Major operators in 2026: **Cloudflare**, **Fastly**, **Akamai**, **Amazon CloudFront**, **Google Cloud CDN**, **Bunny**, **Vercel** (a layer on top of Cloudflare and others).
+
+## Why it matters
+
+A CDN is often the single biggest performance lever for a public web site or app. Putting a CDN in front of static assets can take page-load time from 3 seconds to under 1, especially for users far from the origin. CDNs also absorb DDoS attacks, smooth traffic spikes, and dramatically reduce origin bandwidth bills.
+
+## Real-world examples
+
+- **Netflix Open Connect** is a custom CDN that ships physical servers (Open Connect Appliances) to ISPs around the world, so a stream usually comes from a box inside the user's ISP's network.
+- The **June 2021 Fastly outage** took down the BBC, Amazon, the Guardian, Reddit, and many more for under an hour — a vivid demonstration of how much of the modern web sits behind a few CDNs.
+- **Cloudflare** advertises that it handles ~20% of internet traffic; the dashboard's RPM (requests-per-minute) graphs are public reports of how much DDoS its WAF absorbs daily.
+
+## Common misconceptions
+
+- **"A CDN only helps static assets."** Modern CDNs accelerate dynamic content too (via micro-caching, route optimisation, edge compute, and intelligent connection pooling to the origin).
+- **"A CDN is just a cache."** It's a cache, a DDoS absorber, a TLS terminator, an image optimiser, a routing optimiser, and increasingly a runtime.
+
+## Learn next
+
+The protocol CDNs accelerate: [HTTP](/t/http). The encryption layer they handle at the edge: [HTTPS](/t/https). The naming layer that routes users to PoPs: [DNS](/t/dns).

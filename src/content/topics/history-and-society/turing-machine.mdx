@@ -1,29 +1,57 @@
 ---
 title: Turing Machine
+aliases: ["turing-machines", "universal turing machine"]
 category: history-and-society
 kind: concept
 summary: An imaginary computer with an infinite tape and a tiny rule book — the model that defines what is computable.
 level: intermediate
-status: stub
+status: reviewed
 importance: core
-tags: ["theory", "history"]
+tags: ["theory", "history", "computability"]
 prerequisites: ["algorithms"]
 related: ["alan-turing", "history-of-computing"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+A **Turing machine** is the simplest computer Alan Turing could imagine: an infinite paper tape, a head that reads or writes one symbol at a time, and a tiny rule book that says "if you're in state X and reading symbol Y, write Z, move left or right, switch to state W". That's it. Despite — or because of — its extreme simplicity, anything a modern computer can compute, a Turing machine can also compute (given enough tape and patience). It's the yardstick against which the entire field measures "computable".
 
 ## More detail
 
+Turing introduced the machine in his 1936 paper *On Computable Numbers, with an Application to the Entscheidungsproblem* — a 36-page paper that founded theoretical computer science years before electronic computers existed. The formal definition has five parts:
+
+1. A **tape** of cells, infinite in at least one direction, each holding a symbol from a finite alphabet.
+2. A **head** positioned over one cell at a time.
+3. A finite set of **states**, including a start state and one or more halt states.
+4. A **transition function**: `(state, symbol) → (new state, new symbol, move L/R)`.
+5. The machine **halts** when it enters a halt state.
+
+The big result is the **Church–Turing thesis**: anything that can be reasonably called *computed* can be computed by a Turing machine. Lambda calculus, recursive functions, register machines, and modern computers are all equivalent in what they can compute — none more powerful than this absurdly minimal model.
+
+A **universal Turing machine** is one that takes the description of *another* Turing machine as input on its tape and simulates it. That's the theoretical foundation of every general-purpose computer: a single hardware machine can run any program because programs are just data on the tape.
+
+Turing also proved that the **halting problem** — given an arbitrary program and input, decide whether the program halts — is **undecidable** by any Turing machine. There is no algorithm that can solve it in general. Many practical questions ("does this program terminate?", "are these two programs equivalent?") are versions of the halting problem and equally undecidable.
+
+A topic is called **Turing-complete** if a Turing machine can simulate it, and vice versa. Java, Python, x86 assembly, Excel formulas, SQL with recursive CTEs, Conway's Game of Life, the C++ template system, Magic: The Gathering — all Turing-complete.
+
 ## Why it matters
+
+The Turing machine drew the line between "things computers can in principle do" and "things they cannot". That line has not moved in 90 years. Every CPU you've ever used is a finite, fast Turing machine. Every algorithm fits inside its definition. Every claim that some new device "transcends computation" runs into the Church–Turing thesis. Knowing the machine is a basic literacy of the field.
 
 ## Real-world examples
 
+- Conway's Game of Life is Turing-complete; people have built working Turing machines inside it (and inside Magic: The Gathering, inside Minecraft, inside the Powerpoint animation engine, …).
+- Compiler theory leans on the halting problem to prove certain optimisations are impossible in the general case.
+- Lambda calculus, the basis of functional programming, is provably equivalent to the Turing machine.
+- A real computer is a Turing machine with bounded tape (finite RAM and disk) — which technically makes it a "linear bounded automaton", but the distinction rarely matters in practice.
+
 ## Common misconceptions
+
+- **"A Turing machine is slow."** It is *asymptotically* equivalent in what it can compute, but it would take an absurd amount of time to actually run a program. The model is about *what* is computable, not how fast.
+- **"Quantum computers transcend the Turing machine."** They are still bounded by the Church–Turing thesis in what they can compute — they just promise polynomial speedups on certain problems. The set of computable problems is unchanged.
+- **"You need infinite tape to be Turing-complete."** Formally yes; practically, having "as much memory as the problem needs" is treated as the same thing.
 
 ## Learn next
 
-See [Alan Turing](/t/alan-turing).
+The man behind the model: [Alan Turing](/t/alan-turing). The broader timeline he sits in: [history of computing](/t/history-of-computing). The everyday subject his model formalises: [algorithms](/t/algorithms).

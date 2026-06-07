@@ -1,0 +1,69 @@
+---
+title: ORM
+aliases: ["object-relational mapping", "orms"]
+category: data-and-databases
+kind: tool
+summary: A library that maps rows in a relational database to objects in your programming language, so you can query with code instead of SQL strings.
+level: intermediate
+status: draft
+importance: important
+tags: ["orm", "database", "sql"]
+prerequisites: ["sql"]
+related: ["database", "relational-model"]
+updated: 2026-06-07
+---
+
+## In simple terms
+
+An **ORM** (Object-Relational Mapper) is a library that lets you talk to a relational database through your programming language's object model instead of writing SQL strings. You define a `User` class, the ORM creates a `users` table; you ask `user.orders`, the ORM does the SQL join. It hides the impedance mismatch between objects (graphs of mutable references) and relational data (sets of rows).
+
+## More detail
+
+ORMs typically provide:
+
+- **Schema mapping** — class ↔ table, field ↔ column.
+- **Querying** — chainable Python / TypeScript / etc. that translates to SQL.
+- **Relationships** — `has_many`, `belongs_to`, `has_one`, `many_to_many`.
+- **Migrations** — versioned schema changes you can apply and roll back.
+- **Connection pooling** — reuse DB connections across requests.
+- **Lifecycle hooks** — `before_save`, `after_create`, etc.
+- **Eager / lazy loading** — control how related rows are fetched.
+
+The big players in 2026:
+
+| Language | Popular ORMs |
+|---|---|
+| Python | Django ORM, SQLAlchemy, Tortoise, Prisma (via codegen) |
+| Ruby | ActiveRecord (Rails) |
+| Java | Hibernate, JPA, jOOQ (query builder, technically not an ORM) |
+| .NET | Entity Framework Core, Dapper (micro-ORM) |
+| JS / TS | Prisma, Drizzle, TypeORM, Sequelize, Kysely (query builder) |
+| Go | GORM, ent (Facebook's) — though many Go teams just use `database/sql` |
+| Rust | sqlx, Diesel, SeaORM |
+
+The famous tension:
+
+- **For** ORMs: faster development, type-safe queries, schema migrations as code, easy refactoring, security (parameterised queries by default).
+- **Against** ORMs: N+1 queries (lazy loading triggers a query per row of a list), opaque SQL generated under the hood, sometimes terrible performance on complex queries, leaky abstractions when you need anything unusual.
+
+The 2020s saw a strong move toward **query builders** like Drizzle, Kysely, jOOQ, and sqlx that stop short of full ORM: type-safe, composable, but you write something that looks like SQL. The trade-off: less magic, much less surprise.
+
+## Why it matters
+
+Almost every backend codebase touches a database, and most touch it through an ORM or query builder. Knowing the patterns — especially the N+1 trap — and the trade-off against raw SQL is core backend literacy.
+
+## Real-world examples
+
+- A Rails app that returns 50 posts and accesses `post.author.name` for each one will fire 51 queries by default — the classic N+1. `includes(:author)` collapses it to 2.
+- **GitHub** is famously a Rails monolith with ActiveRecord at the data layer; the team has open-sourced a lot about scaling AR.
+- **Prisma** introduced a code-generation approach (write `schema.prisma`, generate a TypeScript client) that became very influential in TS-land.
+- The "**ditch the ORM**" debate is perennial; teams shipping serverless Postgres workloads in 2026 often use Drizzle / Kysely / raw `pg` to avoid ORM overhead and cold-start costs.
+
+## Common misconceptions
+
+- **"You can avoid learning SQL by using an ORM."** Eventually you'll need to write or debug SQL. The ORM only helps with the common cases.
+- **"ORMs are always slower than raw SQL."** A naive use is. A careful use (correct eager loading, raw SQL escape hatches for complex queries) can match raw SQL for nearly all workloads.
+
+## Learn next
+
+The language ORMs ultimately produce: [SQL](/t/sql). What you can read to diagnose ORM-generated query problems: the [query plan](/t/query-plan).

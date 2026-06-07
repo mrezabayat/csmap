@@ -5,12 +5,12 @@ category: data-and-databases
 kind: concept
 summary: Auxiliary data structures a database maintains so it can answer queries without scanning every row — the single biggest knob for query performance.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["database", "performance"]
 prerequisites: ["database", "sql"]
 related: ["relational-model"]
-updated: 2026-06-04
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -46,6 +46,8 @@ Most "the database is slow" stories are really "a query is doing a sequential sc
 - A `WHERE email = ?` lookup with an index: ~3 disk reads. Without: a full table scan of millions of rows.
 - A leading-column index on `(country, created_at)` answers "users in France created after Jan 1" efficiently.
 - A full-text search index lets a blog answer "posts containing 'rust' and 'memory'" in milliseconds.
+
+- Adding an index that covers a `WHERE` and an `ORDER BY` can take a query from 30 seconds to 30 milliseconds — a 1000× win without touching the query.
 
 ## Common misconceptions
 

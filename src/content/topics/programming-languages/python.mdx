@@ -4,27 +4,51 @@ category: programming-languages
 kind: language
 summary: A general-purpose, dynamically typed, interpreted programming language known for readable syntax and a vast ecosystem.
 level: beginner
-status: stub
+status: reviewed
 importance: important
 tags: ["python", "language"]
 prerequisites: ["programming-language"]
 partOf: []
-related: ["algorithms", "interpreter", "garbage-collection"]
-updated: 2026-06-04
+related: ["algorithms", "interpreter", "garbage-collection", "type-system"]
+updated: 2026-06-07
 ---
 
 ## In simple terms
 
-(Stub — not yet written. [Contribute](/contribute) to help fill this in.)
+**Python** is a programming language designed to be readable. It looks almost like pseudo-code: indentation defines blocks, there are no semicolons, no curly braces, no type declarations to start. You can usually read a Python program out loud and roughly explain it to a non-programmer. That accessibility, plus a huge collection of high-quality libraries, made it the dominant language for data work, scientific computing, scripting, and a large slice of backend web development.
 
 ## More detail
 
+Python was created by Guido van Rossum in 1991 with one strong opinion: code is read more often than it's written, so optimise for the reader. The result is a small core syntax plus a deep standard library — "batteries included".
+
+Key properties:
+
+- **Dynamically typed**, with optional type hints (PEP 484) that tools like `mypy` and `pyright` check.
+- **Interpreted** by CPython (the reference implementation) via a bytecode VM. Alternative runtimes include **PyPy** (JIT, much faster on long-running code) and **MicroPython** for embedded systems.
+- **Garbage collected** with reference counting plus a cycle collector.
+- **Multi-paradigm**: imperative by default, fluent OO, light functional facilities (comprehensions, `map` / `filter`, first-class functions).
+- **Famously rich ecosystem**: `numpy`, `pandas`, `scikit-learn`, `pytorch`, `tensorflow`, `requests`, `django`, `fastapi`, `polars`, plus tens of thousands more.
+
+The language has evolved steadily — 3.0 (2008) broke compatibility to fix decades of legacy; 3.11+ delivered major speed wins; 3.13 introduced an experimental free-threading mode that removes the global interpreter lock (GIL), the long-standing constraint that only one Python thread can execute bytecode at a time.
+
 ## Why it matters
+
+Python is the default language for data science and machine learning, the most-used teaching language, the glue for huge sections of scientific computing, and the workhorse of countless backend services and automation scripts. Knowing it well opens more domains than almost any other single language.
 
 ## Real-world examples
 
+- **Instagram's backend** is largely Python on Django.
+- **Dropbox** was historically a Python shop top to bottom, including the desktop client.
+- **Pandas + Jupyter notebooks** powers a huge fraction of data analysis at every scale, from quant funds to academic labs.
+- **PyTorch and TensorFlow** — both used to train state-of-the-art ML models — expose Python as their primary interface even though the heavy lifting is C++ and CUDA.
+- **Ansible**, **Salt**, and many other infra tools are written in Python.
+
 ## Common misconceptions
+
+- **"Python is slow."** Pure-Python CPU-bound code is slow compared to compiled languages — but the most common Python workloads delegate the heavy lifting to C extensions (NumPy, PyTorch, JSON parsers), which is anything but slow. For genuinely CPU-bound code, PyPy or Cython is the answer.
+- **"The GIL means Python can't do concurrency."** The GIL constrains *CPU-bound* threading. Python is excellent at *I/O-bound* concurrency via `asyncio` and threads, and at parallel computation via `multiprocessing` or via NumPy / PyTorch which release the GIL during heavy work. Python 3.13+ is also rolling out a no-GIL build.
+- **"Python is only for scripts."** Plenty of multi-million-line Python services run in production at Google, Netflix, Spotify, Stripe, and beyond.
 
 ## Learn next
 
-See [programming language](/t/programming-language) for the broader context.
+See [programming language](/t/programming-language) for the broader category, [interpreter](/t/interpreter) for what runs Python source, and [garbage collection](/t/garbage-collection) for the memory model.

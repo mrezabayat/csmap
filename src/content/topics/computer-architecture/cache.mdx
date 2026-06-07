@@ -5,12 +5,12 @@ category: computer-architecture
 kind: concept
 summary: Small, fast memory close to the CPU that keeps recently or about-to-be-used data, hiding the slowness of main memory.
 level: intermediate
-status: draft
+status: reviewed
 importance: core
 tags: ["cache", "memory", "architecture"]
 prerequisites: ["cpu", "memory"]
-related: ["cpu-pipeline", "register"]
-updated: 2026-06-04
+related: ["cpu-pipeline", "register", "cache-coherence"]
+updated: 2026-06-07
 ---
 
 ## In simple terms
@@ -53,6 +53,8 @@ Most "performance" tuning at the language level is really cache tuning: lay data
 - Iterating a Python list of integers is slow partly because each integer is a heap-allocated object, scattering them across memory.
 - A struct-of-arrays layout almost always beats array-of-structs for tight inner loops on the same data.
 - The Intel/AMD performance gap is often a cache-hierarchy gap.
+
+- On a modern CPU, an L1 cache hit is ~3 cycles; a miss to DRAM is ~300. The factor of 100 is why "cache-friendly" code patterns (struct-of-arrays, sequential access) often dwarf algorithmic tweaks.
 
 ## Common misconceptions
 
