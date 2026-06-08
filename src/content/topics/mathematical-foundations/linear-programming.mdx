@@ -1,0 +1,51 @@
+---
+title: Linear Programming
+aliases: ["LP", "linear optimisation"]
+category: mathematical-foundations
+kind: field
+summary: Optimising a linear objective function subject to linear constraints — the foundational model for scheduling, resource allocation, and network flow, solved efficiently by the simplex method.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["mathematics", "optimisation", "operations-research", "algorithms"]
+prerequisites: ["linear-algebra", "algorithms"]
+related: ["complexity-theory", "numerical-methods"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Linear programming (LP) solves decisions of the form: "given limited resources and a set of rules about how they can be used, how do I get the most out of them?" The *linear* part means both the rules (constraints) and the goal (objective) are built from sums of weighted variables — no squaring, no multiplication of variables together. This restriction sounds limiting but covers an enormous range of practical problems.
+
+## More detail
+
+A standard LP has three pieces:
+
+1. **Decision variables** — the quantities you control (e.g. how many units of each product to make).
+2. **Objective function** — a linear expression to maximise or minimise (e.g. total profit).
+3. **Constraints** — linear inequalities the variables must satisfy (e.g. capacity limits, balance equations).
+
+Geometrically, each constraint carves a half-space; their intersection is a convex **feasible region** (a polytope). The optimal solution, if it exists, always lies at a **vertex** of this polytope — the insight that makes LP solvable efficiently. The **simplex method** walks from vertex to vertex along edges, improving the objective at each step. For most practical problems it is extremely fast, despite having exponential worst-case behaviour. **Interior-point methods** (barrier methods) are polynomial in theory and competitive in practice for large problems.
+
+LP is the core of **integer programming** (some variables must be whole numbers — NP-hard in general), **mixed-integer LP**, and **network flow** (shortest paths, max-flow problems are all special LPs). **LP duality** is a structural theorem: every LP has a "dual" that provides a certificate of optimality and bounds.
+
+## Why it matters
+
+LP underpins supply-chain management, airline crew and gate scheduling, network routing, ad auction clearing, financial portfolio optimisation, and computational biology. It is also the relaxation of choice for approximation algorithms: solve the LP, round the fractional solution, prove the rounding doesn't lose too much. Modern ML uses LP ideas in structured prediction and in theoretical analysis of deep networks. Any time you have "allocate limited resources to maximise value under hard constraints", LP is the first model to reach for.
+
+## Real-world examples
+
+- Airlines solve LP/MIP problems nightly to assign crews and aircraft to flights within regulatory constraints.
+- Google's ad auction runs an LP to allocate ad slots under budget and targeting constraints.
+- Network flow LP assigns bandwidth or freight across a graph to minimise cost or latency.
+- Diet optimisation (the original LP application from the 1940s) finds the cheapest combination of foods that meets all nutritional requirements.
+
+## Common misconceptions
+
+- **"Linear programming means programming in the code sense."** The name predates software; "programming" here means *planning* or *scheduling*, as in military operations research.
+- **"Real problems are never linear."** Many are approximated well by LP after problem reformulation; and LP relaxations of non-linear, discrete problems are a standard algorithmic tool even when the original problem is not LP-shaped.
+
+## Learn next
+
+LP is [linear algebra](/t/linear-algebra) in service of decisions. Its complexity analysis connects to [complexity theory](/t/complexity-theory), and extending it to integer variables is one of the canonical hard problems in combinatorial optimisation.

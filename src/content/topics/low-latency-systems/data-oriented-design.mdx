@@ -1,0 +1,64 @@
+---
+title: Data-Oriented Design
+aliases: ["DOD", "data-driven design", "struct of arrays"]
+category: low-latency-systems
+kind: concept
+summary: Organising code around the memory layout data needs rather than object-oriented abstractions — transforming how systems are structured so the CPU spends time computing, not waiting for cache misses.
+level: advanced
+status: reviewed
+importance: important
+tags: ["performance", "memory-layout", "cache", "ecs"]
+prerequisites: ["cache-line-alignment", "memory-hierarchy"]
+related: ["simd", "memory-pool"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Object-oriented design asks "what *things* does this system model?" Data-oriented design asks "what *data* does this system transform, and how should it sit in memory for the CPU to do that fast?" The insight is that the CPU is not slow — it is almost always waiting for memory. Arranging data contiguously by access pattern, not by conceptual grouping, lets the cache pre-fetch useful data instead of fetching scattered garbage.
+
+## More detail
+
+The canonical comparison is **array-of-structs (AoS)** vs **struct-of-arrays (SoA)**:
+
+```
+// AoS — typical OOP layout
+struct Entity { float x, y, z; float health; bool active; };
+Entity entities[10000];
+
+// SoA — data-oriented layout
+float x[10000], y[10000], z[10000];
+float health[10000];
+bool  active[10000];
+```
+
+If a loop only updates positions (`x`, `y`, `z`), the AoS layout loads `health` and `active` on every cache-line fetch even though they're irrelevant. The SoA layout packs only the needed floats into each cache line — perfect for iteration, and friendly to [SIMD](/t/simd) because four floats from `x[]` fill a 128-bit register naturally.
+
+The principles generalise:
+
+- **Hot/cold splitting** — separate frequently-read fields (hot) from rarely-read ones (cold) so tight loops don't drag cold data into the cache.
+- **Flat arrays over pointer forests** — linked structures scatter nodes across the heap; arrays keep them contiguous.
+- **Batch processing** — process *all entities of type X* together, not "do everything for entity 1, then entity 2". This is why Entity-Component-System (ECS) architectures power many game engines: components are flat arrays, systems iterate a single component type at a time.
+- **Minimise branching** — unpredictable branches stall the pipeline; sort work by type before processing, so branches are coherent or eliminated.
+
+Data-oriented design doesn't mean "no abstraction" — it means choosing abstractions whose *memory shape* matches the work, not just whose *semantics* are tidy.
+
+## Why it matters
+
+Modern CPUs can execute several floating-point operations per clock cycle, but a main-memory fetch stalls for 200+ cycles. In a game running at 120 fps with 100,000 entities, a loop that averages even one extra cache miss per entity can burn its entire frame budget waiting for RAM. DOD turns cache misses from an ambient tax into a design variable, and the wins — 5× to 50× for tight loops — are among the largest available at any level of the stack.
+
+## Real-world examples
+
+- The Unity and Godot game engines provide ECS / DOTS architectures built on SoA layouts for performance-critical paths.
+- High-frequency trading systems lay out order-book data in column arrays to enable vectorised scanning.
+- Game physics engines separate position, velocity, and mass into separate arrays so the integrator streams each with zero wasted bandwidth.
+
+## Common misconceptions
+
+- **"This is just premature optimisation."** It's a design philosophy applied where the data is large and performance-critical, not a micro-optimisation pass. Changing layout late is extremely expensive.
+- **"OOP and DOD are mutually exclusive."** You can have a clean OOP API externally while internally storing data in DOD layouts; the two address different concerns.
+
+## Learn next
+
+Data-oriented design feeds directly into [SIMD](/t/simd) (contiguous floats are SIMD-ready) and works best when paired with [memory pools](/t/memory-pool) for allocation. [Cache-line alignment](/t/cache-line-alignment) is the lower-level mechanism it relies on.

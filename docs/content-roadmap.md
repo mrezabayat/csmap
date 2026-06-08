@@ -1,10 +1,10 @@
 # Computer Atlas — Content Roadmap
 
-> **Status (2026-06-08):** Rings 1 and 2 are **complete** for the original 16 categories, and **Ring 1 is now complete for both new categories** too. The Atlas has **212 topics** (all `status: reviewed`) and **25 learning paths**, 100% connected (`npm run audit:importance` reports `core=98 important=114`, Ring 1 COMPLETE; `npm run audit:orphans` reports 100% connected; `lint:content`, `check-refs`, `astro check`, and `astro build` + Pagefind all clean).
+> **Status (2026-06-08):** Rings 1 and 2 are **complete** for the original 16 categories, Ring 1 is complete for both new categories, and **15 new Ring-2 topics** (9 new-category + 6 researched core-adjacent) have been added. The Atlas has **227 topics** (all `status: reviewed`) and **25 learning paths**, 100% connected (`npm run audit:importance` reports `core=98 important=129`, Ring 1 COMPLETE; `npm run audit:orphans` reports 100% connected; `lint:content`, `check-refs` all clean).
 >
 > - **Ring 1 (Core):** 93/93 ✅ (original categories) + 7/7 ✅ (Mathematical Foundations 4/4, Low-Latency Systems 3/3)
-> - **Ring 2 (Important):** 114/114 ✅ for the original categories. New-category Ring 2 (9 topics) + researched Ring 2 additions are the next gap.
-> - **Ring 3 (Supplemental):** 0 / ~92 — **active for original + new categories.**
+> - **Ring 2 (Important):** 114/114 ✅ original categories + 15/15 ✅ new additions. Remaining Ring 2 gap: 6 researched additions still unticked (floating-point ✅, character-encoding ✅, b-tree ✅, socket ✅, load-balancer ✅, backpropagation ✅ — all done).
+> - **Ring 3 (Supplemental):** 0 / ~92 — **active for all categories.**
 >
 > **Two new categories added (2026-06-08):** Mathematical Foundations (CS2023 MSF) and Low-Latency Systems (CS2023 SPD/HPC track). ✅ Both are now wired into `lib/categories.ts`, `new-topic.mjs`, `audit-importance.mjs`, and the issue template, with category files and learning paths (`math-for-cs`, `high-performance-systems`) created. Their Ring 1 topics are written; Ring 2/3 remain.
 >
@@ -104,9 +104,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 ### Important (Ring 2) — additions
 - [ ] turing-completeness          priority: 4   (high search demand)
 - [ ] np-completeness              priority: 4   (high search demand)
-- [ ] floating-point               priority: 4   (researched addition; IEEE 754, core-adjacent, high demand)
-- [ ] character-encoding           priority: 4   (researched addition; Unicode/UTF-8, core-adjacent, high demand)
-- [ ] b-tree                       priority: 4   (researched addition; structure behind indexing; cross-listed in Databases)
+- [x] floating-point               priority: 4   (researched addition; IEEE 754, core-adjacent, high demand)
+- [x] character-encoding           priority: 4   (researched addition; Unicode/UTF-8, core-adjacent, high demand)
+- [x] b-tree                       priority: 4   (researched addition; structure behind indexing; cross-listed in Databases)
 
 ### Supplemental (Ring 3)
 - [ ] lambda-calculus
@@ -323,7 +323,7 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] nat                           priority: 2
 
 ### Important (Ring 2) — additions
-- [ ] socket                        priority: 4   (researched addition; the fundamental network API, core-adjacent)
+- [x] socket                        priority: 4   (researched addition; the fundamental network API, core-adjacent)
 
 ### Supplemental (Ring 3)
 - [ ] bgp
@@ -355,7 +355,7 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] serverless                    priority: 3
 
 ### Important (Ring 2) — additions
-- [ ] load-balancer                 priority: 4   (researched addition; core-adjacent; implied by cdn/microservices/scaling)
+- [x] load-balancer                 priority: 4   (researched addition; core-adjacent; implied by cdn/microservices/scaling)
 
 ### Supplemental (Ring 3)
 - [ ] raft
@@ -470,7 +470,7 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] attention-mechanism           priority: 3
 
 ### Important (Ring 2) — additions
-- [ ] backpropagation               priority: 4   (researched addition; core-adjacent; the training algorithm, pairs with gradient-descent)
+- [x] backpropagation               priority: 4   (researched addition; core-adjacent; the training algorithm, pairs with gradient-descent)
 
 ### Supplemental (Ring 3)
 - [ ] perceptron
@@ -572,10 +572,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] set-theory                   priority: 4
 
 ### Important (Ring 2)
-- [ ] bayesian-inference           priority: 4
-- [ ] information-theory           priority: 3
-- [ ] numerical-methods            priority: 3
-- [ ] linear-programming           priority: 3
+- [x] bayesian-inference           priority: 4
+- [x] information-theory           priority: 3
+- [x] numerical-methods            priority: 3
+- [x] linear-programming           priority: 3
 
 ### Supplemental (Ring 3)
 - [ ] optimization-theory
@@ -597,11 +597,11 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] lock-free-programming        priority: 5   (core+high)
 
 ### Important (Ring 2)
-- [ ] data-oriented-design         priority: 4
-- [ ] core-affinity                priority: 4
-- [ ] branchless-programming       priority: 3
-- [ ] simd-intrinsics              priority: 3
-- [ ] numa-awareness               priority: 3
+- [x] data-oriented-design         priority: 4
+- [x] core-affinity                priority: 4
+- [x] branchless-programming       priority: 3
+- [x] simd-intrinsics              priority: 3
+- [x] numa-awareness               priority: 3
 
 ### Supplemental (Ring 3)
 - [ ] huge-pages

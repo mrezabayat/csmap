@@ -1,0 +1,59 @@
+---
+title: Socket
+aliases: ["network socket", "BSD socket", "TCP socket", "Unix socket"]
+category: networks-and-internet
+kind: concept
+summary: The OS abstraction that lets a program send and receive data over a network — the fundamental API sitting between application code and the TCP/IP stack.
+level: beginner
+status: reviewed
+importance: important
+tags: ["networking", "api", "tcp", "programming"]
+prerequisites: ["tcp", "ip-address"]
+related: ["udp", "tls"]
+nextSteps: ["http", "rest-api"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When your program wants to talk to another program over the network, it calls into the operating system via the **socket API** — the same four calls (create, bind, connect/listen, send/receive) whether you're writing a web server, a game client, or a database driver. A socket is the OS's file-like handle for a network endpoint: open it, write bytes in, get bytes out, close it when done.
+
+## More detail
+
+A socket is identified by five values — the **5-tuple**: `(protocol, local IP, local port, remote IP, remote port)`. This uniquely identifies every active connection in the system. The OS uses it to demultiplex incoming packets to the right application.
+
+The BSD socket API (standardised in POSIX, available on every OS):
+
+1. **`socket(domain, type, protocol)`** — create a socket. `AF_INET`/`AF_INET6` for IP; `SOCK_STREAM` for TCP; `SOCK_DGRAM` for UDP.
+2. **`bind(fd, addr)`** — claim a local address/port (mandatory for servers; optional for clients, who get an ephemeral port).
+3. **`listen(fd, backlog)`** — (TCP servers only) mark the socket as passive; `backlog` is how many pending connections the kernel will queue.
+4. **`accept(fd)`** — (TCP servers) block until a client connects; returns a *new* socket for that connection, leaving the listening socket ready for the next.
+5. **`connect(fd, addr)`** — (TCP clients) initiate the three-way handshake to a server address.
+6. **`send` / `recv`** (or `write` / `read`) — exchange data. **TCP is a stream**: `send(1000 bytes)` may result in `recv` returning 200 bytes, then 800 bytes — the application must loop until it has all it expects.
+7. **`close(fd)`** — tear down the connection (sends TCP FIN).
+
+**Unix domain sockets** (`AF_UNIX`) use the same API but communicate through the kernel without touching the network stack — they're faster for same-machine IPC (databases, docker, systemd all use them).
+
+Non-blocking sockets and **I/O multiplexing** (`select`, `poll`, `epoll`, `kqueue`) let a single thread handle thousands of concurrent connections by registering sockets and getting callbacks when data arrives — the model behind every high-performance server (Nginx, Node.js's event loop).
+
+**TLS** is layered on top of a TCP socket: the application opens a normal socket, hands it to a TLS library (OpenSSL, BoringSSL), which handles the handshake and then wraps `send`/`recv` to encrypt/decrypt transparently.
+
+## Why it matters
+
+Every network library, every HTTP client, every database driver, and every web server ultimately calls the socket API. Understanding it explains why HTTP keep-alive matters (amortising the cost of connect), why a server needs `SO_REUSEADDR` after a crash, why `TCP_NODELAY` helps latency-sensitive protocols, and why "connection refused" vs "connection timed out" point to different failure modes. You don't write raw sockets daily, but they're the floor everything else is built on.
+
+## Real-world examples
+
+- A browser opens a TCP socket to port 443 of a web server, hands it to a TLS library, then speaks HTTP over it.
+- `curl` and every HTTP client library create a socket, connect, send the HTTP request as bytes, and read the response.
+- Redis, PostgreSQL, and MySQL all listen on a TCP socket; clients connect using the same BSD API.
+- Node.js's `net` module is a thin wrapper over non-blocking sockets with `epoll`/`kqueue` for event notification.
+
+## Common misconceptions
+
+- **"Sockets are a network concept."** Unix domain sockets work entirely within the kernel — same API, zero network. Many local services (Docker daemon, systemd, database) use them.
+- **"If I send 1000 bytes, the other side receives 1000 bytes in one call."** TCP is a stream, not a message protocol. The receiver can get any fragmentation; higher-level protocols define where messages end.
+
+## Learn next
+
+[TCP](/t/tcp) is the protocol the socket abstracts. Above sockets sits [HTTP](/t/http) and other application protocols that define message structure, and [TLS](/t/tls) provides encryption on top of a plain socket.

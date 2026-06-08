@@ -1,0 +1,57 @@
+---
+title: Information Theory
+aliases: ["entropy", "Shannon information"]
+category: mathematical-foundations
+kind: field
+summary: The mathematics of measuring, compressing, and transmitting information — entropy quantifies surprise, and channel capacity bounds how much data any link can carry.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["mathematics", "entropy", "compression", "machine-learning"]
+prerequisites: ["probability-statistics", "discrete-mathematics"]
+related: ["bayesian-inference", "linear-algebra"]
+nextSteps: ["machine-learning"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Information theory asks: how surprised should you be by an event? A coin landing heads is mildly surprising; a fair die rolling exactly 6 is more surprising; the sun failing to rise is maximally surprising. Claude Shannon formalised this intuition in 1948 into a single number — **entropy** — that measures how much uncertainty lives in a source, and therefore how many bits are *needed* to communicate it faithfully.
+
+## More detail
+
+**Self-information** of an event with probability `p` is `−log₂(p)` bits. Rare events carry more information; certain events carry none. **Entropy** H(X) is the *expected* self-information over a distribution:
+
+```
+H(X) = −∑ p(x) log₂ p(x)
+```
+
+It measures average uncertainty: a fair coin has entropy 1 bit; a biased coin has less. A fair die has ~2.58 bits. Entropy is also the **lower bound on lossless compression** — you cannot represent messages from a source in fewer bits than its entropy on average.
+
+Key derived quantities:
+
+- **Joint and conditional entropy** — entropy of two variables together, and what remains after conditioning on one.
+- **Mutual information** I(X;Y) — how much knowing X reduces uncertainty about Y; a symmetric measure of dependence. Mutual information is used for feature selection and for the information bottleneck framework for model compression.
+- **KL divergence** D\_KL(P||Q) — how much information is lost when you use distribution Q to approximate P. It appears everywhere in ML as a regulariser and loss term (variational autoencoders, RL policy gradients, Bayesian inference).
+- **Cross-entropy** H(P,Q) = H(P) + D\_KL(P||Q) — used directly as a loss function in classification; minimising cross-entropy trains a model to match the true label distribution P.
+- **Channel capacity** — Shannon's noisy-channel theorem: for any channel with noise, there exists an encoding that transmits up to `C = max I(X;Y)` bits per use reliably. This set the theoretical ceiling for all digital communications.
+
+## Why it matters
+
+Information theory is the hidden engine behind compression (zip, JPEG, MP3), error-correcting codes (your SSD, 5G), and machine learning loss functions. When you minimise **cross-entropy loss** in a classifier, you are doing information theory. When a language model scores a text with **perplexity**, it is measuring entropy. Feature selection, clustering, and the information bottleneck all reduce to mutual information. Even [Bayesian inference](/t/bayesian-inference) is phrased naturally in terms of KL divergence between prior and posterior.
+
+## Real-world examples
+
+- Huffman coding assigns short bit strings to frequent symbols; it approaches the entropy bound for lossless compression.
+- The cross-entropy loss in a neural-network classifier is literally the expected bits to encode labels using the model's predicted distribution.
+- Shannon's channel-capacity theorem tells network engineers the maximum achievable throughput over a noisy link.
+- Decision-tree algorithms (ID3, C4.5) split on the feature that maximises information gain — reduction in entropy.
+
+## Common misconceptions
+
+- **"Entropy is just a physics concept."** Shannon entropy is mathematically identical to thermodynamic entropy only in a specific limit; the two were deliberately analogous, not the same thing.
+- **"Higher entropy means more information."** Higher entropy means *more uncertainty*, which means each message carries more information on average — but you need more bits to transmit it. It cuts both ways.
+
+## Learn next
+
+Information theory ties [probability and statistics](/t/probability-statistics) to practical compression and communication. Its loss functions (`cross-entropy`, `KL divergence`) appear immediately in [machine learning](/t/machine-learning), and the connection to [Bayesian inference](/t/bayesian-inference) shows why KL divergence measures how much one belief diverges from another.

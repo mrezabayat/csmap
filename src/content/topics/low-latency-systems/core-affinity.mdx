@@ -1,0 +1,51 @@
+---
+title: Core Affinity
+aliases: ["CPU pinning", "processor affinity", "thread pinning"]
+category: low-latency-systems
+kind: concept
+summary: Binding a thread permanently to a specific CPU core — eliminating migration overhead, warming the core's private caches, and making execution timing predictable.
+level: advanced
+status: reviewed
+importance: important
+tags: ["performance", "concurrency", "cpu", "latency"]
+prerequisites: ["thread", "scheduler", "process"]
+related: ["context-switch", "cache-coherence", "memory-pool"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally the OS [scheduler](/t/scheduler) can move a thread from core 3 to core 7 whenever it likes — it balances load across cores without consulting the application. Core affinity says "no: this thread *always* runs on core 3, full stop." The thread pays no latency for migration, its data stays warm in core 3's private L1/L2 caches, and the core can be isolated entirely from the OS scheduler, making timing rock-steady.
+
+## More detail
+
+Modern CPUs have a hierarchy of caches. L1 and L2 are **per-core private**; L3 is typically shared. When the OS migrates a thread, it may move to a core whose L1/L2 holds nothing relevant — a cold-start cost of hundreds of cycles for each cache line that needs reloading. Pinning eliminates that.
+
+The techniques that build on affinity:
+
+- **`pthread_setaffinity_np` / `sched_setaffinity`** (Linux), **`SetThreadAffinityMask`** (Windows) — API calls that bind a thread to a cpu-set.
+- **Isolated cores (`isolcpus`)** — boot the Linux kernel with certain core numbers excluded from the general scheduler. Those cores receive no OS timers, no work-stealing, no interrupts (beyond the strict minimum). A pinned thread on an isolated core runs with microsecond-scale jitter instead of millisecond-scale.
+- **IRQ routing** — move network and disk interrupt handling away from the application's core(s) so interrupts don't preempt the hot path.
+- **NUMA affinity** — on multi-socket servers, pin threads *and* their memory allocations to the same NUMA node; crossing a socket boundary for memory doubles latency (see [NUMA awareness](/t/numa-awareness)).
+
+The risk is that pinned threads can't be load-balanced — if one core's workload surges, the others sit idle. So affinity is applied surgically: to the handful of threads where predictable latency is non-negotiable, leaving the rest freely schedulable.
+
+## Why it matters
+
+Jitter is latency's hidden enemy. A trading engine that processes a market event in 5 µs *on average* but sometimes stalls 500 µs when the OS rescheduled it onto a cold core fails its SLAs. Pinning + isolated cores compresses the *distribution* of response times, not just the mean. The same applies to real-time audio, packet processing (DPDK), and any system where the worst case matters more than the average.
+
+## Real-world examples
+
+- High-frequency trading firms pin the order-submission thread to an isolated core and route all network interrupts away from it.
+- DPDK (Data Plane Development Kit) dedicates entire cores to packet I/O loops; those cores are isolated and polled, never interrupted.
+- Real-time audio servers (JACK, PulseAudio in RT mode) pin the audio callback thread and elevate its priority to prevent dropout.
+
+## Common misconceptions
+
+- **"More cores is always better."** An isolated, pinned thread on one core beats a freely-migrated thread that bounces across eight.
+- **"Pinning is only for exotic embedded systems."** It is routine in any user-space application with hard latency requirements — trading, telecom, gaming servers, real-time control.
+
+## Learn next
+
+Core affinity is one lever; the others are [NUMA awareness](/t/numa-awareness) (keeping data on the same socket as the pinned thread) and [cache-line alignment](/t/cache-line-alignment) (keeping that data compact). Together they eliminate the main sources of unpredictable latency.

@@ -1,0 +1,55 @@
+---
+title: Floating-Point
+aliases: ["IEEE 754", "float", "double precision", "floating point arithmetic"]
+category: foundations
+kind: concept
+summary: The standard way computers represent real numbers — a finite binary approximation with a sign, an exponent, and a significand that makes most arithmetic fast but never perfectly exact.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["representation", "numbers", "IEEE754", "arithmetic"]
+prerequisites: ["binary-numbers", "bits"]
+related: ["character-encoding"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Integers are exact; real numbers are not. Most decimal fractions — even `0.1` — cannot be written in binary without an infinite number of digits, so the computer stores the closest approximation it can. **Floating-point** is the standard format for that approximation: a number stored as `sign × significand × 2^exponent`, where all three parts are fixed-width bit fields. The result is a system that covers an enormous range of magnitudes and is wrong by a tiny, bounded amount — usually good enough, occasionally catastrophic.
+
+## More detail
+
+IEEE 754 (1985, revised 2008) is the standard followed by virtually every CPU and programming language. It defines:
+
+- **Binary32 (single)** — 1 sign bit + 8 exponent bits + 23 significand bits = 32 bits. ~7 decimal digits of precision.
+- **Binary64 (double)** — 1 sign bit + 11 exponent bits + 52 significand bits = 64 bits. ~15–17 decimal digits.
+
+The significand is always normalised to `1.xxx…` in binary (the leading `1` is implicit and free), so all bits of the fraction field are significant. The exponent is stored with a **bias** (127 for single, 1023 for double) so it can represent both large and small magnitudes with an unsigned integer.
+
+Special values encode edge cases:
+- **Infinity** (+∞, −∞) — result of dividing by zero or overflow.
+- **NaN** (Not a Number) — result of `0/0`, `√(−1)`, or arithmetic on existing NaN. NaN is "contagious": any operation on NaN produces NaN.
+- **Denormals / subnormals** — very small values below the normal minimum, encoded with an implicit leading `0` instead of `1`; often much slower to process.
+
+The key rounding behaviours: every operation is rounded to the nearest representable value (with ties going to even). Consecutive floating-point operations accumulate rounding error. **Catastrophic cancellation** — subtracting two nearly-equal numbers — can lose almost all significant bits in one step.
+
+## Why it matters
+
+Every mainstream language (C, Python, Java, JavaScript, Rust) uses IEEE 754 doubles by default. Every GPU does floating-point arithmetic at its core. Machine learning uses 16-bit and 8-bit variants (half, bfloat16, fp8) to trade precision for speed and memory. The bugs that floating-point produces — `0.1 + 0.2 ≠ 0.3`, comparisons against computed values failing, NaN propagation hiding errors — are among the most common surprising bugs a programmer encounters, and the fixes (epsilon comparisons, decimal arithmetic for money, checking for NaN) follow directly from understanding the representation.
+
+## Real-world examples
+
+- `0.1 + 0.2 == 0.3` is `false` in virtually every language — both sides round to the nearest binary fraction and the rounding differs.
+- The Ariane 5 rocket's 1996 failure was caused by a floating-point overflow converting a 64-bit double to a 16-bit integer.
+- Machine learning hardware (TPUs, modern GPUs) uses bfloat16 — a truncated double that preserves the exponent range while halving storage — for training speed.
+- Financial systems never use floating-point for currency; they use fixed-point or decimal arithmetic libraries to avoid accumulated rounding.
+
+## Common misconceptions
+
+- **"Just use `double` and the errors are negligible."** They usually are, but compounding operations, cancellation, and comparison failures can amplify them to real bugs.
+- **"NaN is like zero."** NaN propagates silently: `NaN + 1 = NaN`, `NaN > 0 = false`, `NaN == NaN = false`. A computation feeding NaN-infected values downstream can produce wrong answers for many steps before anyone notices.
+
+## Learn next
+
+Floating-point is [binary numbers](/t/binary-numbers) extended to fractions — understanding bits and binary first makes the representation clear. In ML contexts, the precision trade-off connects to how models are stored and computed in [training and inference](/t/training-and-inference).

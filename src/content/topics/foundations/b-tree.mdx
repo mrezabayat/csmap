@@ -1,0 +1,56 @@
+---
+title: B-Tree
+aliases: ["B+ tree", "btree", "balanced tree"]
+category: foundations
+kind: concept
+summary: A self-balancing tree optimised for block storage — wide, shallow, and designed so every search, insert, and delete touches only O(log n) pages, which is why it powers almost every database index.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["data-structures", "trees", "databases", "indexing"]
+prerequisites: ["tree", "data-structure"]
+related: ["hash-table", "algorithms"]
+nextSteps: ["indexing"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A regular binary search tree has two children per node. A B-tree has hundreds — each node is sized to fill exactly one disk page (typically 4–16 KB) and can hold hundreds of keys and pointers. Because the tree is so wide, it stays very shallow: a B-tree of a billion rows is typically only 3–4 levels deep, so any lookup touches at most 3–4 pages. That's the design insight: match the tree's node size to the storage system's access unit to minimise the number of expensive I/O operations.
+
+## More detail
+
+A **B-tree of order m** has these invariants:
+
+- Every node holds between ⌈m/2⌉ and m keys (except the root, which needs only 1).
+- An internal node with k keys has k+1 children.
+- All leaf nodes are at the same depth (the tree is perfectly balanced by height).
+- Keys within a node are kept sorted; each pointer between two keys leads to a subtree whose keys fall between them.
+
+On a **search**, start at the root, binary-search within the node (O(log m)), follow the right child pointer, repeat — O(log_m n) nodes visited. With m ≈ 500 and n = 1 billion, that's ≤ 4 node accesses.
+
+On **insert**, find the leaf, insert the key in sorted order. If the leaf overflows (> m keys), **split** it into two half-full nodes and push the middle key up to the parent — recursively if needed, all the way to the root. The root split is how the tree grows in height. Insert is O(log n) amortised.
+
+**B+ trees** (the variant used by most database systems) differ slightly: internal nodes hold only keys (no data), while leaf nodes hold all data and are linked in a sorted linked list. This supports range scans by traversing leaf pointers linearly — you find the start with a tree search, then follow pointers for the range.
+
+The contrast with [hash tables](/t/hash-table): hash tables give O(1) point lookups but provide no ordering and cannot answer range queries efficiently. B-trees give O(log n) point lookups *and* O(log n + k) range queries over k results.
+
+## Why it matters
+
+Nearly every relational database ([SQL](/t/sql)) stores its indexes in B+ trees — PostgreSQL, MySQL InnoDB, Oracle, SQLite, and SQL Server all do. Understanding B-trees explains why [indexing](/t/indexing) helps for equality and range queries, why `LIKE '%suffix'` can't use an index (you can't binary-search an interior part of a string), why index key order matters, and why covering indexes (leaf nodes already contain the queried columns) eliminate a second lookup. Filesystems (ext4, NTFS, HFS+) also use B-tree variants for directory lookup.
+
+## Real-world examples
+
+- PostgreSQL's default index type is a B+ tree; `CREATE INDEX` without further options produces one.
+- SQLite stores its entire database in a B-tree file, with one B-tree per table and one per index.
+- ext4 uses a B-tree to index the blocks of large files (the HTree extension also uses it for directory lookups).
+- LSM trees (used in LevelDB, RocksDB, Cassandra) sacrifice balanced B-tree updates for better write throughput — the trade-off is understood in terms of B-tree limitations.
+
+## Common misconceptions
+
+- **"B-tree and binary search tree are the same."** A BST has 2 children per node; a B-tree has hundreds. The "B" stands for balanced (and Bayer, the co-inventor), not binary.
+- **"B-trees are only for databases."** They are the structure of choice for any ordered key-value store backed by block storage — filesystems, key-value engines, and even in-memory structures for large sorted datasets.
+
+## Learn next
+
+B-trees are the implementation behind [indexing](/t/indexing) — understanding the tree explains what the index *is* and when it will or won't help a query.

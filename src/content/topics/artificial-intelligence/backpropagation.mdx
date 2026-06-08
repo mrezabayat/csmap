@@ -1,0 +1,59 @@
+---
+title: Backpropagation
+aliases: ["backprop", "reverse-mode autodiff", "error backpropagation"]
+category: artificial-intelligence
+kind: concept
+summary: The algorithm that computes how much each weight in a neural network contributed to the error — applying the chain rule layer by layer in reverse so gradient descent knows which way to adjust every parameter.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["machine-learning", "neural-networks", "training", "gradients"]
+prerequisites: ["gradient-descent", "neural-network"]
+related: ["calculus-basics", "training-and-inference", "transformer"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Training a [neural network](/t/neural-network) requires knowing: "if I nudge weight W by a tiny amount, how much does the error change?" That question is answered by backpropagation — it sweeps through the network *backwards* from the output, computing the answer for every single weight in one efficient pass. Without it, you'd need a separate forward pass per weight to estimate each gradient numerically, making training of million-parameter networks impossible.
+
+## More detail
+
+A neural network is a composition of functions: input → layer 1 → layer 2 → … → output → loss. Computing a loss given inputs is the **forward pass**. Finding how the loss changes with respect to each weight — `∂L/∂W` — is the **backward pass**, done by backpropagation.
+
+The mathematics is the **chain rule** applied to a computation graph. For a composed function `L = f(g(h(x)))`:
+
+```
+dL/dx = (dL/df) × (df/dg) × (dg/dh) × (dh/dx)
+```
+
+Backpropagation applies this starting from the loss and working backwards:
+1. Compute the gradient of the loss with respect to the output layer's activations.
+2. Use the chain rule to propagate that gradient backwards through each layer's weights and activations.
+3. Accumulate `∂L/∂W` for every weight W in every layer.
+4. Pass these gradients to [gradient descent](/t/gradient-descent), which updates each weight.
+
+The key efficiency insight: each intermediate gradient is computed *once* and *reused* for everything downstream. This is **reverse-mode automatic differentiation** — the technique general ML frameworks (PyTorch, TensorFlow, JAX) implement as their `backward()` call. The forward pass caches intermediate values needed for the backward pass; the backward pass computes all n parameter gradients in O(n) work, rather than O(n²).
+
+For transformers and other modern architectures, backprop flows through attention layers and residual connections — the math is the same chain rule, just a more complex graph.
+
+## Why it matters
+
+Backpropagation is *why* deep learning is tractable. Without it, a network with millions of parameters would require millions of forward passes to estimate gradients numerically. With it, one forward + one backward pass trains the whole network. The combination of backpropagation + gradient descent + GPU parallelism is the engine behind every modern neural network, from image classifiers to [large language models](/t/large-language-model).
+
+## Real-world examples
+
+- PyTorch's `loss.backward()` runs backpropagation through the entire computation graph, populating `.grad` on every leaf tensor.
+- Training GPT-3 required computing gradients of a 175-billion-parameter network — only feasible because backprop scales linearly with parameter count.
+- Gradient-based adversarial attacks (FGSM) apply backpropagation to the *input* instead of the weights — finding input perturbations that maximise loss.
+
+## Common misconceptions
+
+- **"Backprop is the same as gradient descent."** Backprop *computes* the gradients; gradient descent *uses* them to update weights. They're paired but distinct.
+- **"Backprop only works for feedforward networks."** It works for any differentiable computation graph — recurrent networks, attention, residual connections — because it operates on the graph, not the architecture.
+- **"Deep networks suffer from vanishing gradients because of backprop."** Vanishing gradients are an architecture issue (saturating activations, too many layers without shortcuts). Techniques like ReLU, batch norm, and residual connections fix the architecture, not the algorithm.
+
+## Learn next
+
+Backpropagation is [calculus-basics](/t/calculus-basics) — specifically the chain rule — applied to neural networks. It produces the gradients that [gradient descent](/t/gradient-descent) uses to train the model, and the two together are what [training and inference](/t/training-and-inference) describes end-to-end.

@@ -1,0 +1,59 @@
+---
+title: Load Balancer
+aliases: ["load balancing", "reverse proxy", "LB"]
+category: distributed-systems-and-cloud
+kind: technology
+summary: A component that distributes incoming traffic across a pool of servers — hiding individual server failures, spreading work evenly, and making the fleet appear as a single endpoint to clients.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["distributed-systems", "networking", "scalability", "availability"]
+prerequisites: ["distributed-system", "tcp"]
+related: ["cdn", "container"]
+nextSteps: ["microservices", "kubernetes"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When you have ten servers behind a web address, something must decide which one handles each new request. That's the **load balancer**: a single point at the front that accepts connections and forwards them, one at a time, to whichever backend is least busy (or next in rotation). Clients see one address; the load balancer sees ten servers — it hides the fleet and manages it.
+
+## More detail
+
+Load balancers operate at different layers of the network stack:
+
+**Layer 4 (transport) load balancers** work at the TCP/UDP level — they see IP packets and port numbers but not the application payload. Extremely fast (often implemented in hardware or kernel bypass), but cannot make routing decisions based on HTTP paths or cookies.
+
+**Layer 7 (application) load balancers** terminate the TCP connection, parse the HTTP (or gRPC, etc.) request, and forward it. They can route based on URL path (`/api/*` → service A, `/static/*` → CDN), inject headers, terminate TLS, and perform health checks at the application level. HAProxy, Nginx, AWS ALB, and Envoy are examples.
+
+**Algorithms** for picking the backend:
+- **Round-robin** — next server in a cycle. Simple and fair when requests are equal cost.
+- **Least-connections** — send to whichever server has the fewest active connections. Better for long-lived requests.
+- **IP hash** — hash the client's IP to always route to the same server. Provides *sticky sessions* without explicit session tracking.
+- **Weighted** — some servers get more traffic than others (for heterogeneous fleets or canary deploys).
+
+**Health checks** are essential: the load balancer probes each backend (TCP connect, or HTTP `GET /health`) and stops routing to any that fail. This is how the fleet tolerates individual server crashes without the client noticing.
+
+**High availability of the load balancer itself** — since it's a single point of entry, it must be redundant too. Common patterns: active-passive with a floating VIP (virtual IP) failing over on heartbeat loss; or active-active with DNS round-robin or anycast.
+
+In [Kubernetes](/t/kubernetes) and service meshes, load balancing is moved inside the cluster (every pod has a sidecar proxy that balances outgoing calls) — the traditional external load balancer remains for ingress traffic only.
+
+## Why it matters
+
+A load balancer is the boundary between "one server" and "a fleet". Without it, scaling a service means changing DNS and accepting downtime; with it, you add or remove backends transparently, roll out [canary deployments](https://en.wikipedia.org/wiki/Feature_flag), and survive server failures silently. It is also where TLS termination, rate limiting, and authentication can be applied uniformly without every backend implementing them. Almost every public web service has at least two layers of load balancing.
+
+## Real-world examples
+
+- AWS Elastic Load Balancer (ALB/NLB) sits in front of EC2 instances or ECS tasks and distributes HTTP or TCP traffic.
+- Nginx configured as a reverse proxy performs Layer 7 load balancing and TLS termination for a group of application servers.
+- Kubernetes' `Service` type `LoadBalancer` provisions a cloud load balancer pointing at the pod IP addresses.
+- Cloudflare and other CDNs use anycast routing — the same IP is advertised from multiple data-centres, and BGP delivers each request to the nearest one.
+
+## Common misconceptions
+
+- **"A load balancer is a single machine."** Modern load balancers run in clusters or as distributed software (Envoy sidecar, eBPF-based kube-proxy) — there's no single physical bottleneck.
+- **"Round-robin is good enough."** It is for uniform short requests. For variable-cost or long-lived connections (streaming, WebSocket, database queries), least-connections or random-with-two-choices gives substantially better tail latency.
+
+## Learn next
+
+Load balancers are the front door to [microservices](/t/microservices) architectures and [Kubernetes](/t/kubernetes) clusters. In a distributed system, they work alongside [service meshes](https://en.wikipedia.org/wiki/Service_mesh) which provide load balancing *between* services, not just at the edge.

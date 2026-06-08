@@ -1,0 +1,54 @@
+---
+title: Character Encoding
+aliases: ["Unicode", "UTF-8", "ASCII", "text encoding"]
+category: foundations
+kind: concept
+summary: The standard that maps characters to numbers so text can be stored and transmitted as bits — from ASCII's original 128 code points to Unicode's 150,000 and UTF-8's dominant variable-length encoding.
+level: beginner
+status: reviewed
+importance: important
+tags: ["representation", "text", "unicode", "utf-8"]
+prerequisites: ["bits", "binary-numbers"]
+related: ["floating-point"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Computers store text as numbers. A **character encoding** is the table that says which number represents which character: 65 = 'A', 66 = 'B', and so on. The challenge is agreeing on *one* table that covers every writing system on Earth — Chinese, Arabic, emoji, and all. Unicode is that agreement; UTF-8 is the way to turn Unicode's code points into actual bytes.
+
+## More detail
+
+**ASCII** (1963) mapped 128 characters (the Latin alphabet, digits, punctuation, and control codes) to 7 bits. Enough for English; nowhere near enough for the world. The next decades saw hundreds of incompatible extensions — Latin-1, Windows-1252, Shift-JIS, Big5, ISO-8859 — each covering a region but producing mojibake (garbled text) when files moved between systems.
+
+**Unicode** solved the coordination problem by defining one universal **code point** for every character: `U+0041` for 'A', `U+4E2D` for '中', `U+1F600` for '😀'. Unicode now covers over 150,000 characters across 168 scripts. A code point is an integer, not bytes — the encoding determines how that integer is stored:
+
+- **UTF-32** — every code point as a fixed 4-byte integer. Simple but wastes space for ASCII-heavy text.
+- **UTF-16** — 2 bytes for most characters, 4 bytes (a surrogate pair) for rarer ones. Used by Java, JavaScript internals, and Windows APIs.
+- **UTF-8** — variable width: 1 byte for ASCII (U+0000–U+007F), 2–4 bytes for everything else. The leading bits of the first byte signal the length. UTF-8 is backward-compatible with ASCII and is the dominant encoding on the web (~98% of web pages).
+
+Important properties of UTF-8:
+- **Self-synchronising** — you can find the start of any character by scanning for a byte whose high bits are `0xxxxxxx` or `11xxxxxx`; continuation bytes always start `10xxxxxx`.
+- **ASCII-safe** — any byte with value < 128 is a single-byte ASCII character; no two-byte or four-byte sequence ever produces a byte in that range.
+- **Not fixed-width** — `string.length` in bytes ≠ number of characters. Python `len("中")` is 1 (code points), but `len("中".encode("utf-8"))` is 3 (bytes).
+
+## Why it matters
+
+Every program that handles text — every web server, database, editor, terminal, and network protocol — must know what encoding text is in. Encoding bugs break everything: incorrect byte-lengths crash string operations, misidentified encodings corrupt data, and injected malformed bytes can bypass security checks. "Always use UTF-8" is the modern consensus because it is universal, compact, and ASCII-compatible — but you still have to know it's variable-width, what a BOM is (a UTF-8 BOM is three bytes the Windows ecosystem adds and everything else ignores), and why `\n` vs `\r\n` is also an encoding concern.
+
+## Real-world examples
+
+- A web server that doesn't declare `Content-Type: text/html; charset=utf-8` risks browsers guessing Latin-1 or Shift-JIS and rendering garbled text.
+- `strlen` in C counts bytes, not characters — a UTF-8 string of 10 emoji can be 40 bytes.
+- MySQL's historical `utf8` charset is actually a broken 3-byte-max encoding that cannot store emoji; `utf8mb4` is the correct UTF-8.
+- Emoji rendering requires combining a code point with a skin-tone modifier and a zero-width joiner — a single rendered "character" can be 10+ code points.
+
+## Common misconceptions
+
+- **"Unicode and UTF-8 are the same thing."** Unicode is the code-point standard; UTF-8 is one *encoding* of it. There are others (UTF-16, UTF-32).
+- **"String length = character count."** Only in fixed-width encodings. In UTF-8, length in bytes, length in code points, and length in grapheme clusters (user-visible characters) can all differ.
+
+## Learn next
+
+Character encoding is how text becomes [bits](/t/bits) — the same raw material as numbers and instructions. Understanding it prevents a category of subtle bugs in any software that accepts or displays text from the real world.

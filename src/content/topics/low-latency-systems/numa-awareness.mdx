@@ -1,0 +1,65 @@
+---
+title: NUMA Awareness
+aliases: ["NUMA", "Non-Uniform Memory Access", "NUMA topology"]
+category: low-latency-systems
+kind: concept
+summary: On multi-socket servers each CPU has fast local memory and slow remote memory — NUMA-aware code allocates memory on the same socket as the thread that uses it, halving memory latency.
+level: advanced
+status: reviewed
+importance: important
+tags: ["performance", "memory", "multi-socket", "latency"]
+prerequisites: ["memory-hierarchy", "cache-coherence"]
+related: ["core-affinity", "memory-pool", "cache-line-alignment"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A typical server has two sockets, each with its own CPU and its own bank of RAM. A thread on socket 0 can access socket 1's RAM — but it's twice as slow, because the request crosses an inter-socket interconnect (Intel QPI / UPI, AMD Infinity Fabric). **NUMA awareness** means making sure a thread's data lives in the RAM physically attached to its socket, so every memory access is local and fast.
+
+## More detail
+
+**NUMA** (Non-Uniform Memory Access) is the term for any architecture where memory access latency depends on *which* memory is accessed. In a two-socket server the memory hierarchy looks like:
+
+```
+Socket 0                    Socket 1
+  Core 0, 1, … n             Core 0, 1, … n
+    L1/L2 (per-core)            L1/L2 (per-core)
+    L3 (shared on socket)       L3 (shared on socket)
+  Local DRAM (~80 ns)        Local DRAM (~80 ns)
+          \                   /
+           Inter-socket link (~160 ns for remote access)
+```
+
+Accessing remote memory is 1.5–2× slower. Under heavy load, it also saturates the inter-socket interconnect, creating contention.
+
+Strategies for NUMA-aware code:
+
+- **`numactl --localalloc`** — run a process and instruct the kernel to allocate pages from the local node by default.
+- **`mbind` / `numa_alloc_onnode`** — allocate a specific buffer on a specific NUMA node from code.
+- **Thread–memory co-location** — combine [core affinity](/t/core-affinity) (pin thread to socket 0 cores) with NUMA-local allocation (allocate on node 0) so thread and data are always on the same socket.
+- **Per-NUMA-node data structures** — maintain separate queues, caches, or counters per node; threads always touch their node's copy.
+- **First-touch policy** — Linux allocates a page on the NUMA node of the thread that *first writes* it. Initialise data from the thread that will use it, not from a setup thread on a different socket.
+
+The interaction with [cache coherence](/t/cache-coherence) matters too: a cache line modified on socket 0 and then read on socket 1 must be transferred across the inter-socket link, compounding the latency.
+
+## Why it matters
+
+As core count per socket has grown (32–128 cores) and workloads have scaled to fill whole servers, NUMA effects have gone from a curiosity to a first-order performance concern. A database buffer pool naïvely allocated by a background thread and then accessed by query threads on a different socket can run at half speed. The Linux kernel, JVM, databases (PostgreSQL, MySQL), and message brokers (Kafka, RabbitMQ) all have NUMA-awareness options precisely because the difference is measurable in production.
+
+## Real-world examples
+
+- The Linux kernel's slab allocator is NUMA-aware, maintaining per-node caches so kernel allocations prefer local memory.
+- DPDK allows pinning packet-processing threads and their memory pools to the same NUMA node as the NIC's DMA engine.
+- Databases like PostgreSQL and Oracle ship configuration options for NUMA policy and recommend `numactl --interleave` or `--localalloc` depending on the workload.
+- JVM GC tuning for large heap deployments includes NUMA-aware allocation flags (`-XX:+UseNUMA`).
+
+## Common misconceptions
+
+- **"NUMA is only relevant for HPC clusters."** Any server with two or more physical CPU sockets has NUMA topology, including standard cloud VMs with enough vCPUs to span sockets.
+- **"Interleaving memory across nodes is always the safe choice."** It equalises access times at the cost of making *nothing* fast — local access drops from local speed to the interleaved average.
+
+## Learn next
+
+NUMA awareness is [core affinity](/t/core-affinity) extended to memory topology. Pair with [memory pools](/t/memory-pool) so allocation itself is NUMA-local, and with [cache-line alignment](/t/cache-line-alignment) to minimise coherence traffic across the inter-socket link.

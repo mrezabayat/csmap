@@ -1,0 +1,55 @@
+---
+title: Numerical Methods
+aliases: ["numerical analysis", "numerical computing"]
+category: mathematical-foundations
+kind: field
+summary: Algorithms for computing approximate answers to mathematical problems a computer cannot solve exactly — root-finding, integration, solving differential equations, and fitting data.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["mathematics", "numerical-analysis", "simulation", "scientific-computing"]
+prerequisites: ["calculus-basics", "linear-algebra"]
+related: ["algorithms"]
+nextSteps: ["machine-learning"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Most equations that arise in science and engineering cannot be solved with an exact formula. Numerical methods compute an answer that is close enough, in a bounded number of steps. Instead of "the root is `√2`", they say "the root is `1.41421356...` to eight decimal places, and I can make it as accurate as you like by running longer." The trade-off is always speed vs. accuracy, and managing the errors that accumulate.
+
+## More detail
+
+The field is broad, but a handful of problems recur constantly:
+
+**Root-finding.** Given `f(x) = 0`, find `x`. Newton's method iterates `x_{n+1} = x_n − f(x_n)/f'(x_n)` and converges quadratically near a root. The bisection method is slower but always works when the function changes sign.
+
+**Linear systems.** Solving `Ax = b` exactly needs matrix factorisation (Gaussian elimination / LU decomposition); for huge sparse systems, iterative methods (conjugate gradient, GMRES) converge without factorising the whole matrix.
+
+**Integration (quadrature).** Approximate ∫f(x)dx by evaluating `f` at strategically chosen points and forming a weighted sum — trapezoidal rule, Simpson's rule, Gaussian quadrature. For high-dimensional integrals: Monte Carlo integration (random sampling), which scales better than grid-based methods.
+
+**Differential equations.** Euler's method takes small time steps to simulate how a system evolves; Runge-Kutta methods (especially RK4) take a weighted average of multiple slope estimates to stay accurate over large steps.
+
+**Fitting / least squares.** Given noisy data, find the curve that minimises total squared error — solvable as a linear algebra problem (`Aᵀx = Aᵀb`) or, for nonlinear models, via iterative optimisation like Levenberg-Marquardt.
+
+All of these share a concern with **numerical stability**: floating-point arithmetic introduces rounding errors at every step, and some algorithms amplify those errors catastrophically while others keep them bounded.
+
+## Why it matters
+
+Scientific computing, simulation, graphics, and machine learning all rest on numerical methods. A physics engine integrates differential equations to move objects. A deep-learning framework uses numerical optimisation to fit millions of parameters. Signal processing, computer vision, computational finance, and weather forecasting are applied numerical analysis. Even the basic question "does this model's Jacobian have full rank?" is answered numerically.
+
+## Real-world examples
+
+- Climate models integrate atmospheric differential equations forward in time using Runge-Kutta-style solvers.
+- MRI reconstruction solves a large linear system to recover a 3D image from sensor measurements.
+- Optimisation-based ML training (SGD, Adam) is a form of iterative root-finding applied to gradients.
+- Finance uses Monte Carlo integration to price derivatives by averaging outcomes across thousands of simulated paths.
+
+## Common misconceptions
+
+- **"Floating-point arithmetic is accurate enough."** It usually is, but some algorithms are ill-conditioned: tiny perturbations in input cause huge changes in output. Stability analysis catches these before they matter.
+- **"More iterations always mean more accuracy."** Accumulated rounding error eventually dominates; there is a sweet spot, and sometimes a coarser method is more stable over many steps.
+
+## Learn next
+
+Numerical methods apply [calculus](/t/calculus-basics) and [linear algebra](/t/linear-algebra) algorithmically — they are where the mathematics meets the machine. They feed directly into the optimisation routines that train [machine-learning](/t/machine-learning) models.

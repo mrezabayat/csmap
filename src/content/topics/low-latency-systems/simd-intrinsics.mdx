@@ -1,0 +1,60 @@
+---
+title: SIMD Intrinsics
+aliases: ["Intel intrinsics", "AVX", "SSE", "NEON", "vector intrinsics"]
+category: low-latency-systems
+kind: concept
+summary: C/C++ functions that map directly to vector CPU instructions — bypassing the auto-vectoriser to write hand-tuned code that processes 4, 8, or 16 values in a single clock cycle.
+level: advanced
+status: reviewed
+importance: important
+tags: ["performance", "simd", "vectorisation", "cpu"]
+prerequisites: ["simd", "cache-line-alignment"]
+related: ["branchless-programming", "data-oriented-design"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+[SIMD](/t/simd) hardware can add eight floats in the same time it adds one. **Intrinsics** are the C-level door to that hardware: functions like `_mm256_add_ps(a, b)` that compile to a single machine instruction rather than a function call. You write nearly-assembly-level code in C, keep type safety, and stay portable across compilers — without dropping into raw assembly.
+
+## More detail
+
+SIMD intrinsics are thin wrappers around CPU vector instructions, standardised by Intel for x86 and ARM for NEON/SVE. They come in families:
+
+| Family | Width | Floats | Integers | Era |
+|--------|-------|--------|----------|-----|
+| SSE / SSE2–4.2 | 128-bit | 4×f32 or 2×f64 | 16×i8 … 2×i64 | 1999–2011 |
+| AVX / AVX2 | 256-bit | 8×f32 | 32×i8 … 4×i64 | 2011–2013 |
+| AVX-512 | 512-bit | 16×f32 | 64×i8 … 8×i64 | 2016+ |
+| ARM NEON | 128-bit | 4×f32 | 16×i8 … 2×i64 | 2004+ |
+
+The typical usage pattern:
+
+1. **Load** a vector from memory: `__m256 v = _mm256_loadu_ps(ptr);` — loads 8 floats. Aligned loads (`_mm256_load_ps`) are faster and require 32-byte-aligned data ([cache-line alignment](/t/cache-line-alignment) is the prerequisite).
+2. **Compute**: arithmetic, comparisons, shuffles, blends. Each operation maps to one or two instructions.
+3. **Store** the result back: `_mm256_storeu_ps(dst, result);`
+
+The non-obvious parts are the **shuffle and permute** instructions that rearrange lanes within a register — essential for operations like horizontal sums, transpose, or interleaving. Masking instructions (AVX-512 `_mm512_mask_add_ps`) predicate operations on individual lanes without branches, enabling [branchless programming](/t/branchless-programming) at vector granularity.
+
+The auto-vectoriser in a compiler (`-O3`, `#pragma GCC ivdep`) can generate SIMD for clean loops, but it often fails on complex data access patterns, aliased pointers, or loops with carried dependencies. Intrinsics are the fallback when the compiler can't or won't — and the ceiling when maximum throughput is non-negotiable.
+
+## Why it matters
+
+For workloads that are data-parallel — matrix multiply, convolution, signal processing, sort kernels, database scans — SIMD intrinsics unlock 4×–16× throughput that no algorithm change can match. Deep-learning inference kernels, image codecs, audio DSPs, and trading system matching engines are commonly hand-vectorised. Machine-learning frameworks (PyTorch, TensorFlow) delegate hot paths to hand-tuned libraries (MKL, OpenBLAS, cuBLAS) that are largely intrinsics under the hood.
+
+## Real-world examples
+
+- BLAS/LAPACK libraries (`dgemm`, `sgemm`) use hand-tuned AVX-512 intrinsics for matrix multiply — the backbone of every ML framework.
+- FFmpeg's audio and video codecs have SSE/AVX inner loops for DCT, motion compensation, and pixel operations.
+- Database engines (DuckDB, ClickHouse) use AVX2 to scan and filter columnar data at memory bandwidth speed.
+- High-frequency trading order matching uses SSE4.2 string comparison (`_mm_cmpestri`) to sort order IDs faster than scalar code.
+
+## Common misconceptions
+
+- **"SIMD intrinsics are assembly."** They are C functions that compile to assembly; you keep the compiler's register allocator and function-call conventions, and the code remains portable across compilers (that support the same ISA extension).
+- **"If it compiles with AVX-512, it'll run fast on all servers."** AVX-512 is not available on all CPUs and can throttle clock speeds on some Intel chips under heavy use — check target hardware first.
+
+## Learn next
+
+SIMD intrinsics are most effective when the data is laid out for contiguous vector loads — revisit [cache-line alignment](/t/cache-line-alignment) and [data-oriented design](/t/data-oriented-design). Combine them with [branchless programming](/t/branchless-programming) to remove the conditional jumps that would otherwise break vector throughput.

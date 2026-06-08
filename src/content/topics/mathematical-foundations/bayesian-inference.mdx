@@ -1,0 +1,56 @@
+---
+title: Bayesian Inference
+aliases: ["bayes", "bayesian statistics", "posterior inference"]
+category: mathematical-foundations
+kind: concept
+summary: Updating a belief about the world when new evidence arrives — Bayes' rule turned into a systematic method for learning from data while accounting for prior knowledge.
+level: intermediate
+status: reviewed
+importance: important
+tags: ["mathematics", "statistics", "probability", "machine-learning"]
+prerequisites: ["probability-statistics"]
+related: ["supervised-learning", "information-theory"]
+nextSteps: ["machine-learning"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Bayesian inference answers: "given what I already believed, and what I just observed, what should I believe now?" The answer is always a distribution — not a single number, but a range of possibilities with confidence attached. You start with a **prior** (your belief before seeing data), observe evidence, and the math outputs a **posterior** (your updated belief). Every new observation narrows or shifts the posterior further.
+
+## More detail
+
+The engine is **Bayes' rule**:
+
+```
+P(hypothesis | data) = P(data | hypothesis) × P(hypothesis) / P(data)
+```
+
+- **Prior** `P(hypothesis)` — what you believed before.
+- **Likelihood** `P(data | hypothesis)` — how probable is this data, assuming the hypothesis is true?
+- **Posterior** `P(hypothesis | data)` — the updated belief, combining both.
+- **Evidence / marginal likelihood** `P(data)` — a normalising constant.
+
+The step from a formula to an *inference method* is: treat model parameters as random variables, write down a prior over them, observe data, and compute (or approximate) the posterior. Classical (frequentist) statistics instead treats parameters as fixed unknowns and asks whether data is consistent with them. Bayes treats uncertainty about parameters symmetrically with uncertainty about data.
+
+In practice, the posterior is often intractable and must be approximated — with **Markov Chain Monte Carlo (MCMC)** (drawing samples from the posterior) or **variational inference** (fitting a simpler distribution). Many ML models have Bayesian interpretations: a Gaussian naive Bayes classifier, a Bayesian neural network, or a Gaussian process are all posteriors over parameters.
+
+## Why it matters
+
+Bayesian thinking changes how you design and interpret models: it forces you to declare what you believe before seeing data (avoiding overfitting to noise), it lets uncertainty propagate through a whole pipeline, and it naturally handles small data. Spam filters, recommendation systems, medical diagnosis, sensor fusion, and most of modern probabilistic ML lean on it. It also matters for A/B testing — Bayesian tests report "probability variant B is better" directly, instead of the often-misread *p*-value.
+
+## Real-world examples
+
+- A spam filter scores incoming email by updating the posterior probability of "spam" given the words it sees.
+- GPS fuses noisy sensor readings with a motion model using a **Kalman filter** — a linear Gaussian form of Bayesian inference.
+- Drug trial analysis: start with a prior over efficacy, update with trial outcomes to get a posterior probability the drug works.
+- Bayesian optimisation tunes hyperparameters by maintaining a posterior over the loss surface and picking the next configuration to maximise expected improvement.
+
+## Common misconceptions
+
+- **"The prior is subjective so Bayes is unscientific."** The prior makes assumptions *explicit* — frequentist methods also have implicit assumptions that are just harder to see.
+- **"You always need a lot of data for Bayesian methods."** The opposite is an advantage: priors regularise inference under small data, where maximum-likelihood estimation overfits.
+
+## Learn next
+
+Bayesian inference is [probability-statistics](/t/probability-statistics) applied to model parameters. Follow the thread into [machine learning](/t/machine-learning) to see how these ideas power practical algorithms, or into [information theory](/t/information-theory) to see entropy and the KL divergence that measures how far posteriors are from priors.

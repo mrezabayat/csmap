@@ -1,0 +1,62 @@
+---
+title: Branchless Programming
+aliases: ["branch elimination", "predicated execution"]
+category: low-latency-systems
+kind: concept
+summary: Replacing conditional branches with arithmetic and bit-manipulation so the CPU's branch predictor is never wrong — turning misprediction penalties into simple computation.
+level: advanced
+status: reviewed
+importance: important
+tags: ["performance", "cpu-pipeline", "branches", "bitmask"]
+prerequisites: ["cpu-pipeline", "cache"]
+related: ["simd", "cache-line-alignment"]
+nextSteps: ["simd-intrinsics"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A modern CPU starts executing the *next* instruction before it knows whether a branch was taken — a technique called speculative execution. When it guesses wrong, it throws away the speculative work and starts over: a **branch misprediction** penalty of 10–20 cycles. Branchless programming removes the branch entirely, replacing it with arithmetic that computes the same answer regardless of condition, so there is nothing to mispredict.
+
+## More detail
+
+The [CPU pipeline](/t/cpu-pipeline) is always running ahead. The branch predictor keeps a table of outcomes for recent branches and guesses "taken" or "not taken". Predictable patterns — an outer loop that always runs the body, a function that almost always follows the same path — cost nearly nothing. Unpredictable patterns — a comparison whose outcome alternates randomly, a bounds check that fails occasionally — break the pipeline's stride.
+
+Techniques to remove branches:
+
+**Conditional moves.** `(a < b) ? a : b` can compile to a `cmov` (conditional move) instruction, which reads both values and selects one without branching. Compilers sometimes generate this automatically with `-O2`.
+
+**Boolean arithmetic.** A comparison produces 0 or 1. Multiplying by 0 or 1 selects between two values without a branch:
+```c
+int clamp(int v, int lo, int hi) {
+    int above = (v > hi);
+    int below = (v < lo);
+    return v * (!above & !below) + hi * above + lo * below;
+}
+```
+
+**Bit masking.** `-(condition)` produces all-zero or all-ones bits, masking an expression in or out with a bitwise AND — no branch, just integers.
+
+**Predicated SIMD.** [SIMD](/t/simd) blend/select instructions pick between two vector lanes based on a mask — effectively branchless selection across 4–16 elements at once.
+
+The discipline is not "never branch" but "don't branch unpredictably on hot paths". Static branches (loop bounds, type dispatch resolved at compile time) cost nothing. It's data-dependent branches over random data that mispredicts and slow the pipeline.
+
+## Why it matters
+
+On a modern CPU doing 3–4 GHz and running multiple instructions per clock, a 15-cycle misprediction stall is a visible fraction of a tight loop's total cost. In a comparison function called millions of times per second — sorting, binary search, priority-queue maintenance, order-matching — removing a single unpredictable branch can cut runtime in half. Combined with [SIMD](/t/simd) and [cache-line alignment](/t/cache-line-alignment), branchless programming is the third leg of low-latency hot-loop optimisation.
+
+## Real-world examples
+
+- High-frequency trading comparison functions for order matching are hand-tuned to `cmov` sequences to avoid unpredictable sort-direction branches.
+- `std::sort` implementations use branchless partition kernels for the inner loop where mispredictions would dominate.
+- Image-processing loops use SIMD blend instructions to clamp pixel values without per-pixel conditional jumps.
+- Hash-table probe sequences avoid a "found/not-found" branch by using a branchless comparison and mask.
+
+## Common misconceptions
+
+- **"Branchless code is always faster."** Not if the branch was highly predictable — a predictable branch has near-zero cost. Branchless is only faster when the branch was *unpredictable*.
+- **"The compiler always figures this out."** Compilers generate `cmov` when it's clearly safe; data-dependent bit tricks require human insight into the specific access pattern.
+
+## Learn next
+
+Branchless techniques pair naturally with [SIMD intrinsics](/t/simd-intrinsics), which give access to vectorised blend and compare operations that eliminate branches across whole data lanes at once.
