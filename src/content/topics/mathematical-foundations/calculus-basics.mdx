@@ -1,0 +1,51 @@
+---
+title: Calculus Basics
+aliases: ["calculus", "derivatives and integrals"]
+category: mathematical-foundations
+kind: field
+summary: The mathematics of change and accumulation — derivatives measure rates, integrals add them up. In computing it powers optimisation and the training of machine-learning models.
+level: intermediate
+status: reviewed
+importance: core
+tags: ["mathematics", "calculus", "optimization", "gradients"]
+related: ["linear-algebra"]
+nextSteps: ["gradient-descent"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Calculus is the study of how things change. The **derivative** answers "how fast is this changing right now, and in which direction?" — the slope of a curve at a point. The **integral** answers the reverse: "if I add up all these tiny changes, how much accumulates in total?" — the area under a curve. Most of computing's use of calculus is about the first one: finding which way is downhill.
+
+## More detail
+
+The derivative of a function `f(x)` is its instantaneous rate of change, written `f'(x)` or `df/dx`. Geometrically it's the slope of the tangent line; where the slope is zero, the function has a peak, valley, or plateau — which is exactly where optima live.
+
+The pieces that matter for computing:
+
+- **The chain rule** — how to differentiate a function built from nested functions. This is the mathematical core of **backpropagation**: a neural network is one big composed function, and the chain rule propagates error gradients back through every layer.
+- **Gradients** — for a function of many variables, the gradient is the vector of all its partial derivatives. It points in the direction of steepest increase, so its negative points downhill toward a minimum.
+- **Optimisation** — minimising a *loss function* by repeatedly stepping in the direction the gradient says reduces it fastest. That single idea, **gradient descent**, trains almost every modern model.
+- **Integrals** — accumulation: total probability under a distribution, total signal energy, expected values.
+
+You rarely compute these by hand in practice; frameworks perform *automatic differentiation*. But understanding what a gradient *is* explains why training works, why learning rates matter, and why models get stuck.
+
+## Why it matters
+
+Training a machine-learning model is an optimisation problem, and optimisation is calculus. Every time a model improves during training, a gradient told it which way to nudge millions of parameters. Calculus also underlies physics simulation, signal processing, computer graphics (curves and surfaces), and control systems — anywhere a quantity varies continuously.
+
+## Real-world examples
+
+- Neural-network training computes the gradient of a loss with respect to every weight and steps downhill — pure calculus at scale.
+- Physics engines integrate acceleration into velocity and velocity into position, frame by frame.
+- A camera's autofocus hunts for the lens position that maximises image sharpness — finding where a derivative is zero.
+- Animation eases motion using smooth curves whose slopes are tuned for natural acceleration.
+
+## Common misconceptions
+
+- **"You need to be fluent in symbolic calculus to do ML."** Frameworks differentiate automatically; what you need is intuition for gradients, slopes, and minima.
+- **"Gradient descent always finds the best answer."** It finds a *local* minimum along the path it took; the global optimum may lie elsewhere, which is why initialisation and step size matter.
+
+## Learn next
+
+Pair the gradient idea with [linear algebra](/t/linear-algebra) to see how whole layers are differentiated at once, then follow it straight into [gradient descent](/t/gradient-descent), the algorithm that turns calculus into learning.

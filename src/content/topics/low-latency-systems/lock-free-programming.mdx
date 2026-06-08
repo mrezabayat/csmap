@@ -1,0 +1,52 @@
+---
+title: Lock-Free Programming
+aliases: ["lock-free", "atomics", "compare-and-swap"]
+category: low-latency-systems
+kind: concept
+summary: Coordinating threads with atomic hardware operations instead of locks — so no thread can ever block another, eliminating lock contention and the latency spikes it causes.
+level: advanced
+status: reviewed
+importance: core
+tags: ["performance", "concurrency", "atomics", "latency"]
+prerequisites: ["thread", "mutex"]
+related: ["cache-coherence", "deadlock"]
+nextSteps: ["memory-pool"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally, when two threads share data, one takes a **lock** and the other waits. Lock-free programming removes the lock: threads cooperate using tiny *atomic* instructions the CPU guarantees happen all-or-nothing. No thread ever has to wait for another to finish — if two collide, one simply retries. The reward is that a thread can't be stalled by a lock another thread is holding; the price is that the code is genuinely hard to get right.
+
+## More detail
+
+The foundation is the **atomic read-modify-write**, above all **compare-and-swap (CAS)**: "if this memory still holds the value I last saw, replace it with this new value, atomically; otherwise tell me it changed." Algorithms loop on CAS — read the current state, compute the next state, try to swap it in, and retry if someone beat you to it.
+
+Key concepts:
+
+- **Progress guarantees.** *Lock-free* means at least one thread always makes progress system-wide (no deadlock). *Wait-free*, stronger still, bounds every individual thread's steps. Plain locks offer neither — a descheduled lock-holder blocks everyone.
+- **Memory ordering.** Modern CPUs and compilers reorder memory operations. Lock-free code must specify **memory barriers** / ordering (acquire, release, sequentially-consistent) so other threads observe writes in a sane order. This is the subtlest part.
+- **The ABA problem.** A value can change from A to B and back to A between your read and your CAS, fooling the check. Solutions add version tags or use hazard pointers / epoch-based reclamation to free memory safely.
+
+Because threads still touch shared cache lines, lock-free code is intensely sensitive to **cache coherence** — a contended atomic still bounces a line between cores, so reducing contention matters as much as removing the lock. It avoids **deadlock** by construction (there's no lock to hold), but livelock under heavy contention is still possible.
+
+## Why it matters
+
+Locks cause the worst kind of latency: unpredictable. A thread holding a **mutex** can be preempted, paging out, or simply slow, and every waiter inherits that stall — disastrous for the tail latency that low-latency systems care about. Lock-free structures keep the system moving regardless of any single thread's fate, which is why they sit at the heart of schedulers, allocators, and high-throughput queues. The catch: they're notoriously bug-prone, so they're reserved for the few hot spots that justify the risk.
+
+## Real-world examples
+
+- Single-producer/single-consumer ring buffers move messages between threads with only atomic index updates — no locks on the hot path.
+- Concurrent counters and statistics use atomic fetch-and-add instead of a guarded `mutex`.
+- Garbage collectors and memory reclamation schemes use lock-free hazard pointers to free nodes safely while readers are active.
+- Operating-system run queues use lock-free or lightly-locked structures so scheduling never stalls globally.
+
+## Common misconceptions
+
+- **"Lock-free means faster, always."** Only under contention, and only when done correctly; an uncontended mutex is cheap, and a badly-written CAS loop can spin and thrash worse than a lock.
+- **"Lock-free means no waiting at all."** That's *wait-free*. Lock-free only guarantees *someone* progresses; an unlucky thread may retry many times.
+- **"If it compiles and passes tests, it's correct."** Memory-ordering and ABA bugs are timing-dependent and can hide for months — these need careful reasoning, not just testing.
+
+## Learn next
+
+Lock-free structures pair naturally with [memory pools](/t/memory-pool) for safe, fast node allocation, and they live or die by the [cache-coherence](/t/cache-coherence) traffic their atomics generate — minimise that with [cache-line alignment](/t/cache-line-alignment).

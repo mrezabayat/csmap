@@ -1,0 +1,52 @@
+---
+title: Linear Algebra
+aliases: ["vectors and matrices", "matrix math"]
+category: mathematical-foundations
+kind: field
+summary: The mathematics of vectors and matrices — the language for representing and transforming data in bulk, and the engine under graphics and machine learning.
+level: intermediate
+status: reviewed
+importance: core
+tags: ["mathematics", "vectors", "matrices", "machine-learning"]
+prerequisites: ["set-theory"]
+related: ["gpu", "embedding", "computer-vision"]
+nextSteps: ["machine-learning", "neural-network"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Linear algebra is arithmetic done on whole lists of numbers at once. A **vector** is an ordered list — `[3, 1, 4]` — that you can picture as an arrow in space or as a row of data. A **matrix** is a grid of numbers that *transforms* vectors: rotating them, stretching them, projecting them onto a plane. Instead of nudging one number at a time, you operate on thousands together with a single multiplication.
+
+## More detail
+
+The two central objects are the **vector** (a point or direction in an *n*-dimensional space) and the **matrix** (a rectangular array that maps vectors to other vectors). The workhorse operation is the **matrix–vector product**, which applies a linear transformation, and the **matrix–matrix product**, which composes two transformations into one.
+
+Key ideas that recur everywhere:
+
+- **Dot product** — multiply two vectors element-wise and sum; measures how aligned they are. Cosine similarity between embeddings is a normalised dot product.
+- **Linear independence and basis** — the smallest set of vectors whose combinations span a space; the dimension is how many you need.
+- **Eigenvalues and eigenvectors** — directions a matrix only stretches (never rotates), and by how much. They reveal a transformation's "natural axes" and power techniques like PCA.
+- **Matrix decompositions** (LU, QR, SVD) — factor a matrix into simpler pieces to solve systems, compress data, or find low-rank structure.
+
+A transformation is **linear** when it preserves straight lines and the origin: scaling the input scales the output, and adding inputs adds outputs. That single constraint is what makes the whole theory clean — and what makes it map perfectly onto hardware that multiplies and adds in bulk.
+
+## Why it matters
+
+Almost every data-heavy field reduces to linear algebra. A neural-network layer is a matrix multiply followed by a non-linearity. A 3D scene is a stream of vertices pushed through transformation matrices. A recommendation system factors a giant user–item matrix. Because these operations are uniform and parallel, the **GPU** was built to run them — the connection between linear algebra and hardware is why modern AI is feasible at all.
+
+## Real-world examples
+
+- A graphics pipeline multiplies every vertex by model, view, and projection matrices to place it on screen.
+- Word and image **embeddings** are vectors whose dot products encode similarity.
+- Google's original PageRank is the dominant eigenvector of a web-link matrix.
+- Image compression and noise reduction use the singular value decomposition to keep only the strongest components.
+
+## Common misconceptions
+
+- **"It's just solving systems of equations."** That's the entry point; the payoff is treating data as geometry — distances, angles, and projections in high-dimensional space.
+- **"Matrices are only square grids of numbers."** A matrix is better understood as a *function* that transforms space; the numbers are just its coordinates in a chosen basis.
+
+## Learn next
+
+With vectors and matrices in hand, pair them with [probability and statistics](/t/probability-statistics) and [calculus](/t/calculus-basics) to complete the toolkit behind [machine learning](/t/machine-learning) and [neural networks](/t/neural-network).

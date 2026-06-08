@@ -1,0 +1,47 @@
+---
+title: Cache-Line Alignment
+aliases: ["cache line", "false sharing"]
+category: low-latency-systems
+kind: concept
+summary: Laying data out to match the CPU's cache lines — so hot fields share a line, unrelated fields don't, and the processor stops wasting fetches and fighting over ownership.
+level: advanced
+status: reviewed
+importance: core
+tags: ["performance", "cache", "memory-layout", "concurrency"]
+prerequisites: ["cache", "memory-hierarchy"]
+related: ["cache-coherence", "simd"]
+nextSteps: ["memory-pool", "lock-free-programming"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A CPU never reads a single byte from memory — it pulls in a whole **cache line**, typically 64 bytes, at once. Cache-line alignment is the craft of arranging your data so that the bytes you use together land in the same line, and the bytes used by *different* threads land in *different* lines. Get it right and the processor does less work; get it wrong and it quietly burns cycles shuttling memory it didn't need.
+
+## More detail
+
+Two distinct problems hide here:
+
+- **Spatial locality / packing.** If a struct's frequently-touched fields span two cache lines, every access risks two fetches instead of one. Grouping hot fields together (and pushing cold fields elsewhere) keeps a working set in fewer lines, which means fewer cache misses and better use of the **memory hierarchy**.
+- **False sharing.** When two threads write to two *different* variables that happen to sit in the *same* cache line, the **cache-coherence** protocol treats it as a conflict. Each write invalidates the other core's copy, so the line ping-pongs between cores even though the threads never actually share data. The fix is to pad or align hot per-thread data to its own line (e.g. `alignas(64)`), trading a little memory for a large drop in coherence traffic.
+
+Alignment also matters for **SIMD**: vector loads often require operands aligned to 16-, 32-, or 64-byte boundaries to hit the fast path. The general technique is to think about the *physical* layout of bytes, not just the logical structure of objects — `struct` field order, padding, and array-of-structs vs struct-of-arrays all change how many lines a loop touches.
+
+## Why it matters
+
+In hot loops, memory layout often dominates algorithmic cleverness. A counter that suffers false sharing can make a multithreaded program *slower* than its single-threaded version. A struct reorganised to fit one cache line instead of two can halve memory traffic in a tight loop. None of this changes what the code computes — only how the hardware moves the bytes — which is why it's invisible until you measure.
+
+## Real-world examples
+
+- High-performance queues pad their head and tail indices to separate cache lines so producer and consumer threads never false-share.
+- Game engines store entity components as struct-of-arrays so a system iterating one field streams contiguous cache lines.
+- Per-CPU counters in the Linux kernel are cache-line aligned to avoid coherence ping-pong under load.
+
+## Common misconceptions
+
+- **"Two threads touching different variables can't interfere."** They can, if those variables share a cache line — false sharing is a real, measurable slowdown.
+- **"The compiler lays out my data optimally."** It respects alignment rules and your declared field order, but it won't reorganise a struct for *your* access pattern; that's on you.
+
+## Learn next
+
+Alignment is one half of cache-aware design; pair it with [memory pools](/t/memory-pool) for contiguous allocation and [lock-free programming](/t/lock-free-programming) to avoid the coherence storms that alignment alone can't fix.

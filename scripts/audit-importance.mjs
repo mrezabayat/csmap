@@ -29,6 +29,8 @@ const CATEGORY_TITLES = {
   applications: "Applications",
   "history-and-society": "History and Society",
   "operations-and-reliability": "Operations and Reliability",
+  "mathematical-foundations": "Mathematical Foundations",
+  "low-latency-systems": "Low-Latency Systems",
 };
 
 // Core (Ring 1) lists per category — mirrors docs/content-roadmap.md.
@@ -50,6 +52,8 @@ const CORE = {
   applications: ["web-browser", "mobile-app", "embedded-system", "game-engine"],
   "history-and-society": ["alan-turing", "turing-machine", "history-of-computing", "ada-lovelace", "internet-history"],
   "operations-and-reliability": ["deployment", "monitoring", "logging", "incident-response", "sre"],
+  "mathematical-foundations": ["linear-algebra", "probability-statistics", "calculus-basics", "set-theory"],
+  "low-latency-systems": ["cache-line-alignment", "memory-pool", "lock-free-programming"],
 };
 
 async function main() {

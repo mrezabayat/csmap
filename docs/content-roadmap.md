@@ -1,12 +1,14 @@
 # Computer Atlas — Content Roadmap
 
-> **Status (2026-06-08):** Rings 1 and 2 are both **complete** for the original 16 categories. The Atlas has **205 topics** (all `status: reviewed`) and **16 learning paths**, 100% connected (`npm run audit:importance` reports `core=91 important=114`, `npm run audit:orphans` reports 100% connected, `lint:content` clean).
+> **Status (2026-06-08):** Rings 1 and 2 are **complete** for the original 16 categories, and **Ring 1 is now complete for both new categories** too. The Atlas has **212 topics** (all `status: reviewed`) and **25 learning paths**, 100% connected (`npm run audit:importance` reports `core=98 important=114`, Ring 1 COMPLETE; `npm run audit:orphans` reports 100% connected; `lint:content`, `check-refs`, `astro check`, and `astro build` + Pagefind all clean).
 >
-> - **Ring 1 (Core):** 93/93 ✅ (original categories) + new topics needed for Mathematical Foundations & Low-Latency Systems
-> - **Ring 2 (Important):** 114/114 written and reviewed ✅
-> - **Ring 3 (Supplemental):** 0 / ~90 — **active for original categories.** New categories (Mathematical Foundations, Low-Latency Systems) start at Ring 1.
+> - **Ring 1 (Core):** 93/93 ✅ (original categories) + 7/7 ✅ (Mathematical Foundations 4/4, Low-Latency Systems 3/3)
+> - **Ring 2 (Important):** 114/114 ✅ for the original categories. New-category Ring 2 (9 topics) + researched Ring 2 additions are the next gap.
+> - **Ring 3 (Supplemental):** 0 / ~92 — **active for original + new categories.**
 >
-> **Two new categories added (2026-06-08):** Mathematical Foundations (CS2023 MSF) and Low-Latency Systems (CS2023 SPD/HPC track). These require Ring 1 topics to be written before Ring 3 work begins for them. Two new learning paths needed: `math-for-cs` and `high-performance-systems`.
+> **Two new categories added (2026-06-08):** Mathematical Foundations (CS2023 MSF) and Low-Latency Systems (CS2023 SPD/HPC track). ✅ Both are now wired into `lib/categories.ts`, `new-topic.mjs`, `audit-importance.mjs`, and the issue template, with category files and learning paths (`math-for-cs`, `high-performance-systems`) created. Their Ring 1 topics are written; Ring 2/3 remain.
+>
+> **Researched additions (2026-06-08):** ~21 fundamental topics the original rings missed were folded in below, tagged `(researched addition)`. To preserve every original category's "Ring 1 COMPLETE" status, all additions are placed at Ring 2 (Important) or Ring 3 (Supplemental) — none reopen a Core list, so `scripts/audit-importance.mjs` needs no change. The six most glaring (`floating-point`, `character-encoding`, `b-tree`, `load-balancer`, `backpropagation`, `socket`) are core-adjacent and sit at the top of their Ring 2 lists.
 >
 > The "Ring 2 plan" section below is retained as a record of how Ring 2 was executed.
 
@@ -102,11 +104,15 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 ### Important (Ring 2) — additions
 - [ ] turing-completeness          priority: 4   (high search demand)
 - [ ] np-completeness              priority: 4   (high search demand)
+- [ ] floating-point               priority: 4   (researched addition; IEEE 754, core-adjacent, high demand)
+- [ ] character-encoding           priority: 4   (researched addition; Unicode/UTF-8, core-adjacent, high demand)
+- [ ] b-tree                       priority: 4   (researched addition; structure behind indexing; cross-listed in Databases)
 
 ### Supplemental (Ring 3)
 - [ ] lambda-calculus
 - [ ] type-theory
 - [ ] category-theory
+- [ ] regular-expression           (researched addition; cross-listed in Programming Languages)
 
 ---
 
@@ -194,6 +200,8 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] capability-based-security
 - [ ] copy-on-write
 - [ ] ext4-vs-zfs-vs-btrfs
+- [ ] semaphore                     (researched addition; companion to mutex/deadlock)
+- [ ] virtualization               (researched addition; hypervisors / VMs, underpins cloud-provider)
 
 ---
 
@@ -225,6 +233,8 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] erlang
 - [ ] continuation
 - [ ] homoiconicity
+- [ ] closure                       (researched addition; fundamental, high demand)
+- [ ] pointer-and-reference         (researched addition; fundamental, high demand)
 
 ---
 
@@ -254,6 +264,8 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] dora-metrics
 - [ ] test-driven-development
 - [ ] domain-driven-design
+- [ ] debugging                     (researched addition; core practical skill, high demand)
+- [ ] package-manager               (researched addition; dependency management, high demand)
 
 ---
 
@@ -283,6 +295,8 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] time-series-database
 - [ ] vector-database
 - [ ] mvcc
+- [ ] write-ahead-log               (researched addition; durability/recovery, underpins transaction-acid)
+- [ ] b-tree                        (researched addition; primary in Foundations Ring 2 — listed here for the indexing lens)
 
 ---
 
@@ -308,12 +322,16 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] firewall                      priority: 3
 - [x] nat                           priority: 2
 
+### Important (Ring 2) — additions
+- [ ] socket                        priority: 4   (researched addition; the fundamental network API, core-adjacent)
+
 ### Supplemental (Ring 3)
 - [ ] bgp
 - [ ] mpls
 - [ ] anycast
 - [ ] quic
 - [ ] ipv6
+- [ ] dhcp                          (researched addition; address assignment, companion to nat/ip-address)
 
 ---
 
@@ -336,6 +354,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] cloud-provider                priority: 3
 - [x] serverless                    priority: 3
 
+### Important (Ring 2) — additions
+- [ ] load-balancer                 priority: 4   (researched addition; core-adjacent; implied by cdn/microservices/scaling)
+
 ### Supplemental (Ring 3)
 - [ ] raft
 - [ ] paxos
@@ -345,6 +366,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] actor-model
 - [ ] mpi-basics
 - [ ] openmp
+- [ ] rate-limiting                 (researched addition; cross-listed in Networks)
+- [ ] idempotency                   (researched addition; retries / exactly-once)
+- [ ] circuit-breaker               (researched addition; resilience pattern)
 
 ---
 
@@ -374,6 +398,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [ ] sandbox
 - [ ] homomorphic-encryption
 - [ ] formal-verification
+- [ ] jwt                           (researched addition; tokens, companion to oauth; high demand)
+- [ ] certificate-authority         (researched addition; PKI trust root, companion to tls)
+- [ ] multi-factor-authentication   (researched addition; companion to authentication; high demand)
 
 ---
 
@@ -441,6 +468,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] natural-language-processing   priority: 3
 - [x] convolutional-neural-network  priority: 3
 - [x] attention-mechanism           priority: 3
+
+### Important (Ring 2) — additions
+- [ ] backpropagation               priority: 4   (researched addition; core-adjacent; the training algorithm, pairs with gradient-descent)
 
 ### Supplemental (Ring 3)
 - [ ] perceptron
@@ -536,10 +566,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 > CS2023 Knowledge Area: **MSF** (Mathematical and Statistical Foundations). Ring 1 topics here need to be written before this category's Ring 3 work begins.
 
 ### Core (Ring 1)
-- [ ] linear-algebra               priority: 5   (core+high)
-- [ ] probability-statistics       priority: 5   (core+high)
-- [ ] calculus-basics              priority: 4
-- [ ] set-theory                   priority: 4
+- [x] linear-algebra               priority: 5   (core+high)
+- [x] probability-statistics       priority: 5   (core+high)
+- [x] calculus-basics              priority: 4
+- [x] set-theory                   priority: 4
 
 ### Important (Ring 2)
 - [ ] bayesian-inference           priority: 4
@@ -562,9 +592,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 > CS2023 Knowledge Area: **SPD** extension + HPC track. Covers sub-millisecond execution, hardware-software co-design, and performance engineering. Ring 1 topics here need to be written before this category's Ring 3 work begins.
 
 ### Core (Ring 1)
-- [ ] cache-line-alignment         priority: 5   (core+high)
-- [ ] memory-pool                  priority: 5   (core+high)
-- [ ] lock-free-programming        priority: 5   (core+high)
+- [x] cache-line-alignment         priority: 5   (core+high)
+- [x] memory-pool                  priority: 5   (core+high)
+- [x] lock-free-programming        priority: 5   (core+high)
 
 ### Important (Ring 2)
 - [ ] data-oriented-design         priority: 4

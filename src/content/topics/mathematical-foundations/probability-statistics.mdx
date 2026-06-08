@@ -1,0 +1,51 @@
+---
+title: Probability and Statistics
+aliases: ["probability", "statistics"]
+category: mathematical-foundations
+kind: field
+summary: The mathematics of uncertainty and evidence — probability models what might happen, statistics infers what is true from data. Together they underpin machine learning and analytics.
+level: intermediate
+status: reviewed
+importance: core
+tags: ["mathematics", "probability", "statistics", "machine-learning"]
+prerequisites: ["set-theory"]
+related: ["supervised-learning", "discrete-mathematics"]
+nextSteps: ["machine-learning", "gradient-descent"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+**Probability** runs the world forwards: given a fair coin, how often do we expect heads? **Statistics** runs it backwards: given a pile of coin flips, was the coin fair? One reasons from a known model to likely outcomes; the other reasons from observed outcomes back to a plausible model. Computers lean on both whenever they must act without certainty.
+
+## More detail
+
+Probability starts with a **sample space** (all possible outcomes), assigns each event a number between 0 and 1, and combines them with a few rules. The essential tools:
+
+- **Random variables and distributions** — a variable whose value is uncertain, described by a distribution (uniform, Bernoulli, binomial, normal, Poisson). The **normal/Gaussian** distribution shows up constantly because of the *central limit theorem*: sums of many small independent effects tend toward it.
+- **Expectation and variance** — the long-run average of a random variable and how spread out it is.
+- **Conditional probability and Bayes' rule** — how a probability should update once you learn new evidence. `P(A|B) = P(B|A)·P(A) / P(B)` is the hinge of all statistical inference.
+- **Independence** — when knowing one outcome tells you nothing about another.
+
+Statistics then asks: given data, what can we conclude? It splits into **descriptive** (summaries like mean, median, correlation), **inferential** (confidence intervals, hypothesis tests, *p*-values), and **estimation** (fitting a model's parameters, e.g. via maximum likelihood). The recurring danger is confusing correlation with causation, or reading signal into noise.
+
+## Why it matters
+
+Machine learning is applied probability and statistics: a model is a probability distribution over outputs, and training is statistical estimation of its parameters. Beyond ML, A/B tests decide product changes, anomaly detection flags fraud and outages, and randomised algorithms trade certainty for speed. Any system that must act on incomplete information is doing statistics, explicitly or not.
+
+## Real-world examples
+
+- A spam filter scores each email with the probability it is junk, updated Bayesian-style as it sees more mail.
+- An A/B test uses a hypothesis test to decide whether a new button genuinely lifted conversions or just got lucky.
+- Recommendation and ranking systems model the probability you'll click, then sort by it.
+- Monitoring dashboards flag a metric as anomalous when it falls many standard deviations from its baseline.
+
+## Common misconceptions
+
+- **"A low *p*-value proves the effect is real."** It only bounds how surprising the data would be under the null hypothesis; it is not the probability the hypothesis is true.
+- **"Past independent outcomes change future ones."** The gambler's fallacy — a fair coin has no memory; previous flips don't make heads "due".
+- **"More data always means more truth."** Biased data scales the bias too; a bigger flawed sample can be more confidently wrong.
+
+## Learn next
+
+Combine this with [linear algebra](/t/linear-algebra) and [calculus](/t/calculus-basics), then see how [supervised learning](/t/supervised-learning) turns statistical estimation into [machine learning](/t/machine-learning).

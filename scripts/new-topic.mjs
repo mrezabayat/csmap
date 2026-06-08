@@ -34,6 +34,8 @@ const CATEGORIES = [
   "applications",
   "history-and-society",
   "operations-and-reliability",
+  "mathematical-foundations",
+  "low-latency-systems",
 ];
 const KINDS = [
   "concept",

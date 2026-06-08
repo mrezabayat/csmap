@@ -1,0 +1,51 @@
+---
+title: Set Theory
+aliases: ["sets"]
+category: mathematical-foundations
+kind: field
+summary: The mathematics of collections — sets, membership, and the operations on them. The shared vocabulary beneath logic, databases, type systems, and the rest of mathematics.
+level: beginner
+status: reviewed
+importance: core
+tags: ["mathematics", "sets", "foundations", "logic"]
+related: ["discrete-mathematics", "boolean-logic", "relational-model"]
+nextSteps: ["linear-algebra", "probability-statistics"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A **set** is just a collection of distinct things, with no particular order and no duplicates: `{1, 2, 3}`, the set of all users, the set of valid email addresses. The only question a set really answers is *"is this thing in here or not?"* — that's **membership**. From that one idea, an astonishing amount of mathematics and computing is built.
+
+## More detail
+
+A set is defined by its **elements**, and the same element never appears twice. We write `x ∈ A` ("x is in A") or `x ∉ A`. Sets can be finite (`{red, green, blue}`) or infinite (the natural numbers). The core operations:
+
+- **Union** `A ∪ B` — everything in either set.
+- **Intersection** `A ∩ B` — only what's in both.
+- **Difference** `A \ B` — what's in A but not B.
+- **Complement** — everything *not* in A, relative to some universe.
+- **Subset** `A ⊆ B` — every element of A is also in B.
+- **Cartesian product** `A × B` — all ordered pairs `(a, b)`; the basis of relations and tables.
+
+A few deeper ideas matter for computing: the **power set** (the set of all subsets, of size 2ⁿ for an *n*-element set), **cardinality** (a set's size, and the surprising result that some infinities are larger than others), and **relations and functions**, which are themselves just sets of ordered pairs. Modern foundations layer axioms (ZFC) on top to avoid paradoxes like "the set of all sets that don't contain themselves."
+
+## Why it matters
+
+Set theory is the connective tissue of mathematics and the conceptual root of much of computing. The **relational model** behind SQL databases is set theory made practical — tables are relations, and `JOIN`, `UNION`, and `INTERSECT` are set operations. **Boolean logic** is set algebra in disguise (AND ↔ intersection, OR ↔ union). Type systems treat types as sets of values; `Optional<T>` is a union. Even hash sets and `IN`-clauses are membership tests. Speaking the language of sets makes all of these look like one idea.
+
+## Real-world examples
+
+- A SQL `INNER JOIN` is an intersection of rows that match a condition; `UNION` merges result sets.
+- A programming language's `Set` collection enforces uniqueness and offers O(1) membership tests.
+- Access control asks set questions: is this user in the set of admins?
+- A type like `string | number` is a union of two sets of possible values.
+
+## Common misconceptions
+
+- **"Sets are ordered like lists."** They aren't — `{1, 2}` and `{2, 1}` are the same set, and there are no duplicates. Order and repetition belong to sequences/lists.
+- **"All infinities are the same size."** Cantor showed otherwise: the real numbers are strictly more numerous than the integers, even though both are infinite.
+
+## Learn next
+
+Set theory feeds directly into [discrete mathematics](/t/discrete-mathematics) and [boolean logic](/t/boolean-logic), shows up in practice in the [relational model](/t/relational-model), and is the starting vocabulary for [linear algebra](/t/linear-algebra) and [probability](/t/probability-statistics).

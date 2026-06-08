@@ -15,6 +15,8 @@ export const CATEGORIES = [
   "applications",
   "history-and-society",
   "operations-and-reliability",
+  "mathematical-foundations",
+  "low-latency-systems",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORIES)[number];
@@ -36,6 +38,8 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   applications: "Applications",
   "history-and-society": "History and Society",
   "operations-and-reliability": "Operations and Reliability",
+  "mathematical-foundations": "Mathematical Foundations",
+  "low-latency-systems": "Low-Latency Systems",
 };
 
 export const categoryLabel = (slug: CategorySlug): string =>

@@ -1,0 +1,32 @@
+---
+title: High-Performance Systems
+summary: How sub-millisecond software is built — cache-aware data layout, pool allocation, and lock-free concurrency, grounded in how the memory hierarchy and cache coherence really behave.
+audience: advanced
+topics:
+  - ref: memory-hierarchy
+    section: Know the hardware
+  - ref: cache
+    section: Know the hardware
+  - ref: cache-coherence
+    section: Know the hardware
+  - ref: cache-line-alignment
+    section: Cache-aware design
+  - ref: memory-pool
+    section: Cache-aware design
+  - ref: simd
+    section: Cache-aware design
+    optional: true
+  - ref: thread
+    section: Concurrency without stalls
+    optional: true
+  - ref: mutex
+    section: Concurrency without stalls
+    optional: true
+  - ref: lock-free-programming
+    section: Concurrency without stalls
+updated: 2026-06-08
+---
+
+Most software is fast enough; this path is about the code that isn't allowed to be slow — trading engines, game loops, packet processors, real-time audio. Performance here is a design constraint, not a clean-up pass, and the wins come from cooperating with the hardware rather than abstracting it away.
+
+Begin by grounding yourself in how the memory hierarchy and cache coherence actually behave, since every later technique is a response to them. Then learn cache-aware design — aligning data to cache lines and allocating from pools for contiguous, predictable memory — before tackling lock-free programming, which keeps threads moving without the latency spikes that locks introduce.

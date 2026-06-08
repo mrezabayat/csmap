@@ -50,6 +50,8 @@ body:
         - applications
         - history-and-society
         - operations-and-reliability
+        - mathematical-foundations
+        - low-latency-systems
     validations:
       required: true
 

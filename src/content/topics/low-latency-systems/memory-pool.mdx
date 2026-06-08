@@ -1,0 +1,48 @@
+---
+title: Memory Pool
+aliases: ["object pool", "arena allocator", "pool allocator"]
+category: low-latency-systems
+kind: concept
+summary: Pre-allocating a block of memory and handing out fixed-size chunks from it — trading flexibility for speed and predictability by sidestepping the general-purpose allocator.
+level: advanced
+status: reviewed
+importance: core
+tags: ["performance", "memory-management", "allocation", "latency"]
+prerequisites: ["memory", "virtual-memory"]
+related: ["garbage-collection", "cache-line-alignment"]
+nextSteps: ["lock-free-programming"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Calling the general-purpose allocator (`malloc`/`new`) for every object is like going to the warehouse every time you need a screw. A **memory pool** instead grabs one big crate up front and hands out screws from it instantly. You allocate a large block once, then carve fixed-size pieces out of it with almost no work — and often hand them all back at once when you're done.
+
+## More detail
+
+A pool (sometimes called an **arena** or **slab**, depending on the flavour) reserves a contiguous region of memory and manages it itself:
+
+- **Fixed-size pools** keep a free list of identical chunks. Allocation pops the head of the list; deallocation pushes it back. Both are O(1) with no searching and no fragmentation, because every chunk is interchangeable.
+- **Arena/bump allocators** just advance a pointer through the block on each allocation and free *everything at once* by resetting the pointer. Individual frees are free — you don't do them. Perfect for data with a shared lifetime, like everything produced during one request or one frame.
+
+The payoffs over a general allocator are several: speed (no global locks, no best-fit search), **predictability** (no unbounded pauses — critical for real-time work), **locality** (objects sit contiguously, so they share cache lines and play well with [cache-line alignment](/t/cache-line-alignment)), and no external fragmentation. The costs are flexibility and discipline: pools assume a known size class or lifetime, can waste memory if oversized, and require you to reason about ownership yourself rather than leaning on a general allocator or **garbage collection**.
+
+## Why it matters
+
+In low-latency systems the general allocator is a frequent culprit for *tail latency*: it takes a global lock, may fault in new pages, and can stall unpredictably. A pool replaces that with a bounded, branch-light operation, so worst-case timing becomes knowable. The contiguous layout is a bonus — it turns scattered heap objects into cache-friendly runs, often a bigger win than the allocation speed itself.
+
+## Real-world examples
+
+- Game engines reset a per-frame arena every frame instead of freeing thousands of temporary objects individually.
+- High-throughput network servers pool fixed-size packet/connection buffers to avoid allocating on the hot path.
+- Embedded and real-time systems forbid general `malloc` entirely and use pools so timing is deterministic.
+- Database engines manage their page cache as a pool of fixed-size buffers.
+
+## Common misconceptions
+
+- **"Pools are just a micro-optimisation."** Their bigger value is *predictability* — bounded, lock-free allocation matters more than raw speed in real-time code.
+- **"A pool means you never think about memory again."** The opposite: you take on ownership and sizing decisions the general allocator used to make for you.
+
+## Learn next
+
+Pools give you contiguous, predictable memory; combine that with [cache-line alignment](/t/cache-line-alignment) for layout and [lock-free programming](/t/lock-free-programming) to share pooled objects across threads without locks.
