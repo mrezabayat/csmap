@@ -1,0 +1,71 @@
+---
+title: Debugging
+aliases: ["debugging", "debugger", "breakpoint", "print debugging", "root cause analysis"]
+category: software-engineering
+kind: concept
+summary: The systematic process of finding and fixing the root cause of a software defect — using debuggers, logging, binary search, and reasoning from evidence to isolate incorrect behaviour.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["software-engineering", "tooling", "practice", "quality"]
+prerequisites: ["programming-language", "testing"]
+related: ["observability", "test-driven-development", "logging"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A bug is when the program does something other than what you intended. Debugging is the art of figuring out exactly *why* — and it is one of the most underrated skills in software engineering. The process: reproduce the bug reliably, form a hypothesis about the cause, find evidence that confirms or refutes it, and repeat until you find the root cause (not just a symptom). Then fix the root cause, not the symptom.
+
+## More detail
+
+**The debugging process:**
+1. **Reproduce** — can you make the bug happen reliably? A bug you can't reproduce is almost impossible to fix. Narrow down: which inputs trigger it? Which environment? Which version?
+2. **Understand the expected behaviour** — what *should* the code do? Read the spec, the test, the documentation.
+3. **Hypothesize** — form a specific hypothesis about the cause: "I think the problem is in the date parsing when the year is a leap year."
+4. **Gather evidence** — use a debugger, add logging, write a failing test, inspect state. Try to falsify your hypothesis.
+5. **Binary search** — if you have a large space, bisect it. `git bisect` finds the commit that introduced a bug by binary-searching commits. Comment out half the code. Narrow down to the smallest failing case.
+6. **Fix the root cause** — fix the *underlying* bug, not a workaround. Add a regression test so the bug cannot silently return.
+
+**Debugger tools:**
+- **Breakpoints** — pause execution at a specific line. Inspect variables, call stack.
+- **Stepping** — step into (enter function), step over (execute line), step out (finish current function).
+- **Watch expressions** — monitor a variable's value continuously.
+- **Conditional breakpoints** — break only when `i == 42`.
+- **Post-mortem debugging** — analyse a core dump after a crash. `gdb ./program core`, `lldb --core core.dump`.
+- **Remote debugging** — connect a debugger to a running process on another machine (gdbserver, `dlv` for Go, Python's `debugpy`).
+
+**Printf/logging debugging:** adding print statements is the oldest technique and often fastest for simple bugs. Modern variants: structured logging (`logger.debug("state", {"user": id, "count": n})`), which can be enabled dynamically. Prefer logging to print in production code.
+
+**Common bug patterns:**
+- **Off-by-one errors** — loop runs one too many or too few times.
+- **Null/undefined dereference** — accessing a field on null.
+- **Race conditions** — non-deterministic ordering of concurrent operations.
+- **Integer overflow** — `int` wraps around to negative.
+- **Mismatched assumption** — your code assumes a list is sorted, but it isn't.
+- **Memory corruption** — writing beyond an array bound corrupts adjacent data (C/C++).
+
+**Scientific method applied:** debugging is hypothesis-testing. Never make two changes at once — you won't know which one fixed it. Keep notes. The best debuggers are the ones who reason most carefully about what evidence implies.
+
+**Rubber duck debugging:** explaining the problem aloud (to a rubber duck, a colleague, or a forum) forces you to articulate your assumptions precisely — which frequently reveals the bug before the explanation is finished.
+
+## Why it matters
+
+Every programmer spends a significant fraction of their time debugging. Studies suggest 50% or more of programming time is debugging, yet it is rarely taught as a skill. Effective debugging (using a debugger, systematic hypothesis testing, binary search) is dramatically faster than random trial-and-error. Understanding core debugging techniques — breakpoints, bisect, post-mortem analysis — directly improves developer productivity and code quality.
+
+## Real-world examples
+
+- `git bisect run npm test` — automatically binary-searches thousands of commits to find the one that broke a test; used routinely in Linux kernel development.
+- Chrome DevTools debugger: JavaScript breakpoints, call stack inspection, memory heap snapshots — the primary tool for frontend debugging.
+- gdb with ASAN (Address Sanitizer): finds memory corruption bugs (buffer overflows, use-after-free) by instrumenting memory accesses at compile time.
+- Valgrind: dynamic analysis tool that detects memory leaks and uninitialized memory reads in C/C++ programs.
+
+## Common misconceptions
+
+- **"Print statements are a bad debugging technique."** They are often the fastest path to understanding program state. The key is removing them after the fix (or replacing with proper logging).
+- **"A bug fix that passes tests is correct."** It might fix the symptom without addressing the root cause. Add a specific regression test that would have caught the bug.
+
+## Learn next
+
+Debugging is made much easier by good [observability](/t/observability) — structured [logging](/t/logging), tracing, and metrics tell you what's happening in production. [Test-driven development](/t/test-driven-development) produces a test suite that makes bugs easier to isolate and prevents regressions.

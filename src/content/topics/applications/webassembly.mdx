@@ -1,0 +1,65 @@
+---
+title: WebAssembly
+aliases: ["Wasm", "WebAssembly", "WASI", "Wasm runtime"]
+category: applications
+kind: technology
+summary: A portable binary instruction format that runs at near-native speed in browsers and on servers — enabling C, C++, Rust, and other languages to run on the web without JavaScript, and serving as a universal sandboxed compute target beyond the browser.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["web", "performance", "portable", "runtime"]
+prerequisites: ["javascript-language", "web-browser", "cpu"]
+related: ["edge-computing", "sandbox", "forth", "wasm-runtime"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Before WebAssembly, JavaScript was the only language that could run natively in a browser. WebAssembly (Wasm) changes this: it is a compact binary format that any language can compile to, and browsers execute it at near-native speed. Figma's vector graphics engine is C++ compiled to Wasm. Google Earth and AutoCAD run in the browser via Wasm. Beyond the browser, Wasm is emerging as a universal, sandboxed runtime for serverless, plugins, and IoT — "write once, run anywhere" that actually works.
+
+## More detail
+
+**What Wasm is:** a stack-based binary instruction format (think: a portable assembly language) with a well-defined type system and execution semantics. A `.wasm` binary is:
+- **Compact** — typically 50–80% smaller than equivalent JavaScript.
+- **Fast to decode** — the binary format is designed to be parsed in a single pass.
+- **Safe** — the runtime sandbox enforces that Wasm code can only access memory it has been granted; it cannot escape the sandbox.
+- **Deterministic** — same inputs, same outputs, regardless of host platform (with some floating-point caveats).
+
+**Execution model:** Wasm is a stack machine. Instructions push/pop typed values (i32, i64, f32, f64, v128). The runtime JIT-compiles or AOT-compiles the Wasm binary to native code. V8 (Chrome), SpiderMonkey (Firefox), and Wasmtime/Wasmer (server) all have JIT compilers for Wasm achieving 90–95% of native speed.
+
+**Language support:** any language with an LLVM backend can target Wasm: C, C++, Rust, Go, Swift, Kotlin, AssemblyScript (TypeScript-like), and Zig. The toolchain: `clang --target=wasm32` or `wasm-pack` (Rust) produce `.wasm` files.
+
+**JavaScript interoperability:** Wasm modules import and export functions. JavaScript calls into Wasm functions; Wasm calls JavaScript-provided functions. The boundary has copying overhead for non-trivial data. Tools like `wasm-bindgen` (Rust) automatically generate the glue code.
+
+**Wasm beyond the browser:**
+
+**WASI (WebAssembly System Interface):** a capability-based API for Wasm to access OS resources (files, network, clocks) in a sandboxed, portable way. A Wasm+WASI binary runs on any host that implements WASI — no recompilation. Docker co-founder Solomon Hykes: "If WASM+WASI existed in 2008, we would not have needed to create Docker."
+
+**Component Model:** a higher-level standard for composable Wasm modules with typed interfaces (WIT — Wasm Interface Types). Modules can be composed in any language without FFI.
+
+**Server-side Wasm runtimes:** Wasmtime (Bytecode Alliance), Wasmer, WasmEdge, and WAMR (IoT) run Wasm outside the browser. Fastly (Compute@Edge), Cloudflare Workers, and Fermyon Spin are Wasm-native serverless platforms.
+
+**Wasm threads and SIMD:** the threads proposal adds shared memory and atomic operations (opt-in, requires `SharedArrayBuffer` and a suitable security context). SIMD (v128 type) provides 128-bit SIMD operations for vectorised computation.
+
+**Performance characteristics:** Wasm JIT achieves 90–95% of native C performance on compute-intensive code. For memory-intensive code with complex allocation patterns, the performance advantage of native code (better memory layout, LLVM optimisations at link time) may be larger. Startup time: ~100µs for a typical Wasm module (vs. ms for container startup).
+
+## Why it matters
+
+WebAssembly is the most significant browser platform addition since JavaScript. It enables: porting native applications to the web without rewriting them; near-native performance for compute-intensive browser apps (video editing, CAD, gaming); a universal sandboxed compute target for serverless and edge computing; and a plugin system with strong isolation (VS Code extensions, Envoy filters, open-policy-agent). Wasm+WASI is a serious candidate for replacing Docker containers in some scenarios (faster startup, smaller size, stronger isolation).
+
+## Real-world examples
+
+- Figma: the vector graphics rendering engine is C++ compiled to Wasm; runs at 60fps in the browser.
+- Google Earth: C++ + OpenGL compiled to Wasm + WebGL for the browser.
+- Cloudflare Workers: each worker is a Wasm binary executing in V8's Wasm runtime; 100ms CPU limit, ~128ms startup.
+- Photoshop for the web (beta): Adobe ported Photoshop's C++ codebase to Wasm.
+
+## Common misconceptions
+
+- **"Wasm replaces JavaScript."** Wasm supplements JavaScript; the two interoperate. Wasm has no DOM access — it calls JavaScript APIs for that.
+- **"Wasm is only for the browser."** WASI and Wasm runtimes make it a general-purpose compute target for serverless, edge, plugins, and IoT.
+
+## Learn next
+
+WebAssembly is designed as a stack machine, conceptually related to [Forth](/t/forth)'s execution model. [WASM runtime](/t/wasm-runtime) covers the server-side runtime ecosystem in depth. [Edge computing](/t/edge-computing) platforms (Cloudflare, Fastly) use Wasm as their compute primitive. [Sandboxing](/t/sandbox) explains the security model that Wasm enforces.

@@ -1,0 +1,72 @@
+---
+title: Lisp
+aliases: ["Common Lisp", "Scheme", "Clojure", "s-expression", "John McCarthy", "REPL"]
+category: programming-languages
+kind: technology
+summary: The second oldest high-level programming language (1958) — pioneering garbage collection, dynamic typing, the REPL, and code-as-data (homoiconicity), influencing virtually every programming language that followed.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "history", "functional", "lisp"]
+prerequisites: ["programming-language", "lambda-calculus"]
+related: ["homoiconicity", "closure"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Lisp (LISt Processing) was invented by John McCarthy at MIT in 1958 and is the second oldest high-level programming language after Fortran. It introduced ideas so revolutionary that most are now standard: garbage collection, interactive development (REPL), first-class functions, dynamic typing, and treating code as data (homoiconicity). Modern Lisps — Scheme, Common Lisp, Clojure, Racket — carry these ideas forward. Many "new" features in Python, JavaScript, and Ruby were present in Lisp 40 years earlier.
+
+## More detail
+
+**The core idea — s-expressions:**
+Lisp code is written as nested lists: `(operator arg1 arg2)`. `(+ 1 2)` is both the written form and the data structure — a list containing `+`, `1`, and `2`. This uniformity (code = data) is homoiconicity, and it's what makes Lisp macros so powerful.
+
+```lisp
+(defun factorial (n)
+  (if (<= n 1)
+      1
+      (* n (factorial (- n 1)))))
+
+(factorial 5) ; => 120
+```
+
+**What Lisp pioneered:**
+- **Garbage collection** (1958) — McCarthy invented GC for Lisp; it remained exotic until the 1990s in mainstream languages.
+- **REPL (Read-Eval-Print Loop)** — interactive development where you type expressions and see results immediately. Every language REPL descends from Lisp's.
+- **First-class functions** — functions as values, passed to other functions. JavaScript's callbacks, Python's decorators, and Haskell's higher-order functions all derive from this.
+- **Dynamic typing** — type errors at runtime, not compile time. Python, Ruby, and JavaScript are dynamically typed in the Lisp tradition.
+- **Dynamic code loading** — loading and redefining functions at runtime without restarting. Erlang's hot code loading, React's hot reload, and Jupyter notebooks all implement this.
+- **Multiple return values, optional arguments, keyword arguments** — all Lisp innovations now in Python, Ruby, and Swift.
+
+**The Lisp family:**
+- **Common Lisp (1984)** — standardised (ANSI), multiparadigm (functional + OOP via CLOS), large standard library. Used at ITA Software (now Google Flights), Grammarly.
+- **Scheme (1975)** — minimalist Lisp, R7RS standard. Mandates proper tail calls. Used for teaching (SICP), as an extension language (GNU Guile embeds in GNU applications).
+- **Clojure (2007)** — functional, immutable-by-default Lisp on the JVM. Interoperates with Java; used at Nubank (Brazil's largest digital bank — 6 million lines of Clojure).
+- **Racket** — a "language laboratory" that extends Scheme; used to implement entire new languages as macros.
+- **Emacs Lisp** — the extension language of the Emacs editor; Emacs is configured entirely in Lisp.
+
+**Alan Kay quote:** "Lisp isn't a language, it's a building material." The Lisp environment lets you grow the language to fit the problem through macros — an idea repeated by DSL authors in every generation.
+
+**The "Blub paradox" (Paul Graham):** a programmer using a less powerful language cannot imagine what more powerful languages offer, because their existing language's features seem sufficient. Graham argued that Lisp's macros are the clearest example of a feature that "Blub" programmers don't miss — until they see them.
+
+## Why it matters
+
+Lisp is the language that invented the most ideas now considered essential in modern languages. Studying it is studying the history and foundation of programming languages. Every interpreter and compiler course teaches Lisp as the first subject (you can build a Lisp interpreter in 200 lines of any language). Lisp's influence is pervasive: JavaScript's prototype-based model, Python's list comprehensions and first-class functions, Ruby's blocks, and Haskell's laziness all trace roots to Lisp. Understanding Lisp develops intuition about language design.
+
+## Real-world examples
+
+- Nubank (Brazil's largest fintech, 80M+ customers) runs its entire backend in Clojure.
+- Grammarly's NLP pipeline was originally implemented in Common Lisp.
+- ITA Software's Qpx (airline fare search engine, used by Google Flights) was written in Common Lisp.
+- GNU Emacs is configured and extended in Emacs Lisp; millions of developers use it daily.
+
+## Common misconceptions
+
+- **"Lisp is dead."** Clojure is actively developed and used in production at Nubank and many others. Emacs Lisp has hundreds of thousands of users. Racket is a research-active language.
+- **"All those parentheses make it unreadable."** Lispers typically say the parentheses disappear with practice and that the uniform syntax (everything is a function call) makes the language more consistent, not less.
+
+## Learn next
+
+Lisp's power comes from [homoiconicity](/t/homoiconicity) (code as data). Its functions are [closures](/t/closure) that capture their environment. Lisp macros implement [continuation](/t/continuation)-based control flow. [Lambda calculus](/t/lambda-calculus) is the mathematical foundation that McCarthy drew on.

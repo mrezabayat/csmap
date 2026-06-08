@@ -1,0 +1,53 @@
+---
+title: Gossip Protocol
+aliases: ["epidemic protocol", "gossip dissemination", "failure detection gossip"]
+category: distributed-systems-and-cloud
+kind: protocol
+summary: A decentralised information-spreading algorithm inspired by rumour propagation — each node periodically exchanges state with a few random neighbours until information reaches the whole cluster.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "protocols", "fault-tolerance", "membership"]
+prerequisites: ["distributed-system"]
+related: ["eventual-consistency", "consensus"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Gossip protocols spread information the way rumours spread in a social network: tell a few friends, they tell a few of their friends, and within a logarithmic number of rounds every node has heard. No central coordinator is needed — each node just picks a few random peers every second and exchanges state. The result is highly resilient: nodes can crash, messages can be lost, and information still propagates reliably.
+
+## More detail
+
+In a gossip protocol running on a cluster of N nodes, each round a node selects k random peers (typically k = 3–5) and exchanges information with them. After O(log N) rounds, information has reached every node with high probability. The bandwidth cost is O(N log N) messages per round rather than O(N²) for a naive broadcast.
+
+**Anti-entropy gossip** exchanges entire local state summaries (digests) and syncs any differences. Used by Cassandra's read-repair and DynamoDB for data consistency.
+
+**Rumour-mongering** spreads a specific piece of information — a new cluster member, a dead node, a configuration update — until every node has heard it, at which point nodes lose interest and stop propagating. Used for event dissemination.
+
+**Failure detection:** nodes piggyback heartbeat sequence numbers in gossip messages. If a node's counter hasn't incremented across multiple gossip rounds, it is suspected dead. SWIM (Scalable Weakly-consistent Infection-style Membership) protocol combines gossip failure detection with a direct-probe mechanism to reduce false positives.
+
+**CRDT gossip:** eventually-consistent data types ([CRDTs](/t/crdt)) are ideal for gossip propagation — their merge is commutative and idempotent, so any two nodes can exchange partial state and converge to the same result regardless of order.
+
+Properties: gossip protocols are **scalable** (cost grows logarithmically), **decentralised** (no coordinator), **fault-tolerant** (any subset can fail), and **eventually consistent** (no strong ordering guarantees). They are not suitable for strict consensus or linearisable operations.
+
+## Why it matters
+
+Gossip protocols power the membership and failure-detection layers of nearly every large distributed system. Cassandra, Riak, DynamoDB, and Consul use SWIM-based gossip for cluster membership. Bitcoin's peer-to-peer network uses gossip to propagate transactions. Service meshes and sidecars gossip health information. Understanding gossip explains why "eventually consistent" is more than just "slow" — it is a specific probability model with provable convergence time.
+
+## Real-world examples
+
+- **Cassandra** uses gossip for cluster membership — each node knows every other node's status within a few gossip rounds.
+- **Consul** uses SWIM gossip for agent health monitoring in its service discovery layer.
+- **Amazon S3** propagates metadata changes via gossip across storage nodes.
+- Bitcoin and Ethereum peer-to-peer networks gossip unconfirmed transactions to all reachable nodes.
+
+## Common misconceptions
+
+- **"Gossip means eventual consistency everywhere."** Gossip is a dissemination mechanism; the level of consistency depends on what is being gossiped. Gossip can propagate Raft log entries or CRDT state.
+- **"Gossip is unreliable."** Any specific message may be lost, but gossip provides probabilistic guarantees that converge to near-certainty in O(log N) rounds — which is robust enough for membership and failure detection in practice.
+
+## Learn next
+
+Gossip pairs naturally with [CRDTs](/t/crdt), which define the merge semantics for gossipped state. It underpins [eventual consistency](/t/eventual-consistency) in leaderless systems, in contrast to leader-based protocols like [Raft](/t/raft) and [Paxos](/t/paxos).

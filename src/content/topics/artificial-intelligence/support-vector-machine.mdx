@@ -1,0 +1,56 @@
+---
+title: Support Vector Machine
+aliases: ["SVM", "support vector classifier", "kernel method"]
+category: artificial-intelligence
+kind: concept
+summary: A classifier that finds the widest possible margin between classes — supported by the training points closest to the boundary, with kernels extending it to non-linear problems.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["machine-learning", "classification", "kernel-methods", "svm"]
+prerequisites: ["supervised-learning", "machine-learning"]
+related: ["perceptron", "decision-tree"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A perceptron finds *a* line that separates two classes. An SVM finds the line with the *widest gap* to the nearest points of each class — the **maximum-margin hyperplane**. Intuitively, a wider margin makes the classifier more robust: small perturbations in new examples are less likely to push them to the wrong side. The training points that sit exactly on the margin edge are the **support vectors** — the only ones that determine the boundary.
+
+## More detail
+
+Formally, for linearly separable data, the SVM solves a **quadratic programming** problem: find the weight vector `w` and bias `b` that maximise the margin `2/||w||` subject to all training points being correctly classified with at least unit margin. The solution depends only on the support vectors — all other training points can be removed without changing the result, which makes SVMs memory-efficient at inference.
+
+For non-linearly-separable data, two extensions:
+
+**Soft margin (C-SVM):** allow some misclassifications, penalised by a slack variable. The hyperparameter `C` trades off margin width vs. tolerance for errors. High `C` → narrow margin, few errors; low `C` → wide margin, more errors. This is regularisation.
+
+**Kernel trick:** map data to a higher-dimensional feature space where it becomes linearly separable, without computing the mapping explicitly. The training problem only needs dot products between inputs — replace `xᵢ · xⱼ` with `K(xᵢ, xⱼ)`, a **kernel function**:
+- **Polynomial kernel** `(xᵢ · xⱼ + c)^d` — degree-d polynomial features.
+- **RBF (Gaussian) kernel** `exp(−γ||xᵢ − xⱼ||²)` — infinite-dimensional mapping; every two points have a similarity score.
+- **String/graph kernels** — for structured data.
+
+The kernel trick lets SVMs implicitly work in a space with billions of features while only computing pairwise similarities in the original space.
+
+SVMs were the dominant method for structured data (tabular, text, images) through the 2000s. Neural networks surpassed them on large datasets and raw images around 2012, but SVMs remain competitive on small datasets where their strong theoretical guarantees and lack of tuning overhead matter.
+
+## Why it matters
+
+SVMs introduced two ideas that echo through modern ML: **margin-based learning** (generative models vs. discriminative; the margin corresponds to a notion of confidence) and the **kernel trick** (implicitly working in rich feature spaces). SVM's soft margin is regularisation by another name; the kernel trick is the ancestor of the "feature learning" framing in deep learning. Understanding SVMs makes it easier to reason about overfitting, the bias-variance trade-off, and why large datasets matter.
+
+## Real-world examples
+
+- Text classification (spam, sentiment) with TF-IDF features and a linear SVM remains a strong baseline.
+- Face detection used SVMs over HOG features before deep learning dominated computer vision.
+- Bioinformatics tasks (protein structure prediction, gene expression classification) with structured kernels.
+- The original ImageNet results in 2010 used SVMs on hand-engineered features; AlexNet in 2012 replaced both.
+
+## Common misconceptions
+
+- **"SVMs are obsolete."** On small labelled datasets, SVMs with an RBF kernel often match or beat a neural network with far less tuning.
+- **"The kernel trick is magic."** It is just a change of inner product — but choosing the right kernel encodes domain knowledge about what "similar" means, which is a genuine modelling decision.
+
+## Learn next
+
+SVMs and [perceptrons](/t/perceptron) are both linear classifiers that learned from [supervised learning](/t/supervised-learning). For non-linear patterns with larger data, [neural networks](/t/neural-network) and [gradient descent](/t/gradient-descent) scaled better — compare SVMs and neural networks to understand why the field shifted.

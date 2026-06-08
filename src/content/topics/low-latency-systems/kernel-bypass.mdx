@@ -1,0 +1,72 @@
+---
+title: Kernel Bypass
+aliases: ["kernel bypass networking", "DPDK", "RDMA", "userspace networking", "SPDK", "io_uring"]
+category: low-latency-systems
+kind: concept
+summary: A technique that allows applications to access hardware (network cards, storage) directly from userspace, bypassing the OS kernel — eliminating system call overhead, context switches, and interrupt processing to achieve single-digit microsecond latency.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["performance", "networking", "low-latency", "linux"]
+prerequisites: ["operating-system", "tcp", "virtual-memory", "lock-free-programming"]
+related: ["rdma", "huge-pages", "numa-awareness", "ebpf"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Every time your application sends a network packet via a normal `sendmsg()` call, the packet goes through the Linux kernel: a system call switches from user mode to kernel mode (~1 µs), the kernel copies the data, runs the network stack (TCP/IP processing), and triggers an interrupt to the NIC. Each step adds latency. Kernel bypass removes the kernel from this path entirely: the application maps the NIC's memory directly into userspace and writes packets directly to hardware registers — no system calls, no copies, no interrupts. Latency drops from ~10–50 µs to ~1–3 µs.
+
+## More detail
+
+**The latency cost of the standard network path:**
+1. `sendmsg()` → syscall → kernel mode switch (~500 ns).
+2. Socket buffer allocation and copy (~500 ns – 1 µs).
+3. TCP/IP stack processing: checksums, segmentation (~500 ns).
+4. Driver queue and NIC DMA (~500 ns).
+5. TX descriptor ring update; NIC interrupt acknowledgement.
+Total: ~5–50 µs depending on CPU load and interrupt coalescing.
+
+**DPDK (Data Plane Development Kit):** Intel's open-source framework for high-performance packet processing. DPDK maps NIC hardware queues directly into userspace via VFIO (Virtual Function I/O) and uses poll-mode drivers (PMDs) — the application spins polling a ring buffer rather than waiting for interrupts. Key techniques:
+- **Hugepages** for packet buffers (no TLB misses; pinned memory for DMA).
+- **CPU core pinning** with no other processes — dedicated cores, no context switches.
+- **NUMA-aware memory allocation** — packet buffers allocated on the same NUMA node as the NIC.
+- **Lockless ring buffers** (rte_ring) for inter-core packet passing.
+- **Zero-copy** — packets never copied; only pointers passed between stages.
+
+DPDK achieves 100 Gbit/s line-rate packet processing on a single core for small-packet workloads (64-byte packets at ~148 Mpps). Used in NFV (network function virtualisation): vRouters, firewalls, load balancers.
+
+**SPDK (Storage Performance Development Kit):** same philosophy for NVMe storage. Applications access NVMe SSDs directly via userspace PCIe drivers, bypassing the Linux block layer and file system. Target: sub-10 µs end-to-end storage latency. Used in cloud storage systems (Ceph's BlueStore, VMware vSAN, Lightbits Labs).
+
+**io_uring (partial bypass, Linux 5.1+):** not full bypass but dramatically reduces syscall overhead for I/O. Applications submit and complete I/O operations via shared ring buffers in userspace without entering kernel mode per operation. Ideal for storage and socket I/O with many concurrent operations; ~30% better throughput than epoll for high-connection workloads. Zero-copy send supported in Linux 6.0+.
+
+**Solarflare/OpenOnload:** a kernel bypass networking stack for standard TCP/UDP sockets. Applications use standard POSIX socket API; OpenOnload intercepts the calls and routes them to a userspace NIC driver. No application code changes; latency reduced to ~1–2 µs for TCP. Used in HFT firms.
+
+**RDMA (Remote Direct Memory Access):** discussed in depth in [rdma](/t/rdma). RDMA is kernel bypass for remote memory access — the NIC performs memory transfers between servers without CPU involvement. Achieves ~1–2 µs latency for cross-server communication. Used in MPI, distributed ML training, and distributed storage.
+
+**Trade-offs of kernel bypass:**
+- **CPU dedication:** polling burns 100% of a dedicated core. For DPDK, you need one or more cores doing nothing but polling. Efficient at high packet rates; wasteful at low rates.
+- **Bypasses kernel security:** userspace access to DMA memory requires careful bounds checking. Bugs can corrupt host memory.
+- **No kernel tools:** tcpdump, netstat, iptables don't see bypass traffic. Debugging requires DPDK-native tools.
+- **NIC-specific:** DPDK requires PMDs for specific NIC families (Intel ixgbe, mlx5, virtio). Not all NICs support bypass.
+
+## Why it matters
+
+Kernel bypass is the primary technique for achieving sub-5 µs network latency — the regime needed for high-frequency trading, ultra-low-latency RPC, and line-rate packet processing (100 Gbit/s firewalls, DPI). DPDK is the dominant software in telco NFV and 5G RAN. SPDK powers the fastest cloud NVMe storage. io_uring is rapidly becoming the standard for high-performance server I/O. Understanding kernel bypass is essential for anyone building or operating latency-critical infrastructure.
+
+## Real-world examples
+
+- High-frequency trading: firms like Virtu and Jane Street use kernel bypass (OpenOnload, Solarflare, DPDK) for sub-microsecond market data and order execution paths.
+- Nokia, Ericsson, Intel: 5G User Plane Function (UPF) implemented with DPDK for 100G+ throughput.
+- Cloudflare's DDoS mitigation pipeline uses DPDK + XDP (eBPF in the kernel driver, just above full bypass) for line-rate packet filtering.
+- SPDK: used in Pure Storage, NetApp, and Samsung's enterprise SSD controllers for sub-10 µs NVMe latency.
+
+## Common misconceptions
+
+- **"io_uring is kernel bypass."** io_uring reduces system call overhead but still uses the kernel's I/O path. It's a significant improvement but not full bypass.
+- **"Kernel bypass is only for networking."** SPDK bypasses the storage stack; GPU DMA bypasses the CPU for data transfers; RDMA bypasses both CPUs for inter-server memory access.
+
+## Learn next
+
+Kernel bypass is the extreme end of the low-latency spectrum that also includes [NUMA-awareness](/t/numa-awareness), [huge pages](/t/huge-pages), and [cache-line alignment](/t/cache-line-alignment). [RDMA](/t/rdma) is the inter-server variant. [eBPF](/t/ebpf) provides a middle ground — programmable kernel code with lower overhead than full userspace bypass.

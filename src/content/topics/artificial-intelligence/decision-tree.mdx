@@ -1,0 +1,52 @@
+---
+title: Decision Tree
+aliases: ["classification tree", "regression tree", "random forest", "CART"]
+category: artificial-intelligence
+kind: concept
+summary: A model that splits data by asking yes/no questions at each node, forming a tree of decisions that is transparent, interpretable, and the building block of powerful ensemble methods.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["machine-learning", "classification", "ensemble", "interpretability"]
+prerequisites: ["supervised-learning", "machine-learning"]
+related: ["support-vector-machine", "perceptron"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A decision tree makes a prediction by asking a sequence of questions: "Is the customer's age > 30? → Yes: Is their balance > $1,000? → No: predict 'low risk'." Each question is a **split** at a node; the final category at a leaf is the prediction. The model is literally a flowchart — you can trace any prediction step by step, which makes it one of the most interpretable models in machine learning.
+
+## More detail
+
+**Building a tree** (training) means finding which feature and threshold to split on at each node. The standard criterion is to maximise information gain — the reduction in entropy or Gini impurity after the split. Algorithms: **ID3** (entropy, discrete features), **C4.5** (continuous features, pruning), **CART** (binary splits, supports regression by minimising MSE).
+
+**Overfitting** is a severe risk: a tree grown to full depth memorises training data perfectly (zero training error) but generalises poorly. Controls include maximum depth, minimum samples per leaf, and **pruning** (grow full, then trim branches that don't improve a validation set).
+
+**Ensemble methods** dramatically improve on a single tree:
+
+- **Random Forest** — build many trees, each trained on a bootstrap sample of the data with a random subset of features at each split. Aggregate predictions by majority vote (classification) or mean (regression). The randomness de-correlates the trees, reducing variance.
+- **Gradient Boosting (XGBoost, LightGBM, CatBoost)** — build trees sequentially, each one correcting the residuals of the previous ensemble. Extremely powerful on structured/tabular data; XGBoost won most Kaggle competitions in the 2014–2020 era.
+
+Random forests and gradient boosting are the default go-to models for tabular data because they require little preprocessing, handle mixed feature types, are robust to outliers, and often outperform neural networks on structured data without heavy tuning.
+
+## Why it matters
+
+Decision trees are the entry point to interpretable ML and the substrate of the most effective algorithms for structured data. Feature importances (how often a feature appears at the top of trees) give a fast, interpretable view of which inputs matter. Beyond prediction, trees are used in A/B testing analysis, credit scoring, and medical diagnosis where explainability is required by law or by trust. Gradient boosting is the workhorse of production ML on tabular data.
+
+## Real-world examples
+
+- Credit card fraud detection and loan approval models are commonly gradient-boosted trees, which regulators can audit.
+- Gradient boosting wins structured-data competitions on Kaggle; XGBoost is the standard library.
+- Medical decision support systems use decision trees so clinicians can verify the reasoning path.
+- Google's Smart Reply and search ranking use gradient boosting over handcrafted features.
+
+## Common misconceptions
+
+- **"Neural networks always beat decision trees."** On tabular/structured data, gradient boosting (tree-based) routinely outperforms neural networks, especially on smaller datasets or without extensive tuning.
+- **"Decision trees are interpretable — so are random forests."** A single tree is interpretable; a random forest of 500 trees is not. Feature importance summaries help, but full transparency is lost.
+
+## Learn next
+
+Decision trees shine on tabular data where [neural networks](/t/neural-network) require more tuning. Ensemble methods (random forests, gradient boosting) extend the idea to build the strongest models for [supervised learning](/t/supervised-learning) on structured data.

@@ -1,0 +1,70 @@
+---
+title: Mob Programming
+aliases: ["ensemble programming", "mob programming", "whole team programming"]
+category: software-engineering
+kind: concept
+summary: A practice where the entire team works together at a single workstation on one task at a time — an extreme form of pair programming scaled to the whole team, maximising knowledge sharing and collective code ownership.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["software-engineering", "practice", "collaboration", "agile"]
+prerequisites: ["agile", "code-review"]
+related: ["test-driven-development", "domain-driven-design", "debugging"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Pair programming is two people at one computer. Mob programming (also called ensemble programming) is the whole team at one computer — one screen, one keyboard, one task at a time. One person "drives" (types), everyone else "navigates" (thinks, suggests, looks up things). The driver rotates every few minutes. It sounds inefficient — but practitioners report faster problem-solving, zero knowledge silos, instant code review, and a team that can independently handle any codebase task within days.
+
+## More detail
+
+**The roles:**
+- **Driver:** types at the keyboard. Does not think ahead — only transcribes what the navigators direct, at the highest level of abstraction they can communicate. "Create a test that asserts the user gets a 404 when the resource is not found."
+- **Navigator(s):** the rest of the team. Think, research, discuss, suggest next steps. Look up documentation. Catch errors before they're typed. A good navigator communicates *intent*, not keystrokes.
+
+**Rotation:** the driver rotates every 5–10 minutes (timer-based). Everyone gets turns. No one is stuck in a role.
+
+**Why it isn't as inefficient as it seems:**
+- All decisions are made once, with full team context.
+- Code is reviewed as it's written — no separate review cycle.
+- No handoffs or waiting for code review approvals.
+- No one person becomes a single point of failure.
+- Knowledge is distributed to the whole team in real time.
+- Interruptions (Slack, email) are socially suppressed while mobbing.
+
+**Outcomes reported by practitioners:**
+- Dramatically reduced bug rate (many eyes catch bugs immediately).
+- Zero knowledge silos — anyone on the team can work in any part of the code.
+- Junior developers ramp up faster (real-time mentoring from the whole team).
+- Better design decisions (group reasoning catches problems one person would miss).
+
+**Remote mob programming:** works well with screen-sharing tools (VS Code Live Share, Tuple, Zoom). Use a "typist rotator" such as mob.sh — automatically resets the driver on a timer and pushes/pulls code changes via git.
+
+**When mob programming is not ideal:**
+- Highly independent tasks that don't benefit from group input.
+- Tasks requiring deep individual focus without collaboration.
+- Teams with extreme time zone spread (synchronous requirement).
+
+**Woody Zuill** popularised mob programming after discovering it by accident at Hunter Industries around 2012. The name "ensemble programming" is preferred by some as more inclusive.
+
+## Why it matters
+
+Mob programming is the logical extension of pair programming's benefits to the whole team. It addresses one of the most persistent problems in software development: knowledge silos, where only one person understands a given system. Teams that practice mob programming regularly report higher code quality, faster onboarding, and better team cohesion. Understanding it is useful for any team evaluating collaboration practices, especially Agile teams.
+
+## Real-world examples
+
+- Hunter Industries (automotive software): discovered mob programming organically; published results showing dramatically lower defect rates and faster delivery.
+- Woody Zuill, now a coach, popularised the practice after Hunter Industries; he trains teams globally.
+- Many Agile and XP-influenced teams use mob programming for complex features or debugging sessions, even if not full-time.
+- Remote teams at Shopify and GitHub report using ensemble programming (via VS Code Live Share) for complex cross-team features.
+
+## Common misconceptions
+
+- **"Mob programming means one person works while everyone else watches."** In a good mob, everyone is actively engaged — researching, thinking, discussing the problem. The driver is the least busy person.
+- **"It's only for teaching juniors."** Mobs work because the collective reasoning of five experienced engineers consistently outperforms one experienced engineer alone. It scales to expert teams.
+
+## Learn next
+
+Mob programming is an extension of pair programming, a practice in [Extreme Programming (XP)](/t/agile) and [software engineering](/t/software-engineering). [Test-driven development](/t/test-driven-development) integrates naturally with mob programming — the mob writes the failing test together before writing any code.

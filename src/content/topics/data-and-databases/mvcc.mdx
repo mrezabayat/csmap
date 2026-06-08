@@ -1,0 +1,56 @@
+---
+title: MVCC
+aliases: ["Multi-Version Concurrency Control", "snapshot isolation"]
+category: data-and-databases
+kind: concept
+summary: A concurrency technique where writes create new versions of rows rather than overwriting them — readers see a consistent snapshot of the past while writers proceed concurrently, with no read/write blocking.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "concurrency", "transactions", "isolation"]
+prerequisites: ["transaction-acid", "database"]
+related: ["write-ahead-log", "indexing"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When a writer updates a row and a reader reads it at the same moment, the classic solution is to block one of them. MVCC avoids this: instead of overwriting the row, the writer creates a **new version** of it tagged with a transaction ID. The reader's transaction sees the version that existed at the moment it started — a consistent snapshot of the past — and is never blocked. Writers and readers run concurrently without locking each other out.
+
+## More detail
+
+Each row has additional metadata: `xmin` (the transaction ID that created this version) and `xmax` (the transaction ID that deleted or updated it, or "infinity" if current). When a reader starts a transaction, it gets a **snapshot**: a list of which transactions were committed at that moment. The reader sees a row version if `xmin` is committed in its snapshot and `xmax` is either uncommitted or after the snapshot.
+
+**Write behaviour:** UPDATE does not modify in place. It marks the old version with `xmax = current_txid` and inserts a new version with `xmin = current_txid`. The old version remains visible to any snapshot taken before the update.
+
+**Isolation levels in MVCC:**
+- **Read Committed** — each statement gets a fresh snapshot; you may see different values within the same transaction. PostgreSQL default.
+- **Repeatable Read / Snapshot Isolation** — the snapshot is taken at the start of the transaction; you always see the same values. No dirty reads, no non-repeatable reads.
+- **Serializable Snapshot Isolation (SSI)** — detects and aborts transactions whose interleaving would not be serialisable, while still using snapshots for reads. PostgreSQL >= 9.1 supports this.
+
+**Garbage collection (VACUUM):** old versions accumulate. They are no longer visible once all running snapshots predate `xmin`. PostgreSQL's `VACUUM` process reclaims dead tuples; insufficient vacuuming causes **table bloat** and, in the worst case, **transaction ID wraparound** (a catastrophic failure mode where very old XIDs are indistinguishable from future ones).
+
+**Write-ahead log interaction:** [MVCC](mvcc) writes go through the WAL for durability; the WAL records the new version, and crash recovery replays it.
+
+MySQL InnoDB implements MVCC differently — undo logs store old versions in a separate undo tablespace and reconstruct old values on the fly rather than storing multiple in-place versions.
+
+## Why it matters
+
+MVCC is why PostgreSQL, MySQL InnoDB, Oracle, and most modern databases can serve hundreds of concurrent users without reads and writes constantly blocking each other. Long-running reports no longer lock the tables they read. This is the implementation detail behind the "I" in ACID: [transaction isolation](/t/transaction-acid) is implemented via snapshots, not locks. Understanding MVCC explains table bloat, VACUUM, snapshot isolation anomalies (write skew), and why long-running transactions are expensive.
+
+## Real-world examples
+
+- PostgreSQL uses MVCC for all data modifications; `VACUUM` is essential maintenance and runs automatically (autovacuum).
+- MySQL InnoDB undo logs implement MVCC; `innodb_undo_tablespace` size matters for long-running transactions.
+- CockroachDB and YugabyteDB implement distributed MVCC where versions are timestamped and replicated via Raft.
+- Git is conceptually MVCC for source code — commits are immutable snapshots; branches read consistent histories.
+
+## Common misconceptions
+
+- **"MVCC means no locking."** MVCC eliminates read-write locks. Write-write conflicts still require locks or optimistic concurrency (check-and-abort).
+- **"Old versions are deleted immediately."** They persist until VACUUM (or the undo log) reclaims them. A long-running transaction forces the database to keep all versions created during its lifetime.
+
+## Learn next
+
+MVCC uses [write-ahead logging](/t/write-ahead-log) for durability of the new versions it creates. It implements the isolation half of [transaction ACID](/t/transaction-acid). [Columnar stores](/t/columnar-store) use different concurrency approaches (often append-only) suited to their bulk-write patterns.

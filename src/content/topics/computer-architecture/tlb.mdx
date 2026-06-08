@@ -1,0 +1,58 @@
+---
+title: TLB
+aliases: ["Translation Lookaside Buffer", "page table walk", "TLB miss", "TLB shootdown"]
+category: computer-architecture
+kind: concept
+summary: A small, fast cache for virtual-to-physical address translations — avoiding the costly page table walk on every memory access and making virtual memory practical at CPU speed.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cpu", "memory", "virtual-memory", "performance"]
+prerequisites: ["virtual-memory", "cache", "memory-hierarchy"]
+related: ["cache-line-alignment", "speculative-execution", "numa-awareness"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Virtual memory gives every process its own address space, but every memory access must be translated from virtual to physical address — which requires walking a multi-level page table in memory. That walk takes 20–100+ memory accesses itself. The TLB is a tiny cache (64–2048 entries) that stores recent virtual-to-physical translations. A TLB hit costs 0–1 cycles; a TLB miss triggers a full page table walk. With a good hit rate (99%+), virtual memory overhead is nearly invisible.
+
+## More detail
+
+**Page table walk:** on a TLB miss, the CPU's MMU walks the page table (a tree structure in physical memory, up to 5 levels for 5-level paging on x86-64). Each level is a 4 KB page of 512 entries. Walking 4 levels requires 4 additional memory accesses — potentially 4 cache misses (hundreds of cycles each). Modern CPUs use dedicated page-walk hardware (hardware page table walker) to perform this in parallel with other work.
+
+**TLB structure:**
+- **Fully associative** (small L1 TLB): ~64 entries, accessed in 1 cycle. Maps the most recently used virtual pages.
+- **Set-associative** (larger L2 TLB): 512–4096 entries, accessed in 5–15 cycles. Second-level TLB before a full page table walk.
+- Separate instruction TLB (iTLB) and data TLB (dTLB) to avoid contention.
+
+**Coverage:** a 4 KB page × 64 TLB entries = 256 KB of address space covered by the L1 TLB. A working set larger than this causes frequent TLB misses. **Huge pages** (2 MB or 1 GB) give each TLB entry 512× or 262144× more coverage — critical for database and HPC workloads with large working sets.
+
+**TLB shootdown:** when a page mapping changes (page unmapped, permissions changed), the TLB entry for that page must be invalidated on *every CPU core* that might have cached it — a TLB shootdown. This is implemented via inter-processor interrupts (IPIs). In multi-socket NUMA systems with many cores, shootdowns (triggered by `munmap`, `mprotect`, `mmap`) can be a significant scalability bottleneck. Linux's lazy TLB and batched shootdowns mitigate this.
+
+**Software vs. hardware TLB fill:**
+- **Hardware-filled (x86, ARM v8.4+ with hardware walk):** the hardware MMU fills the TLB automatically on a miss; the OS only provides the page table structure.
+- **Software-filled (MIPS, older SPARC):** a TLB miss triggers an OS trap; the kernel looks up the translation and fills the TLB manually. More flexible but higher overhead.
+
+**Meltdown and KPTI:** Meltdown (2018) allowed userspace to speculatively read kernel memory via the page table. The fix (Kernel Page-Table Isolation, KPTI) gives each process two page tables: one with kernel mappings (used in kernel mode), one without (used in user mode). The switch requires flushing or tagging TLB entries — adding ~1–10% overhead to syscall-heavy workloads. PCID (Process-Context IDentifiers) allow TLB entries to carry a process tag, avoiding full flushes on context switches.
+
+## Why it matters
+
+TLB performance dominates the cost of virtual memory. Engineers working on databases, JVM runtimes, memory allocators, or OS kernels need to understand TLB coverage to explain performance cliffs. HugePages are a frequent database performance tuning tool (PostgreSQL, Oracle, MySQL with huge_pages=on). TLB shootdown overhead explains why `munmap` is expensive in multi-threaded applications and why jemalloc and tcmalloc batch returns to the OS.
+
+## Real-world examples
+
+- Linux hugepages (`/proc/sys/vm/nr_hugepages`): PostgreSQL configures huge pages to reduce TLB pressure on buffer pools.
+- Oracle database uses 1 GB huge pages for SGA; TLB coverage for a 256 GB SGA goes from needing 65 million TLB entries (4 KB pages) to 256 entries (1 GB pages).
+- JVM uses `-XX:+UseHugePages` for Java heap; reduces TLB misses by 50–80% for large heaps.
+- KPTI overhead on syscall-heavy workloads (Redis, Nginx) was 2–20% initially; PCID support on Skylake+ CPUs brought it to under 1%.
+
+## Common misconceptions
+
+- **"Virtual memory is slow because of address translation."** With a high TLB hit rate (typical for programs with good locality), the overhead is under 1%. The TLB makes virtual memory practical.
+- **"Huge pages are always better."** Huge pages waste memory if sparsely used, can cause fragmentation, and complicate memory overcommit. They are beneficial for large, contiguous working sets (database buffer pools), not for general-purpose allocation.
+
+## Learn next
+
+The TLB sits at the intersection of [virtual memory](/t/virtual-memory) and the [memory hierarchy](/t/memory-hierarchy) (it's effectively a cache for page table entries). [Cache line alignment](/t/cache-line-alignment) and TLB-aware memory layout are complementary performance concerns. [Speculative execution](/t/speculative-execution) (Meltdown) directly attacked the TLB's kernel mapping exposure.

@@ -1,0 +1,87 @@
+---
+title: Closure
+aliases: ["lexical closure", "function closure", "upvalue", "free variable"]
+category: programming-languages
+kind: concept
+summary: A function that captures variables from its enclosing scope — carrying its environment with it so it can access those variables even after the outer function has returned.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "functional-programming", "scope", "functions"]
+prerequisites: ["programming-language", "lambda-calculus", "garbage-collection"]
+related: ["continuation", "homoiconicity"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally, when a function returns, its local variables are gone. A closure "closes over" variables from its surrounding scope, capturing them and keeping them alive even after the outer function has finished. The inner function and the captured variables form a package — a closure — that can be passed around, stored, and called later with full access to the environment it was created in.
+
+## More detail
+
+```javascript
+function makeCounter() {
+  let count = 0;           // local variable
+  return function() {      // inner function
+    count++;               // captures 'count' from outer scope
+    return count;
+  };
+}
+
+const counter = makeCounter();
+counter(); // 1
+counter(); // 2
+counter(); // 3 — count is still alive, bound to this closure
+```
+
+`count` would normally be garbage-collected when `makeCounter` returns — but the inner function holds a reference to it. The runtime keeps `count` alive as long as the closure exists.
+
+**How closures are implemented:**
+- At compile time, the language identifies "free variables" — variables referenced by a function but defined outside it.
+- At runtime, when the inner function is created, a closure object is allocated on the heap containing a pointer to the function code and the captured variables (or references to them).
+- In some implementations (Lua, LuaJIT), captured variables are called "upvalues" and are promoted to the heap when the enclosing function returns.
+- In languages with mutable closures (JavaScript, Python), modifications to the captured variable in the closure are visible to all closures sharing it — which is the source of the classic loop closure bug:
+  ```javascript
+  // Bug: all closures capture the same 'i'
+  for (var i = 0; i < 3; i++) {
+    setTimeout(() => console.log(i), 0); // prints 3, 3, 3
+  }
+  // Fix: use let (block-scoped) or an IIFE to create a new binding each iteration
+  ```
+
+**Common uses of closures:**
+- **Event handlers / callbacks** — capturing context (the `this` or relevant data) at registration time.
+- **Partial application / currying** — `const add5 = x => x + 5;` is a closure over `5`.
+- **Private state / data encapsulation** — the module pattern in JavaScript uses closures to create private variables before `class` existed.
+- **Memoization** — a closure captures a cache map; the memoized function looks up results before recomputing.
+- **Iterator factories** — each call to `makeRange(start, end)` returns a closure with its own position.
+
+**Closures and garbage collection:** because closures keep variables alive, they can cause memory leaks if closures outlive their intended scope (e.g., a DOM event listener that holds a reference to a large object graph). Modern GCs handle this automatically through reference tracing, but it's a real concern in long-lived applications.
+
+**Closures in different languages:**
+- **JavaScript / Python / Ruby / Kotlin / Swift** — full closures; captured variables can be mutable.
+- **Java (before lambdas):** anonymous inner classes captured effectively-final variables only.
+- **Java lambdas / Kotlin lambdas** — closures, but captured variables must be effectively final (no mutation allowed from within the lambda).
+- **C** — no closures; function pointers exist but cannot capture variables. GCC and Clang support nested functions (as an extension) that capture outer variables via a trampoline — not portable.
+- **Rust** — closures capture by value, by reference, or by mutable reference, with lifetime tracking ensuring safety.
+
+## Why it matters
+
+Closures are one of the most powerful and widely used abstractions in modern programming. Every JavaScript callback, every Python decorator, every reactive UI event handler, and every promise/future relies on closures to carry context. Understanding closures clarifies: why the loop variable bug occurs, how module patterns work, how to implement private state without classes, and why closures can cause memory leaks. They are fundamental to functional and reactive programming styles.
+
+## Real-world examples
+
+- React hooks (`useState`, `useEffect`) rely heavily on closures — the effect callback closes over the state values and props at the time of the render.
+- Python decorators are closures: `@lru_cache` wraps a function in a closure that maintains a cache dictionary.
+- Node.js callback patterns: `fs.readFile(path, (err, data) => { /* closes over path, other vars */ })`.
+- Redux's `connect()` in React returns a closure (a component factory) that has closed over the `mapStateToProps` function.
+
+## Common misconceptions
+
+- **"Closures only exist in functional languages."** JavaScript, Python, Ruby, Kotlin, Swift, Rust, and C# all have closures. They're ubiquitous.
+- **"A closure is the same as an anonymous function."** A closure captures variables from its scope; an anonymous function (lambda) is just a function without a name. An anonymous function that captures nothing is not a closure.
+
+## Learn next
+
+Closures are rooted in [lambda calculus](/t/lambda-calculus) — a lambda is a closure over its free variables. They enable [continuation](/t/continuation)-passing style. Understanding closures is prerequisite to understanding [higher-order functions](/t/higher-order-functions) and most functional programming patterns.

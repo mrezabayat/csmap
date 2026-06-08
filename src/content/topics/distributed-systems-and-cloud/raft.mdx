@@ -1,0 +1,56 @@
+---
+title: Raft
+aliases: ["raft consensus", "raft protocol"]
+category: distributed-systems-and-cloud
+kind: protocol
+summary: A consensus algorithm designed to be understandable — it achieves distributed agreement through leader election and log replication, and has become the go-to replacement for Paxos in modern systems.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "consensus", "replication", "fault-tolerance"]
+prerequisites: ["consensus", "replication"]
+related: ["paxos", "distributed-system"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Raft is a recipe for getting a cluster of servers to agree on a sequence of values, even when some servers crash or messages are lost. It decomposes the problem into three separable sub-problems — **leader election**, **log replication**, and **safety** — and handles each in a way that is meant to be traceable by a human reader. If you've used etcd, CockroachDB, or TiKV, you've relied on Raft.
+
+## More detail
+
+Raft organises time into **terms** (monotonically increasing integers). Each term starts with an election; if no candidate wins, a new term begins. Exactly one **leader** exists per term (or none during elections).
+
+**Leader election:** servers start as followers. If a follower receives no heartbeat from a leader within an election timeout (150–300 ms, randomised), it becomes a candidate, increments its term, and requests votes. A server votes for the first candidate it hears from in a term (provided the candidate's log is at least as up-to-date). The candidate that collects a majority wins and begins sending heartbeats.
+
+**Log replication:** clients send commands only to the leader. The leader appends the command to its log, then sends `AppendEntries` RPCs to all followers. When a majority confirms the entry, the leader **commits** it — applies it to the state machine and replies to the client. The leader then notifies followers in subsequent `AppendEntries` messages; they commit too.
+
+**Safety invariants:**
+- A server only votes for a candidate whose log is at least as complete as its own (prevents electing a server that's missing committed entries).
+- A leader never overwrites committed entries.
+- Two servers can never have different committed entries at the same log index in the same term.
+
+**Log compaction:** to prevent the log growing forever, Raft supports **snapshotting** — periodically write the entire state machine to disk, discard the log prefix before that point.
+
+Raft vs Paxos: Raft was explicitly designed for understandability. Paxos is proven but underspecified — implementing a real system requires solving leader election, log management, and reconfiguration not described in the original paper. Raft specifies all of these.
+
+## Why it matters
+
+Raft is the consensus algorithm at the heart of most modern distributed databases and coordination services. Understanding it concretely explains what "strong consistency" means (all commits are ordered by the leader), how a cluster tolerates minority failures (f failures with 2f+1 nodes), and why split-brain situations are prevented (no two majorities can form simultaneously). The algorithm is short enough to be studied in full — the original paper is eminently readable.
+
+## Real-world examples
+
+- **etcd** (Kubernetes' key-value store) uses Raft; every cluster operation (pod scheduling, secret storage) goes through etcd's Raft log.
+- **CockroachDB** and **TiKV** use Raft per shard to replicate data across regions.
+- **Consul** uses Raft for its service registry.
+- **InfluxDB**, **RethinkDB**, and **Neo4j** (enterprise) use Raft variants.
+
+## Common misconceptions
+
+- **"Raft is slower than Paxos."** They have the same message complexity; Raft is sometimes faster in practice because leadership is stable and commit messages are one round-trip.
+- **"The leader is a bottleneck."** The leader serialises commands, which is required for linearisability. Multi-Raft (many Raft groups, each for a partition) distributes the load across leaders.
+
+## Learn next
+
+Raft implements [consensus](/t/consensus) — the abstract problem it solves. [Paxos](/t/paxos) is the alternative to compare against. Raft underlies many [distributed systems](/t/distributed-system) where you need to understand what "committed" guarantees.

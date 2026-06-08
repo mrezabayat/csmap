@@ -1,0 +1,58 @@
+---
+title: Hidden Markov Model
+aliases: ["HMM", "Markov model"]
+category: artificial-intelligence
+kind: concept
+summary: A probabilistic model for sequences where an unobserved (hidden) state evolves according to a Markov chain, and each state emits an observable symbol — the foundation of speech recognition and sequence labelling.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["machine-learning", "sequences", "probabilistic-models", "speech"]
+prerequisites: ["machine-learning", "probability-statistics"]
+related: ["natural-language-processing"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Some sequences are produced by a process you can't observe directly — only its effects. A person speaking is in a sequence of phoneme states; you hear sound waves, not the phonemes. An HMM models this: there is a hidden chain of states (the phonemes, or a market regime, or a gene), each state emits observations with some probability, and the states transition to each other with known probabilities. Given the observations, you can infer what the hidden states were.
+
+## More detail
+
+An HMM is defined by:
+
+- **States** `S = {s₁, …, sN}` — the hidden process (finite state machine).
+- **Transition matrix** `A[i][j] = P(next state = j | current state = i)` — each row sums to 1.
+- **Emission matrix** `B[i][o] = P(observing o | current state = i)` — for discrete observations.
+- **Initial distribution** `π[i] = P(start in state i)`.
+
+Three canonical algorithms:
+
+- **Forward algorithm** — computes `P(observations | model)` efficiently using dynamic programming. Used for likelihood evaluation.
+- **Viterbi algorithm** — finds the most likely hidden state sequence given observations. Used for decoding (e.g., which phonemes produced this audio?).
+- **Baum-Welch algorithm** — learns model parameters (`A`, `B`, `π`) from unlabelled observation sequences using Expectation-Maximisation. The E-step runs Forward-Backward; the M-step re-estimates parameters.
+
+HMMs extend to continuous observations (Gaussian emission, used in speech recognition) and hierarchical structures. They were the dominant model for speech recognition from the 1970s through ~2015, when deep neural networks (CTC, sequence-to-sequence models) took over.
+
+The **Markov property** underlying HMMs — the next state depends only on the current state, not the full history — is both the source of their tractability and their limitation. Real sequences often have long-range dependencies that an HMM cannot capture without an exponential number of states.
+
+## Why it matters
+
+HMMs introduced dynamic programming as a core tool for sequence modelling, and the three algorithms (Forward, Viterbi, Baum-Welch) appear in many guises throughout ML: Conditional Random Fields, Kalman filters, and belief propagation are all generalisations. Understanding HMMs makes the attention mechanism in [transformers](/t/transformer) more legible — both solve the problem of relating each position in a sequence to all others, just in very different ways.
+
+## Real-world examples
+
+- Siri and Google Voice used HMM-based acoustic models for speech recognition through the early 2010s.
+- Bioinformatics uses profile-HMMs to detect remote homologues of protein families (HMMER).
+- Part-of-speech tagging and named-entity recognition used HMMs before neural sequence models became standard.
+- Financial regime detection (bull/bear market hidden states from price observations).
+
+## Common misconceptions
+
+- **"HMMs are obsolete."** In speech recognition, yes — neural models dominate. In bioinformatics and some NLP tasks, HMMs remain competitive and interpretable.
+- **"The Markov assumption means the model has no memory."** It means the next state depends on the current state only, but the current state can encode whatever history was relevant to reach it.
+
+## Learn next
+
+HMMs are a probabilistic sequence model; [transformers](/t/transformer) are the successor that handles long-range dependencies far better. The probabilistic framing comes from [probability and statistics](/t/probability-statistics); the sequence labelling use case leads to [natural language processing](/t/natural-language-processing).

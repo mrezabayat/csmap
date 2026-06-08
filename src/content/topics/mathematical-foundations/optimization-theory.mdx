@@ -1,0 +1,74 @@
+---
+title: Optimization Theory
+aliases: ["mathematical optimization", "convex optimization", "gradient descent optimization", "LP", "QP", "nonlinear programming"]
+category: mathematical-foundations
+kind: concept
+summary: The mathematical study of choosing the best solution from a set of feasible alternatives — minimising or maximising an objective function subject to constraints — underpinning machine learning, operations research, and engineering design.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["mathematics", "optimization", "machine-learning", "operations-research"]
+prerequisites: ["calculus-basics", "linear-algebra", "gradient-descent"]
+related: ["linear-programming", "bayesian-inference", "game-theory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Optimization is the science of finding the best answer. "Best" means minimising cost (the shortest route, the cheapest production schedule) or maximising reward (the highest profit, the most accurate model). Almost every quantitative decision in engineering, economics, and machine learning is an optimization problem. The challenge: finding the true optimum efficiently, especially when there are millions of variables and complex constraints.
+
+## More detail
+
+**General form:** minimise `f(x)` subject to `g_i(x) ≤ 0` and `h_j(x) = 0`, where `x ∈ ℝⁿ` is the decision variable, `f` is the objective function, and `g_i`, `h_j` are constraints.
+
+**Taxonomy of optimization problems:**
+
+**Convex optimization:** the objective is convex and the feasible set is convex. Any local minimum is a global minimum — the fundamental property that makes convex optimization tractable. Every gradient descent step makes progress. Includes linear programming, quadratic programming, second-order cone programming, and semidefinite programming.
+
+**Linear programming (LP):** objective and constraints are all linear. `min cᵀx` subject to `Ax ≤ b`, `x ≥ 0`. Solved by the Simplex method (exponential worst case, fast in practice) or interior point methods (polynomial). Applications: supply chain optimisation, production scheduling, network flow, diet problems.
+
+**Quadratic programming (QP):** quadratic objective, linear constraints. SVMs solve a QP. Portfolio optimisation (Markowitz) is a QP. Solved by interior-point or active-set methods.
+
+**Integer programming (IP/MIP):** some or all variables must be integers. Scheduling, routing (TSP), combinatorial problems. NP-hard in general; solved by branch-and-bound or cutting planes (CPLEX, Gurobi). Modern solvers can handle problems with millions of variables.
+
+**Nonlinear programming (NLP):** objective or constraints are nonlinear and possibly non-convex. Neural network training is NLP (non-convex). Local minima are not guaranteed global; gradient methods find local optima. Techniques: gradient descent, L-BFGS, Newton's method, interior-point methods.
+
+**Stochastic optimization:** objective is the expectation of a function with random parameters. SGD (stochastic gradient descent) optimises `E[loss(x, ξ)]` using mini-batch estimates. Convergence theory: SGD with decreasing learning rate converges to a stationary point.
+
+**Key algorithms:**
+
+*Gradient descent:* `x_{t+1} = x_t - η∇f(x_t)`. The workhorse of ML. Variants: SGD, Adam, RMSProp, AdaGrad. Converges to a stationary point for smooth non-convex functions; global minimum for convex.
+
+*Newton's method:* `x_{t+1} = x_t - H⁻¹∇f(x_t)`, where H is the Hessian. Quadratic convergence near the optimum; `O(n³)` per step (impractical for large n). L-BFGS approximates the inverse Hessian efficiently.
+
+*Interior-point methods (barrier methods):* solve LP/QP/SDP exactly with polynomial complexity. Used by CVXPY, Gurobi, MOSEK for small-to-medium convex problems.
+
+*KKT conditions (Karush-Kuhn-Tucker):* necessary conditions for a local optimum with constraints. For convex problems, also sufficient. The basis of constrained optimization duality theory.
+
+**Duality:** every optimization problem has a dual — a lower bound on the primal. For convex problems, strong duality holds: primal = dual at optimum (no duality gap). Duality enables decomposition and distributed optimization algorithms.
+
+**Solvers:**
+- Convex: CVXPY (modelling language, calls MOSEK/SCS/OSQP), Gurobi, MOSEK.
+- Neural network: PyTorch/JAX (automatic differentiation for gradient computation).
+- Integer: Gurobi, CPLEX, OR-Tools (Google).
+
+## Why it matters
+
+Optimization theory is the mathematical foundation of machine learning (training is optimization), operations research (supply chain, scheduling), financial engineering (portfolio optimization), and control systems (model predictive control). Understanding it clarifies: why gradient descent works for neural networks, what convexity means for guaranteed solvability, why integer problems are hard, and why modern ML optimizers (Adam, AdamW) converge faster than vanilla SGD. Any engineer working with ML models, data pipelines, or resource allocation problems benefits from optimization theory.
+
+## Real-world examples
+
+- Neural network training: every `optimizer.step()` in PyTorch is gradient descent on the loss function.
+- Google Maps routing: shortest path is a linear programming / dynamic programming problem.
+- Airline crew scheduling: mixed-integer programming solved by Gurobi; Lufthansa's crew schedule is solved as a MIP with billions of variables.
+- Financial portfolio optimisation: quadratic programming (mean-variance; Markowitz).
+
+## Common misconceptions
+
+- **"Gradient descent always finds the best solution."** For non-convex problems (neural networks), gradient descent finds a local minimum — often good enough in practice, but not guaranteed to be global.
+- **"Linear programming is just a special case."** LP's polynomial-time solvability makes it qualitatively different from NLP or IP. Many NP-hard problems have LP relaxations that give useful bounds.
+
+## Learn next
+
+Optimization theory is grounded in [calculus](/t/calculus-basics) (derivatives, gradients, Hessians) and [linear algebra](/t/linear-algebra) (matrix computations in Newton's method). [Gradient descent](/t/gradient-descent) is the most important optimization algorithm in ML. [Linear programming](/t/linear-programming) is the most tractable subclass. [Game theory](/t/game-theory) uses optimization in multi-agent settings.

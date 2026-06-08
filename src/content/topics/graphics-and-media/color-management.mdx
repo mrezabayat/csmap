@@ -1,0 +1,79 @@
+---
+title: Colour Management
+aliases: ["color management", "ICC profile", "colour space", "sRGB", "P3", "colour calibration"]
+category: graphics-and-media
+kind: concept
+summary: A system for ensuring that colours are reproduced consistently across different devices — cameras, monitors, and printers — by converting between device-specific colour spaces using ICC profiles and a device-independent colour reference space.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["graphics", "display", "colour", "professional"]
+prerequisites: ["gpu", "computer-vision"]
+related: ["hdr", "anti-aliasing", "subpixel-rendering"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+The value (255, 0, 0) for red does not describe an absolute colour — it means "maximum red according to this device." Different devices define "maximum red" differently: a camera's red is not the same red as a monitor's, which is different again from a printer's. Colour management solves this by labelling colours with their device-specific context (an ICC profile), then converting between devices through a device-independent reference (CIELAB or CIEXYZ), so a photo looks the same on a calibrated monitor as it will in print.
+
+## More detail
+
+**The problem:** every device has its own gamut (range of reproducible colours) and its own transfer curve (how numeric values map to physical light emission or absorption). `(255, 0, 0)` in sRGB is a specific shade of red; the same value in Adobe RGB 1998 is a more saturated, deeper red. If you display an Adobe RGB image on an sRGB monitor without conversion, the colours look wrong.
+
+**Colour spaces:**
+
+*sRGB (1996):* the default colour space for the web and most consumer devices. Covers a relatively small gamut (~35% of visible colours). When browsers display images tagged as sRGB, they display them "as-is" on sRGB displays. The transfer function is approximately gamma 2.2.
+
+*Adobe RGB 1998:* wider gamut than sRGB (~50% of visible colours), particularly in greens and cyans. Used by professional photographers. Must be converted to sRGB for web display.
+
+*Display P3:* Apple's display colour space (based on DCI-P3, used in digital cinema). ~45% wider than sRGB in reds and greens. Standard for Apple Retina displays since 2017. CSS now supports `color(display-p3 1 0 0)` for P3 red in browsers.
+
+*Rec. 2020:* the colour space for HDR content. Covers ~75% of visible colours — a target for future display technology.
+
+*CIELAB (L*a*b*):* a device-independent perceptual colour space. L* is lightness (0=black, 100=white), a* is green-red axis, b* is blue-yellow axis. Used as the reference space for colour conversions in ICC colour management.
+
+**ICC profiles:** the International Color Consortium (ICC) standard for describing a device's colour characteristics. An ICC profile maps device-specific RGB/CMYK values to CIELAB (device-independent). Profiles are embedded in images, attached to displays by OS calibration, and used by printers.
+
+**The colour management workflow:**
+1. A camera captures an image in its native sensor colour space and embeds an ICC profile.
+2. A colour-managed application (Lightroom, Photoshop) converts the image from the camera profile to a working colour space (Pro Photo RGB, Adobe RGB).
+3. The display renders the image by converting from the working space to the display's ICC profile (measured by a colorimeter/spectrophotometer like the X-Rite i1Display).
+4. At export/print, another conversion maps the image to the output device's colour space (sRGB for web; CMYK for offset printing).
+
+**OS colour management:**
+- **macOS ColorSync:** system-level colour management applied to all graphics. The display profile is applied automatically; apps that declare their images' colour spaces get correct rendering on P3 displays.
+- **Windows ICM/WCS:** Windows Colour System; less pervasive than ColorSync historically.
+- **Browsers:** Chrome and Safari are colour-managed for images with ICC profiles; `display-p3` CSS values; wide-gamut canvas.
+
+**Display calibration:** consumer monitors have manufacturing variance (±ΔE ~3–10 without calibration). Professional monitors (NEC, EIZO) and calibration-target monitors (Apple Pro Display XDR) are factory-calibrated to < ΔE 2. A colorimeter (hardware probe) measures the display's actual output and generates a custom ICC profile, applied by the OS.
+
+**ΔE (Delta E):** the perceptual difference between two colours. ΔE < 1 is invisible to most people; ΔE > 2 is noticeable; ΔE > 5 is obvious. Professional colour grading workflows target ΔE < 2 from source to output.
+
+**Colour management for developers:**
+- Always specify colour spaces for images and CSS values.
+- Use `color-profile: sRGB` in `<svg>` for SVGs.
+- CSS: `color(display-p3 1 0 0)` for P3 red in wide-gamut contexts.
+- Canvas: `canvas.getContext('2d', {colorSpace: 'display-p3'})` for P3 drawing.
+- Image processing: never mix colour-space-tagged and untagged images without explicit conversion.
+
+## Why it matters
+
+Colour management is invisible when correct and catastrophic when wrong. A UI designed on a P3 Macbook will look oversaturated on an sRGB monitor if not managed. Professional photography and video workflows depend on colour management to ensure print and screen consistency. Web developers increasingly need to handle wide-gamut displays. As HDR displays become standard, correct colour space handling in rendering pipelines becomes mandatory.
+
+## Real-world examples
+
+- Apple's photos app on iOS is fully colour-managed: images shot in P3 display correctly on P3 screens; sRGB images are converted to P3 for display.
+- Netflix masters content in DCI-P3 (or Rec. 2020 for HDR); colour management ensures it looks correct on both SDR sRGB monitors and HDR P3 TVs.
+- Chrome on macOS applies colour management to all images with embedded ICC profiles; untagged images are assumed sRGB.
+- Print production: a magazine image goes through sRGB → Adobe RGB → press CMYK conversion; mismanaged conversions cause colour shifts that are expensive to reprint.
+
+## Common misconceptions
+
+- **"PNG and JPEG are always sRGB."** Only if tagged as sRGB. An untagged file has no colour space declaration — software must assume a colour space (usually sRGB for untagged images).
+- **"Colour management is only for professional users."** Wide-gamut mobile displays (all iPhones since iPhone 7, most flagship Androids) make colour management essential for app developers and web designers.
+
+## Learn next
+
+Colour management interacts with [HDR](/t/hdr) — HDR requires broader colour spaces (P3, Rec. 2020) and accurate tone mapping. [Subpixel rendering](/t/subpixel-rendering) and [anti-aliasing](/t/anti-aliasing) address other aspects of colour precision in rendering.

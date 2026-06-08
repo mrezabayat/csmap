@@ -1,0 +1,93 @@
+---
+title: Huge Pages
+aliases: ["hugepages", "large pages", "transparent huge pages", "THP", "2MB pages", "1GB pages"]
+category: low-latency-systems
+kind: concept
+summary: Memory pages of 2 MB or 1 GB rather than the default 4 KB — reducing TLB misses for large working sets (databases, JVM heaps) by increasing the coverage each TLB entry provides, at the cost of internal fragmentation.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["performance", "memory", "linux", "low-latency"]
+prerequisites: ["virtual-memory", "tlb", "memory-hierarchy"]
+related: ["memory-pool", "numa-awareness", "cache-line-alignment"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+The CPU's TLB caches virtual-to-physical address translations. With 4 KB pages and a 512-entry TLB, only 2 MB of address space can be covered without a TLB miss. A database with a 64 GB buffer pool will miss the TLB constantly — each miss adds 20–100 cycles to memory access. Huge pages solve this: a 2 MB page gives each TLB entry 512× more coverage; a 1 GB page gives 262,144× more. A 64 GB buffer pool needs 32,768 entries with 4 KB pages but only 64 entries with 1 GB pages — easily fitting in the TLB. The result: 10–30% performance improvement for memory-intensive workloads.
+
+## More detail
+
+**Page sizes on x86-64:**
+- **4 KB (default):** standard page size. Fine for most applications with small working sets.
+- **2 MB:** "large pages" or "huge pages." Supported by all modern CPUs. Intel/AMD call these "large pages" in the hardware manual.
+- **1 GB:** "gigantic pages" or "huge-1G." Requires CPU support (`cpuid` bit for `pdpe1gb`); available since Intel Nehalem (2009).
+
+**Why TLB coverage matters:**
+
+With a 64-entry L1 dTLB and 4 KB pages: `64 × 4 KB = 256 KB` of address space covered. A database or JVM heap is gigabytes — almost every heap access misses the L1 TLB and pays 6–15 cycles for the L2 TLB, or 100–200 cycles for a full page table walk on an L2 miss.
+
+With 2 MB pages: `64 × 2 MB = 128 MB` covered — most JVM heaps fit.
+With 1 GB pages: `64 × 1 GB = 64 GB` covered — most database buffer pools fit.
+
+**Linux huge pages configuration:**
+
+*Static huge pages:* preallocated at boot or via sysctl:
+```bash
+# Preallocate 1024 × 2 MB huge pages (= 2 GB)
+echo 1024 > /proc/sys/vm/nr_hugepages
+
+# Check allocation:
+grep -i huge /proc/meminfo
+```
+Processes access static huge pages via `mmap(MAP_HUGETLB)` or `shmget(SHM_HUGETLB)`. PostgreSQL uses `huge_pages = on` to mmap its shared buffer pool this way.
+
+*Transparent Huge Pages (THP):* Linux automatically promotes 4 KB pages to 2 MB pages when a 2 MB-aligned, contiguous allocation is found. Zero application changes required. However:
+- **THP compaction:** the kernel must occasionally compact memory to create contiguous 2 MB ranges — this causes latency spikes (20–100ms pauses). For latency-sensitive applications (Redis, MongoDB, HFT), THP is often *disabled*.
+- **THP can increase memory usage** for sparse allocations (a process that allocates 4 KB gets a 2 MB page — 2044 KB wasted).
+
+Best practice for latency-sensitive apps: disable THP (`echo never > /sys/kernel/mm/transparent_hugepage/enabled`) and use static huge pages for specific allocations.
+
+**Application-level huge page usage:**
+
+*PostgreSQL:* `huge_pages = on` in `postgresql.conf`. Mmap shared memory (shared_buffers) as huge pages. Can significantly reduce TLB pressure for large buffer pools.
+
+*Oracle Database:* `use_large_pages = TRUE`. Same benefit. Requires pre-allocated huge pages.
+
+*JVM:* `-XX:+UseLargePages` — JVM uses huge pages for the heap and code cache. On Linux, also needs `-XX:LargePageSizeInBytes=2m` and pre-allocated huge pages.
+
+*jemalloc / tcmalloc:* can be configured to use huge pages for large allocations via `MALLOC_CONF=thp:always`.
+
+*1 GB huge pages:*
+```bash
+# Boot parameter:
+hugepagesz=1G hugepages=64
+
+# Application: mmap with MAP_HUGETLB and MAP_HUGE_1GB
+```
+
+**NUMA interaction:** on multi-socket systems, huge pages should be allocated on the NUMA node that will use them. `numactl --membind=0 --cpubind=0 ./app` for NUMA-aware huge page allocation.
+
+**Huge pages in containers / VMs:** KVM VMs can use huge pages on the host (ksm=off, hugepages for guest RAM). Docker/Kubernetes pods inherit huge page support; `hugepages-2Mi: 1Gi` resource requests in pod spec.
+
+## Why it matters
+
+Huge pages are one of the highest-leverage kernel parameters for database and JVM workloads. For PostgreSQL and Oracle with large shared buffer pools, enabling huge pages typically yields 5–30% throughput improvement with near-zero application code changes. For HFT and low-latency trading systems, TLB misses on hot data are a known bottleneck; 1 GB huge pages eliminate them. Understanding huge pages is essential for performance-engineering roles and infrastructure engineers tuning Linux for production workloads.
+
+## Real-world examples
+
+- PostgreSQL tuning guides universally recommend `huge_pages = on` with pre-allocated huge pages for large servers (>16 GB shared_buffers).
+- Redis explicitly recommends `echo never > /sys/kernel/mm/transparent_hugepage/enabled` in its documentation to avoid THP-induced latency spikes.
+- Oracle: DBA best practices require 1 GB huge pages for SGA > 32 GB.
+- HFT firms: 1 GB huge pages on order book servers; TLB misses in hot order-matching code reduced from ~15% to under 0.1% of cycles.
+
+## Common misconceptions
+
+- **"Transparent Huge Pages are always better than default."** THP causes latency spikes from memory compaction — explicitly bad for Redis, MongoDB, and any latency-sensitive workload. Static huge pages are preferred.
+- **"Huge pages waste memory."** Internal fragmentation can waste up to 2 MB per allocation for tiny allocations. For large, contiguous allocations (database pools, JVM heaps), fragmentation is negligible.
+
+## Learn next
+
+Huge pages reduce [TLB](/t/tlb) pressure — the mechanism is explained there. They complement [NUMA-aware](/t/numa-awareness) memory placement and [memory pools](/t/memory-pool) for low-latency allocation. Together these are the primary kernel-level tuning levers for [low-latency systems](/t/cache-line-alignment).

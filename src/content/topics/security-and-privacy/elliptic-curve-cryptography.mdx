@@ -1,0 +1,56 @@
+---
+title: Elliptic Curve Cryptography
+aliases: ["ECC", "ECDSA", "ECDH", "Curve25519"]
+category: security-and-privacy
+kind: concept
+summary: Public-key cryptography using the algebraic structure of elliptic curves — providing the same security as RSA with dramatically shorter keys, making it the default for TLS, SSH, and digital signatures.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cryptography", "public-key", "security", "tls"]
+prerequisites: ["public-key-cryptography", "cryptography"]
+related: ["tls", "post-quantum-cryptography", "certificate-authority"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+RSA security relies on the difficulty of factoring large numbers. ECC relies on the difficulty of the **elliptic curve discrete logarithm problem** — given two points on a curve, P and Q, find the integer `k` such that `Q = k·P`. This problem is harder per bit than factoring: a 256-bit ECC key provides roughly the same security as a 3072-bit RSA key, but operations are much faster and keys are much shorter. That's why modern TLS, SSH, and code signing use ECC.
+
+## More detail
+
+An **elliptic curve** over a prime field is defined by `y² = x³ + ax + b (mod p)`, forming a set of points with a special group law: you can "add" two points by a geometric construction (draw a line through them, reflect the third intersection over the x-axis). Scalar multiplication (`Q = k·P` — add P to itself k times) is efficient; finding `k` given `P` and `Q` is computationally infeasible for large curves.
+
+**Key operations:**
+
+- **ECDH (Elliptic Curve Diffie-Hellman)** — key agreement. Alice has private key `a`, public key `A = a·G`. Bob has `b`, `B = b·G`. Shared secret: `a·B = b·A = ab·G`. Used in TLS 1.3 key exchange.
+- **ECDSA (Elliptic Curve Digital Signature Algorithm)** — digital signatures. Used in TLS certificates, Bitcoin transactions, code signing. Signs and verifies with the curve's group operations.
+- **EdDSA (Edwards-curve DSA)** — a variant using twisted Edwards curves. Deterministic (no random nonce needed), faster, and simpler to implement correctly. Ed25519 is the most common instance.
+
+**Standard curves:**
+- **P-256 (secp256r1 / prime256v1)** — NIST-standardised, used in TLS, Android, and FIDO2. Questions about NIST curve parameter provenance exist.
+- **Curve25519** — designed by Bernstein for performance and safety margins. Used in Signal, WireGuard, SSH (ed25519), and modern TLS. Widely trusted.
+- **secp256k1** — Bitcoin's curve (a non-NIST Koblitz curve); not widely used outside cryptocurrency.
+
+**Security advantage:** a 128-bit security level requires 256-bit ECC vs. 3072-bit RSA. Smaller keys mean faster handshakes, shorter certificates, and less bandwidth — critical for mobile and IoT.
+
+## Why it matters
+
+ECC replaced RSA as the default for new deployments across TLS, SSH, and code signing. TLS 1.3 mandates ECDH for key exchange and supports ECDSA/EdDSA certificates. GitHub SSH prefers `ed25519` keys. WireGuard VPN is built on Curve25519 exclusively. Understanding ECC explains why `openssl genrsa 4096` is no longer considered more secure than `openssl ecparam -name prime256v1 -genkey`, and why post-quantum cryptography is needed even when ECC seems strong today.
+
+## Real-world examples
+
+- TLS 1.3 uses ECDH (X25519) for key exchange and ECDSA/Ed25519 for authentication in every HTTPS connection.
+- Bitcoin uses secp256k1 ECDSA for transaction signatures and wallet addresses.
+- Signal Protocol uses Curve25519 for all key exchange and X3DH ratchet operations.
+- WireGuard uses Curve25519 exclusively for its cryptographic operations.
+
+## Common misconceptions
+
+- **"Bigger ECC key = more security, like RSA."** ECC key length recommendations are different — 256-bit ECC is already at the 128-bit security level. Doubling to 512-bit is unnecessary for most purposes.
+- **"ECC is quantum-safe."** ECC provides no security against a sufficiently large quantum computer running Shor's algorithm — it breaks both RSA and ECC. See [post-quantum cryptography](/t/post-quantum-cryptography).
+
+## Learn next
+
+ECC is an advanced form of [public-key cryptography](/t/public-key-cryptography), used in [TLS](/t/tls) and [certificate authorities](/t/certificate-authority). The quantum threat to ECC motivates [post-quantum cryptography](/t/post-quantum-cryptography).

@@ -1,0 +1,69 @@
+---
+title: Dark Pattern
+aliases: ["dark patterns", "deceptive design", "manipulative UX", "UI tricks"]
+category: human-computer-interaction
+kind: concept
+summary: User interface designs that trick, confuse, or coerce users into unintended actions — subscribing to services, sharing data, or making purchases they did not intend — through deliberate manipulation of attention and decision-making.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["hci", "ethics", "ui-design", "consumer-protection"]
+prerequisites: ["user-interface", "usability-test"]
+related: ["gestalt-principles", "fitts-law"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A dark pattern is a user interface specifically designed to trick you into doing something against your own interests. The cookie consent banner where "Accept all" is big and blue and "Decline" is tiny, grey, buried in a submenu — that's a dark pattern. So is the unsubscribe button that's disguised as an error message, or the pre-checked "Yes, send me spam" checkbox hidden in a long form. Dark patterns are the deliberate misapplication of UX knowledge — exploiting the same cognitive principles that make good design intuitive, but for manipulation instead of clarity.
+
+## More detail
+
+**Common dark pattern types (Harry Brignull's taxonomy):**
+
+**Trick questions:** form fields with confusingly worded checkboxes. "Uncheck this box if you don't want to not receive marketing emails" — double negatives forcing users to re-read carefully to determine what to select.
+
+**Sneak into basket:** adding unwanted items (travel insurance, warranty, donation) to a shopping cart without explicit user consent. Unchecking requires noticing the extra item.
+
+**Roach motel:** easy to get in, hard to get out. Subscribing to a service is one click; cancelling requires calling a phone number, speaking to a retention agent, and waiting on hold. Amazon's "Prime Cancellation" flow requires five clicks through screens designed to discourage cancellation ("Remind Me Later", "Keep My Benefits").
+
+**Privacy zuckering:** leading users to share more personal information than they intended, through confusing privacy settings. Default settings share maximum data; privacy controls are buried and split across multiple menu hierarchies.
+
+**Confirmshaming:** making the "decline" option guilt-laden. "No thanks, I don't want to save money" instead of "No thanks." Users feel judged for choosing the non-conversion option.
+
+**Disguised ads:** ads styled to look like editorial content or organic search results. Google's "Sponsored" label is small and light; some shopping comparison sites show "sponsored" products in the top position that visually resemble organic results.
+
+**Bait and switch:** a user initiates one action; the UI performs a different one. Clicking a social login button sometimes subscribes to marketing without disclosure.
+
+**Hidden costs:** advertising a low price, then adding fees (booking fees, service charges, taxes) only visible at checkout. Ticketmaster's fees are a canonical example.
+
+**Forced continuity:** free trials that convert to paid subscriptions without a clear warning; the charge date is disclosed in a poorly visible way.
+
+**Misdirection:** designing the UI to draw attention to the "Accept" button (large, colourful, in primary position) while burying "Decline" (small, grey, peripherally located) — exploiting Fitts's Law and attention.
+
+**Regulatory context:**
+- **EU General Data Protection Regulation (GDPR) Art. 7** requires that consent must be freely given, specific, informed, and unambiguous. Deceptive cookie banners are illegal under GDPR; multiple EU data authorities have fined companies (Google, Meta) for dark patterns in consent flows.
+- **FTC (US):** the "Click to Cancel" rule (2024) requires that cancellation must be as easy as subscription.
+- **UK Consumer Protection from Unfair Trading Regulations:** prohibit misleading commercial practices.
+- **EU Digital Markets Act / Digital Services Act:** require clear and prominent presentation of alternatives to default tracking.
+
+## Why it matters
+
+Dark patterns are pervasive. A 2019 Princeton study found that 11% of the top 11,000 shopping sites used at least one dark pattern. They extract value from users without consent, erode trust in digital services, and create genuine harm (unwanted charges, data misuse, addiction mechanics in social media). For engineers and designers, understanding dark patterns is both an ethical obligation and a practical one — regulatory action (GDPR, FTC) is increasing, and being asked to implement a dark pattern is a situation engineers must recognize and refuse.
+
+## Real-world examples
+
+- Cookie consent banners: an entire industry (OneTrust, Cookiebot) built on creating "compliant" consent banners, most of which use dark patterns to maximise opt-in. EU regulators have fined Google and Meta for exactly this.
+- Amazon Prime cancellation: requires navigating five screens explicitly designed to discourage cancellation. The FTC sued Amazon in 2023 specifically over Prime enrollment and cancellation dark patterns.
+- LinkedIn: the "Import contacts" flow emailed all the user's contacts without clear disclosure of what would be sent.
+- LinkedIn Premium trials: the free trial requires a credit card; cancellation instructions are not prominently disclosed.
+
+## Common misconceptions
+
+- **"Dark patterns are just good conversion optimisation."** Temporarily yes, but they reduce long-term trust, increase chargebacks, and invite regulatory action. The evidence that dark patterns improve long-term business metrics is weak; the evidence of regulatory risk is growing.
+- **"Dark patterns are illegal everywhere now."** They are increasingly regulated (GDPR, FTC Click-to-Cancel, DSA) but enforcement is still patchy and varies by jurisdiction.
+
+## Learn next
+
+Dark patterns are the unethical application of [Gestalt principles](/t/gestalt-principles) (manipulating perception) and violations of [Fitts's law](/t/fitts-law) (making harmful actions easy, beneficial actions hard). They sit at the intersection of HCI, ethics, and consumer law.

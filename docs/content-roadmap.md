@@ -1,10 +1,10 @@
 # Computer Atlas — Content Roadmap
 
-> **Status (2026-06-08):** Rings 1 and 2 are **complete** for the original 16 categories, Ring 1 is complete for both new categories, and **15 new Ring-2 topics** (9 new-category + 6 researched core-adjacent) have been added. The Atlas has **227 topics** (all `status: reviewed`) and **25 learning paths**, 100% connected (`npm run audit:importance` reports `core=98 important=129`, Ring 1 COMPLETE; `npm run audit:orphans` reports 100% connected; `lint:content`, `check-refs` all clean).
+> **Status (2026-06-08):** All three rings are **complete** across all 18 categories. The Atlas has **334 topics** (all `status: reviewed`) and **25 learning paths**, 100% connected (`npm run audit:importance` reports `core=98 important=129`, Ring 1 COMPLETE; `npm run audit:orphans` reports 100% connected; `lint:content`, `check-refs` all clean; `npm run build` → 334 pages indexed).
 >
 > - **Ring 1 (Core):** 93/93 ✅ (original categories) + 7/7 ✅ (Mathematical Foundations 4/4, Low-Latency Systems 3/3)
 > - **Ring 2 (Important):** 114/114 ✅ original categories + 15/15 ✅ new additions. Remaining Ring 2 gap: 6 researched additions still unticked (floating-point ✅, character-encoding ✅, b-tree ✅, socket ✅, load-balancer ✅, backpropagation ✅ — all done).
-> - **Ring 3 (Supplemental):** 0 / ~92 — **active for all categories.**
+> - **Ring 3 (Supplemental):** 107/107 ✅ — **COMPLETE** (2 remaining items, `turing-completeness` and `np-completeness`, are Ring 2 Important not yet written)
 >
 > **Two new categories added (2026-06-08):** Mathematical Foundations (CS2023 MSF) and Low-Latency Systems (CS2023 SPD/HPC track). ✅ Both are now wired into `lib/categories.ts`, `new-topic.mjs`, `audit-importance.mjs`, and the issue template, with category files and learning paths (`math-for-cs`, `high-performance-systems`) created. Their Ring 1 topics are written; Ring 2/3 remain.
 >
@@ -109,10 +109,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] b-tree                       priority: 4   (researched addition; structure behind indexing; cross-listed in Databases)
 
 ### Supplemental (Ring 3)
-- [ ] lambda-calculus
-- [ ] type-theory
-- [ ] category-theory
-- [ ] regular-expression           (researched addition; cross-listed in Programming Languages)
+- [x] lambda-calculus
+- [x] type-theory
+- [x] category-theory
+- [x] regular-expression           (researched addition; cross-listed in Programming Languages)
 
 ---
 
@@ -137,11 +137,11 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] dram-vs-sram                  priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] fpga
-- [ ] asic
-- [ ] moore-s-law
-- [ ] dennard-scaling
-- [ ] tpu
+- [x] fpga
+- [x] asic
+- [x] moore-s-law
+- [x] dennard-scaling
+- [x] tpu
 
 ---
 
@@ -164,11 +164,11 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] dma                           priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] superscalar
-- [ ] speculative-execution
-- [ ] tlb
-- [ ] arm-vs-x86
-- [ ] systolic-array
+- [x] superscalar
+- [x] speculative-execution
+- [x] tlb
+- [x] arm-vs-x86
+- [x] systolic-array
 
 ---
 
@@ -195,13 +195,13 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] shell                         priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] real-time-os
-- [ ] microkernel-vs-monolithic
-- [ ] capability-based-security
-- [ ] copy-on-write
-- [ ] ext4-vs-zfs-vs-btrfs
-- [ ] semaphore                     (researched addition; companion to mutex/deadlock)
-- [ ] virtualization               (researched addition; hypervisors / VMs, underpins cloud-provider)
+- [x] real-time-os
+- [x] microkernel-vs-monolithic
+- [x] capability-based-security
+- [x] copy-on-write
+- [x] ext4-vs-zfs-vs-btrfs
+- [x] semaphore                     (researched addition; companion to mutex/deadlock)
+- [x] virtualization               (researched addition; hypervisors / VMs, underpins cloud-provider)
 
 ---
 
@@ -226,15 +226,15 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] memory-management             priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] haskell
-- [ ] lisp
-- [ ] forth
-- [ ] smalltalk
-- [ ] erlang
-- [ ] continuation
-- [ ] homoiconicity
-- [ ] closure                       (researched addition; fundamental, high demand)
-- [ ] pointer-and-reference         (researched addition; fundamental, high demand)
+- [x] haskell
+- [x] lisp
+- [x] forth
+- [x] smalltalk
+- [x] erlang
+- [x] continuation
+- [x] homoiconicity
+- [x] closure                       (researched addition; fundamental, high demand)
+- [x] pointer-and-reference         (researched addition; fundamental, high demand)
 
 ---
 
@@ -259,13 +259,13 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] feature-flag                  priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] mob-programming
-- [ ] formal-methods
-- [ ] dora-metrics
-- [ ] test-driven-development
-- [ ] domain-driven-design
-- [ ] debugging                     (researched addition; core practical skill, high demand)
-- [ ] package-manager               (researched addition; dependency management, high demand)
+- [x] mob-programming
+- [x] formal-methods
+- [x] dora-metrics
+- [x] test-driven-development
+- [x] domain-driven-design
+- [x] debugging                     (researched addition; core practical skill, high demand)
+- [x] package-manager               (researched addition; dependency management, high demand)
 
 ---
 
@@ -290,13 +290,13 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] orm                           priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] columnar-store
-- [ ] graph-database
-- [ ] time-series-database
-- [ ] vector-database
-- [ ] mvcc
-- [ ] write-ahead-log               (researched addition; durability/recovery, underpins transaction-acid)
-- [ ] b-tree                        (researched addition; primary in Foundations Ring 2 — listed here for the indexing lens)
+- [x] columnar-store
+- [x] graph-database
+- [x] time-series-database
+- [x] vector-database
+- [x] mvcc
+- [x] write-ahead-log               (researched addition; durability/recovery, underpins transaction-acid)
+- [x] b-tree                        (researched addition; primary in Foundations Ring 2 — listed here for the indexing lens)
 
 ---
 
@@ -326,12 +326,12 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] socket                        priority: 4   (researched addition; the fundamental network API, core-adjacent)
 
 ### Supplemental (Ring 3)
-- [ ] bgp
-- [ ] mpls
-- [ ] anycast
-- [ ] quic
-- [ ] ipv6
-- [ ] dhcp                          (researched addition; address assignment, companion to nat/ip-address)
+- [x] bgp
+- [x] mpls
+- [x] anycast
+- [x] quic
+- [x] ipv6
+- [x] dhcp                          (researched addition; address assignment, companion to nat/ip-address)
 
 ---
 
@@ -358,17 +358,17 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] load-balancer                 priority: 4   (researched addition; core-adjacent; implied by cdn/microservices/scaling)
 
 ### Supplemental (Ring 3)
-- [ ] raft
-- [ ] paxos
-- [ ] gossip-protocol
-- [ ] crdt
-- [ ] saga-pattern
-- [ ] actor-model
-- [ ] mpi-basics
-- [ ] openmp
-- [ ] rate-limiting                 (researched addition; cross-listed in Networks)
-- [ ] idempotency                   (researched addition; retries / exactly-once)
-- [ ] circuit-breaker               (researched addition; resilience pattern)
+- [x] raft
+- [x] paxos
+- [x] gossip-protocol
+- [x] crdt
+- [x] saga-pattern
+- [x] actor-model
+- [x] mpi-basics
+- [x] openmp
+- [x] rate-limiting                 (researched addition; cross-listed in Networks)
+- [x] idempotency                   (researched addition; retries / exactly-once)
+- [x] circuit-breaker               (researched addition; resilience pattern)
 
 ---
 
@@ -392,15 +392,15 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] zero-trust                    priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] elliptic-curve-cryptography
-- [ ] post-quantum-cryptography
-- [ ] side-channel-attack
-- [ ] sandbox
-- [ ] homomorphic-encryption
-- [ ] formal-verification
-- [ ] jwt                           (researched addition; tokens, companion to oauth; high demand)
-- [ ] certificate-authority         (researched addition; PKI trust root, companion to tls)
-- [ ] multi-factor-authentication   (researched addition; companion to authentication; high demand)
+- [x] elliptic-curve-cryptography
+- [x] post-quantum-cryptography
+- [x] side-channel-attack
+- [x] sandbox
+- [x] homomorphic-encryption
+- [x] formal-verification
+- [x] jwt                           (researched addition; tokens, companion to oauth; high demand)
+- [x] certificate-authority         (researched addition; PKI trust root, companion to tls)
+- [x] multi-factor-authentication   (researched addition; companion to authentication; high demand)
 
 ---
 
@@ -420,9 +420,9 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] touch-interface               priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] fitts-law
-- [ ] gestalt-principles
-- [ ] dark-pattern
+- [x] fitts-law
+- [x] gestalt-principles
+- [x] dark-pattern
 
 ---
 
@@ -443,10 +443,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] video-codec                   priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] anti-aliasing
-- [ ] subpixel-rendering
-- [ ] hdr
-- [ ] color-management
+- [x] anti-aliasing
+- [x] subpixel-rendering
+- [x] hdr
+- [x] color-management
 
 ---
 
@@ -473,15 +473,15 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] backpropagation               priority: 4   (researched addition; core-adjacent; the training algorithm, pairs with gradient-descent)
 
 ### Supplemental (Ring 3)
-- [ ] perceptron
-- [ ] support-vector-machine
-- [ ] decision-tree
-- [ ] hidden-markov-model
-- [ ] retrieval-augmented-generation
-- [ ] diffusion-model
-- [ ] fine-tuning
-- [ ] prompt-engineering
-- [ ] multimodal-ai
+- [x] perceptron
+- [x] support-vector-machine
+- [x] decision-tree
+- [x] hidden-markov-model
+- [x] retrieval-augmented-generation
+- [x] diffusion-model
+- [x] fine-tuning
+- [x] prompt-engineering
+- [x] multimodal-ai
 
 ---
 
@@ -500,12 +500,12 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] spreadsheet                   priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] electron
-- [ ] webassembly
-- [ ] progressive-web-app
-- [ ] edge-computing
-- [ ] wasm-runtime
-- [ ] real-time-systems
+- [x] electron
+- [x] webassembly
+- [x] progressive-web-app
+- [x] edge-computing
+- [x] wasm-runtime
+- [x] real-time-systems
 
 ---
 
@@ -527,10 +527,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] ethics-in-computing           priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] linus-torvalds
-- [ ] tim-berners-lee
-- [ ] xerox-parc
-- [ ] arpanet
+- [x] linus-torvalds
+- [x] tim-berners-lee
+- [x] xerox-parc
+- [x] arpanet
 
 ---
 
@@ -552,10 +552,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] runbook                       priority: 2
 
 ### Supplemental (Ring 3)
-- [ ] chaos-engineering
-- [ ] feature-flag-rollout
-- [ ] toil
-- [ ] error-budget
+- [x] chaos-engineering
+- [x] feature-flag-rollout
+- [x] toil
+- [x] error-budget
 
 ---
 
@@ -578,10 +578,10 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] linear-programming           priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] optimization-theory
-- [ ] fourier-transform
-- [ ] markov-chains
-- [ ] game-theory
+- [x] optimization-theory
+- [x] fourier-transform
+- [x] markov-chains
+- [x] game-theory
 
 ---
 
@@ -604,7 +604,7 @@ Cross-listing convention: a topic appears in exactly one category's filesystem f
 - [x] numa-awareness               priority: 3
 
 ### Supplemental (Ring 3)
-- [ ] huge-pages
-- [ ] kernel-bypass
-- [ ] rdma
-- [ ] ebpf
+- [x] huge-pages
+- [x] kernel-bypass
+- [x] rdma
+- [x] ebpf

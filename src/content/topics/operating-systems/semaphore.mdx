@@ -1,0 +1,75 @@
+---
+title: Semaphore
+aliases: ["counting semaphore", "binary semaphore", "P/V operations", "Dijkstra semaphore"]
+category: operating-systems
+kind: concept
+summary: A signalling mechanism that controls access to shared resources by maintaining a counter — threads decrement it to acquire a resource and increment it to release, blocking when the count reaches zero.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["concurrency", "synchronization", "operating-systems", "threads"]
+prerequisites: ["thread", "mutex", "process"]
+related: ["deadlock", "lock-free-programming", "real-time-os"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A semaphore is like a bucket of permits. A thread must take a permit before entering a critical section; it returns the permit when done. If the bucket is empty, the thread waits until someone returns a permit. Dijkstra invented semaphores in 1965 as one of the first solutions to the critical section problem. They are the building block from which mutexes, condition variables, and higher-level concurrency primitives are constructed.
+
+## More detail
+
+A semaphore is a non-negative integer with two atomic operations:
+
+- **wait / P / down / acquire** — if the count > 0, decrement and proceed; if count == 0, block the calling thread.
+- **signal / V / up / release** — increment the count; if any threads are blocked, wake one.
+
+(P and V are from Dutch: *proberen* — to try; *verhogen* — to increment.)
+
+**Binary semaphore (count is 0 or 1):** equivalent to a mutex. Start at 1. `P` acquires, `V` releases. Unlike a mutex, any thread can call `V` — ownership is not enforced. This makes binary semaphores useful for producer-consumer signalling (producer signals, consumer waits) but risky as a mutex substitute (no priority inheritance, no deadlock detection).
+
+**Counting semaphore:** count ≥ 0. Models a pool of resources — e.g., a semaphore initialised to 5 guards a pool of 5 database connections. Threads acquire a connection (`P`), use it, and release (`V`).
+
+**Classic problems solved with semaphores:**
+
+*Producer-Consumer (Bounded Buffer):*
+```
+empty = Semaphore(N)   // N slots available
+full  = Semaphore(0)   // 0 items available
+mutex = Semaphore(1)   // protect buffer
+
+producer: P(empty); P(mutex); add_item(); V(mutex); V(full)
+consumer: P(full);  P(mutex); get_item(); V(mutex); V(empty)
+```
+
+*Readers-Writers:* multiple readers may read concurrently; writers need exclusive access. Implemented with two semaphores and a reader count.
+
+**Pitfalls:**
+- **Deadlock** — if two threads each hold one semaphore and wait for the other.
+- **Starvation** — if the semaphore's scheduling policy never wakes a particular thread.
+- **Forgetting V** — a thread that crashes or returns without signalling permanently reduces the count.
+
+**Semaphore vs. mutex:** a mutex has ownership (only the acquiring thread can release), priority inheritance, and is used purely for mutual exclusion. Semaphores are more general (signalling, counting) but lack ownership — bugs are harder to detect. Modern code prefers mutexes for mutual exclusion and condition variables for signalling; semaphores are used where counting semantics are needed.
+
+**In POSIX:** `sem_init`, `sem_wait`, `sem_post`. In Linux, also futex-based for fast user-space semaphores.
+
+## Why it matters
+
+Semaphores are the oldest synchronisation primitive and appear in every OS, RTOS, and concurrent programming textbook. Understanding them is foundational to understanding mutexes, condition variables, monitors, and all higher-level concurrency abstractions. They are still directly used in OS kernels, device drivers, and real-time systems where low-level control is required.
+
+## Real-world examples
+
+- POSIX `sem_t` is used in Linux IPC for process-level synchronisation (named semaphores in `/dev/shm`).
+- RTOSes (FreeRTOS, VxWorks) expose binary and counting semaphores as their primary synchronisation primitives.
+- Java's `java.util.concurrent.Semaphore` is used to implement connection pools and rate limiters.
+- Linux kernel uses semaphores (`struct semaphore`) for sleeping locks in device drivers.
+
+## Common misconceptions
+
+- **"A semaphore is the same as a mutex."** A binary semaphore can be used like a mutex, but it lacks ownership semantics and priority inheritance — using it as a mutex introduces bugs that are hard to debug.
+- **"Semaphores are outdated."** They remain the right tool for counting resources and for producer-consumer signalling where condition variables are unavailable (e.g., between processes via `sem_open`).
+
+## Learn next
+
+Semaphores are a foundation for understanding [mutexes](/t/mutex) and [deadlocks](/t/deadlock). They are widely used in [real-time operating systems](/t/real-time-os). [Lock-free programming](/t/lock-free-programming) replaces semaphore-based synchronisation with atomic operations for better performance.

@@ -1,0 +1,76 @@
+---
+title: ASIC
+aliases: ["Application-Specific Integrated Circuit", "custom silicon", "tape-out", "SoC"]
+category: hardware
+kind: concept
+summary: A chip designed for a single specific purpose — providing the maximum possible performance and power efficiency at the cost of inflexibility and multi-million dollar fabrication investment, used for Bitcoin mining, AI accelerators, and mobile SoCs.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["hardware", "chip-design", "performance", "semiconductor"]
+prerequisites: ["cpu", "fpga", "binary-numbers"]
+related: ["gpu", "systolic-array", "moore-s-law"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A CPU can run any program but isn't optimised for any particular task. An ASIC is the opposite: a chip designed from scratch to do one thing — mining Bitcoin, running a neural network, processing video, or encrypting storage. An ASIC for SHA-256 hashing is 100,000× more efficient than a CPU at the same task — but cannot do anything else. The chip is designed once, costs millions in fabrication (NRE — non-recurring engineering), then manufactured in millions of copies for pennies each. When volume justifies the investment, nothing beats an ASIC.
+
+## More detail
+
+**ASIC design flow:**
+1. **Specification:** define what the chip must do (logic functions, performance, power budget, I/O).
+2. **RTL design:** write Verilog/VHDL describing the circuit.
+3. **Verification:** simulate, formally verify, and emulate on FPGA to ensure correctness before tape-out.
+4. **Synthesis:** convert RTL to a gate-level netlist (logic gates from a standard cell library provided by the foundry).
+5. **Place & route (P&R):** physically arrange cells on the silicon die and route metal interconnects. Timing closure (meeting all timing constraints) is the hardest step.
+6. **Sign-off:** timing, power, signal integrity, design rule check (DRC), layout vs. schematic (LVS).
+7. **Tape-out:** the verified layout is submitted to the foundry (TSMC, Samsung, Intel Foundry, GlobalFoundries).
+8. **Fabrication:** the foundry manufactures the wafers (~6–12 weeks for advanced nodes). A 300mm wafer at 3nm: ~$20,000–$50,000 per wafer.
+9. **Packaging and test.**
+
+**Economics:**
+- **NRE:** design + mask set (the photolithographic masks used for fabrication). A 3nm mask set: $15M–$30M.
+- **Per-unit cost:** amortised over volume. 1 million units at $30M NRE = $30 NRE/chip + a few dollars fab cost.
+- **Break-even:** typically requires millions of units to justify ASIC over FPGA or GPU.
+
+**Process nodes:** the fabrication process determines transistor density and power efficiency. Smaller nodes = more transistors per mm² and lower power.
+- Intel 14nm (2014), 10nm (2019), 7nm (2023)
+- TSMC 7nm (2018), 5nm (2020), 3nm (2022), 2nm (2025)
+- Samsung 3nm (2022, first commercial GAA transistors)
+
+The "nm" number is a marketing label, not the literal gate length — but it tracks density improvements.
+
+**Types of ASICs:**
+- **Full-custom ASIC:** every transistor manually placed for maximum performance. Used for analog circuits and the most critical digital paths (CPUs, DRAM). Very expensive.
+- **Standard cell ASIC:** uses pre-designed cells (inverter, NAND, flip-flop) placed by automated tools. The standard approach.
+- **Platform ASIC:** a base die with programmable interconnects for customisation — between FPGA and ASIC.
+- **SoC (System on Chip):** an ASIC integrating CPU cores, GPU, memory controllers, I/O, and accelerators on one die. Apple A-series, Qualcomm Snapdragon, Google Tensor.
+
+**Notable ASICs:**
+- **Bitcoin ASICs** — Bitmain's Antminer S21: 200 TH/s SHA-256 hashing at 17 J/TH. A GPU does 100 MH/s at 100 J/TH — 10,000× less efficient.
+- **Google TPU** — a systolic-array ASIC for matrix multiplication; 275 TFLOPS at 170W (TPUv4).
+- **Apple M4** — an SoC with ARM CPU cores, GPU, Neural Engine (ASIC for ML), and Secure Enclave on TSMC 3nm.
+- **Amazon Graviton** — ARM CPU ASIC optimised for cloud workloads; used in EC2.
+
+## Why it matters
+
+ASICs are why your phone's camera AI is fast enough to do real-time HDR and portrait mode without draining the battery, why Bitcoin mining is done on custom chips rather than GPUs, and why Google's TPU trains language models faster than equivalent GPU clusters. The economic logic of ASIC vs. FPGA vs. GPU vs. CPU determines what hardware gets built and why. Engineers designing systems for high-volume applications or extreme performance requirements need to understand when to invest in custom silicon.
+
+## Real-world examples
+
+- Apple: the M4 chip (TSMC 3nm) has 28 billion transistors; Apple's Neural Engine (ASIC) runs CoreML models at 38 TOPS.
+- Google Cloud TPU v5: custom ASIC for Gemini training; deployed in pods of 4096+ chips.
+- Bitmain Antminer dominates Bitcoin mining; profitability depends on the ASIC's energy efficiency.
+- Amazon AWS Inferentia (ASIC for ML inference): deployed for Amazon's own ML workloads; offered as `inf1`, `inf2` instance types.
+
+## Common misconceptions
+
+- **"ASICs are always faster than FPGAs."** An ASIC implementation of the same logic is faster and more power-efficient than an FPGA, but a GPU or CPU at the same process node may outperform an FPGA-based or even ASIC-based design if the workload is parallel enough.
+- **"ASIC design is only for semiconductor companies."** Hyperscalers (Google, Apple, Amazon, Microsoft, Meta) all design their own ASICs. The barrier is falling: chiplets and open PDKs (SkyWater 130nm) allow smaller teams to tape out.
+
+## Learn next
+
+ASICs are the fixed-function extreme of the flexibility-performance spectrum, contrasted with [FPGAs](/t/fpga) (reconfigurable) and [GPUs](/t/gpu) (programmable parallel). [Moore's law](/t/moore-s-law) drove the economic viability of ASICs. [Systolic arrays](/t/systolic-array) are the ASIC architecture for ML acceleration.

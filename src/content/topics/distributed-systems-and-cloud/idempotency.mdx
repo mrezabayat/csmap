@@ -1,0 +1,57 @@
+---
+title: Idempotency
+aliases: ["idempotent operation", "idempotency key"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: An operation is idempotent if performing it multiple times has the same effect as performing it once — a property that makes retries safe and distributed systems far easier to reason about.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "reliability", "api-design", "patterns"]
+prerequisites: ["distributed-system"]
+related: ["rate-limiting", "circuit-breaker", "saga-pattern"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In a distributed system, "did that request succeed?" is genuinely hard to answer — the network can fail after you sent the request but before you received the reply. If your operation is **idempotent**, you can safely retry: doing it again produces the same result as doing it once. "Set value to X" is idempotent (repeating is harmless). "Add $10 to balance" is not (repeating charges twice).
+
+## More detail
+
+**Mathematical definition:** an operation `f` is idempotent if `f(f(x)) = f(x)` — applying it twice gives the same result as applying it once.
+
+**HTTP methods:** `GET`, `PUT`, `DELETE`, and `HEAD` are defined as idempotent by the HTTP spec. `POST` and `PATCH` are not (by default). `PUT` replaces a resource entirely; applying it twice puts the same state twice — idempotent. `DELETE` removes a resource; a second call returns 404 but doesn't cause additional harm — idempotent. `POST` creates a new resource each time — not idempotent.
+
+**Idempotency keys:** for non-idempotent operations (payments, email sends), add a unique client-generated `Idempotency-Key` header. The server stores the key and its response. On a duplicate request with the same key, return the stored response without re-executing. Stripe, PayPal, and all major payment APIs support this:
+
+```http
+POST /charges
+Idempotency-Key: client-uuid-12345
+{ "amount": 1000, "currency": "usd" }
+```
+
+**Database-level idempotency:** `INSERT ... ON CONFLICT DO NOTHING`, `UPSERT`, conditional writes (`UPDATE WHERE version = expected`) — all are idempotent forms of write. Logical replication uses sequence numbers so replaying a log entry twice leaves the database in the same state as replaying it once.
+
+**At-least-once delivery:** message queues (Kafka, SQS) guarantee messages are delivered at least once — meaning duplicates are possible. Consumers must handle duplicate messages. The two strategies are: make the consumer operation intrinsically idempotent, or track processed message IDs and skip duplicates.
+
+## Why it matters
+
+Retries are the primary recovery mechanism for transient failures in distributed systems — networks drop packets, servers timeout, connections reset. If operations are not idempotent, retries cause double-charging, duplicate emails, or duplicated records. Designing idempotent APIs and data pipelines converts uncertain single-attempt semantics into safe at-least-once semantics, which is far easier to reason about and build correctly.
+
+## Real-world examples
+
+- Stripe charges fail silently in transit; idempotency keys ensure retrying a charge never double-charges a customer.
+- Kafka consumers checkpoint their offset only after successfully processing a message; a crash replays from the last checkpoint — idempotent consumers handle the replay.
+- ETL pipelines use idempotent upserts so re-running a daily job doesn't duplicate rows.
+- AWS Lambda functions are recommended to be idempotent because SQS can deliver an event more than once.
+
+## Common misconceptions
+
+- **"Retry logic is enough."** Retrying a non-idempotent operation amplifies the problem. Idempotency must be designed in, not bolted on.
+- **"HTTP GET is always safe AND idempotent."** GET is idempotent by spec but not all implementations honour this — a GET that increments a view counter changes server state and is not truly idempotent.
+
+## Learn next
+
+Idempotency makes [rate limiting](/t/rate-limiting) retries safe and is required for [saga pattern](/t/saga-pattern) compensations. [Circuit breakers](/t/circuit-breaker) decide when to retry; idempotency decides whether it is safe to do so.

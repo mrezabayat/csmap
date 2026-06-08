@@ -1,0 +1,71 @@
+---
+title: Linus Torvalds
+aliases: ["Linus Torvalds", "Linux kernel", "Git creator"]
+category: history-and-society
+kind: concept
+summary: Finnish software engineer who created the Linux kernel in 1991 and Git in 2005 — two of the most consequential software projects in history, powering smartphones, cloud servers, and distributed version control worldwide.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["history", "linux", "open-source", "people"]
+prerequisites: ["operating-system", "version-control"]
+related: ["tim-berners-lee", "xerox-parc", "arpanet"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In 1991, a 21-year-old Finnish student named Linus Torvalds posted to a Usenet newsgroup: "I'm doing a (free) operating system (just a hobby, won't be big and professional like gnu)." That kernel — Linux — now runs 97% of the world's top 500 supercomputers, all 1.5 billion Android smartphones, Google's and Amazon's data centres, and every major cloud provider. In 2005, after a version control dispute, he wrote Git in two weeks — now used by 100 million developers worldwide. Two projects. Two accidental revolutions.
+
+## More detail
+
+**Linux (1991):**
+Torvalds was a computer science student at the University of Helsinki using MINIX (a small educational Unix clone by Andrew Tanenbaum) and wanted a Unix-like OS for his new 386 PC. He started writing his own kernel as a learning exercise. In 1991 he announced it on comp.os.minix and released it under a free license.
+
+The Linux kernel developed rapidly through volunteer contributions from around the world — the first major demonstration that distributed open-source development at global scale could produce production-quality software. Richard Stallman's GNU project had produced the essential Unix tools (GCC, bash, glibc) but lacked a kernel; Linux provided the missing piece. The combination (GNU/Linux) became the dominant open-source OS.
+
+**Key moments in Linux history:**
+- 1991: First public announcement and 0.01 release.
+- 1992: Switched to GPL v2 license — critical for copyleft protection.
+- 1994: 1.0 release; Slackware and Debian emerge as first distributions.
+- 1998: IBM announced $1 billion investment in Linux; corporate legitimacy.
+- 2001: Torvalds moves to California; Linux Foundation eventually formalises governance.
+- 2003: SCO sues IBM over alleged Unix code in Linux; eventually dismissed.
+- 2008: Android (Linux kernel) ships on the first commercial smartphone.
+- 2012: Linux kernel has >1 million commits from thousands of contributors.
+- 2023: ~6,000 contributors per release cycle; ~80,000+ active developers over kernel history.
+
+**Git (2005):**
+Linux kernel development used BitKeeper (proprietary) for version control. When BitKeeper revoked free access due to a license dispute, Torvalds spent two weeks writing Git. Design goals: speed, distributed architecture (every clone is a full repository), strong data integrity (SHA-1 hash of every object), and non-linear development (branching and merging).
+
+Git was released in 2005. GitHub (2008) made Git accessible to a broader audience. Today Git is used by ~100 million developers and has made software collaboration what it is. Essentially all open-source software uses Git; so do Microsoft, Google, Facebook, and virtually every software company.
+
+**Torvalds's leadership style:** Torvalds is known for direct, sometimes harsh technical feedback in Linux kernel mailing lists — a leadership style that has been criticized as intimidating. In 2018 he took a break and reflected on his communication approach, and the Linux kernel adopted a Code of Conduct. His technical rigour and willingness to reject bad patches is also credited with maintaining the kernel's quality.
+
+**Technical philosophy:**
+- "Talk is cheap. Show me the code."
+- Prefers working, tested implementations over theoretical designs.
+- Strong opponent of C++ in the kernel (prefers C).
+- Designed Git with immutable content-addressable objects — a design that has proven robust to 18 years of scale.
+
+## Why it matters
+
+Linux and Git are two of the most consequential pieces of software ever written. Linux demonstrates that a single motivated individual can start a project that becomes global infrastructure, and that open-source development at scale works. Git changed how all software is built — the branch-and-PR workflow is now universal. Torvalds's story is also about the importance of pragmatic engineering choices, the maintainability of open-source at scale, and the long-term consequences of licensing decisions (GPL).
+
+## Real-world examples
+
+- Android (Linux): 3 billion devices worldwide.
+- AWS, Google Cloud, Azure: all Linux-based infrastructure.
+- GitHub: 100M developers, all using Git.
+- Kubernetes: container orchestration built on Linux namespaces and cgroups.
+- The Linux Foundation: now a $100M+ non-profit hosting dozens of critical open-source projects.
+
+## Common misconceptions
+
+- **"Linux is just for servers."** Linux is also Android (smartphones), Chromebooks, embedded systems (routers, cameras, TVs, cars), and increasingly laptops (Steam Deck, etc.).
+- **"Torvalds wrote everything in Linux."** The Linux kernel has contributions from thousands of engineers at Google, Intel, Red Hat, Canonical, ARM, and hundreds of companies. Torvalds is the maintainer and final arbiter; most code is contributed by others.
+
+## Learn next
+
+[Linus Torvalds](/t/linus-torvalds) is one pivotal figure in the history shaped at [Xerox PARC](/t/xerox-parc) and the ARPANET. [Tim Berners-Lee](/t/tim-berners-lee) made the web; Torvalds made the infrastructure the web runs on.

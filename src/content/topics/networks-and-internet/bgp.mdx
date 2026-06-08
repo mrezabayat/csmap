@@ -1,0 +1,57 @@
+---
+title: BGP
+aliases: ["Border Gateway Protocol", "internet routing", "autonomous system"]
+category: networks-and-internet
+kind: protocol
+summary: The routing protocol that holds the internet together — autonomous systems exchange reachability information so each router knows how to forward packets to any IP address on earth.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["networking", "routing", "internet", "infrastructure"]
+prerequisites: ["router", "ip-address", "packet"]
+related: ["anycast", "ipv6", "mpls"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+The internet is not one network — it's tens of thousands of independently operated networks (ISPs, cloud providers, universities) each called an **Autonomous System (AS)**. BGP is the protocol they use to tell each other: "I can reach these IP address ranges; here's the path through me." Every router on the internet builds a routing table from BGP announcements, and packets hop from AS to AS until they reach their destination. If BGP breaks, large swaths of the internet go dark.
+
+## More detail
+
+Each AS has a unique **AS Number (ASN)** (e.g. AS15169 = Google, AS16509 = Amazon). BGP sessions run over TCP port 179 between routers at AS boundaries (**eBGP**, external) or within an AS for consistent routing (**iBGP**, internal).
+
+**BGP UPDATE messages** announce or withdraw **prefixes** (IP ranges like `8.8.8.0/24`) along with **attributes**:
+
+- **AS_PATH** — the list of ASes the prefix has traversed. Loop prevention: reject if your own ASN is in the path. Longer paths are less preferred.
+- **NEXT_HOP** — the IP to forward to for this prefix.
+- **LOCAL_PREF** — used within an AS to prefer exit points. Not shared across ASes.
+- **MED (Multi-Exit Discriminator)** — hint to a neighbouring AS about the preferred entry point.
+- **COMMUNITY** — arbitrary tags for policy tagging (e.g. "no-export", "blackhole").
+
+**Path selection** (when multiple paths to the same prefix exist) follows a deterministic tie-breaking sequence: highest LOCAL_PREF → shortest AS_PATH → lowest MED → eBGP over iBGP → IGP metric → lowest router-id.
+
+**BGP security** is notoriously weak. **BGP hijacking** (announcing someone else's prefix) occurs regularly — accidentally (fat-finger, misconfiguration) and maliciously. RPKI (Resource Public Key Infrastructure) cryptographically ties prefixes to ASNs and is gradually being adopted to verify origin. BGPSEC extends this to path signing.
+
+**BGP convergence** is slow (seconds to minutes after a failure); this is why internet outages from routing changes linger. The internet "routes around" failures but takes time to do so.
+
+## Why it matters
+
+BGP is literally the protocol that makes the internet work as one network instead of thousands of disconnected ones. Every cloud provider, ISP, and content network engineers BGP. A BGP misconfiguration can and regularly does take down significant fractions of internet reachability — Facebook's 2021 outage was caused by a BGP withdrawal that made Facebook's entire infrastructure unreachable. Understanding BGP explains why the internet is resilient to some failures and fragile to others, how anycast works, and how traffic engineering is done at scale.
+
+## Real-world examples
+
+- In 2008 Pakistan Telecom announced a more-specific prefix for YouTube (attempting a block), accidentally attracting YouTube's global traffic and taking it down for ~2 hours.
+- Facebook's October 2021 outage: an automated BGP configuration tool withdrew all of Facebook's prefixes, making its DNS and all services unreachable for six hours.
+- Cloudflare, Akamai, and AWS use BGP [anycast](/t/anycast) to route users to the nearest data centre.
+- Network operators configure BGP communities to signal DDoS blackholing: "drop all traffic to this prefix" propagated to upstream providers.
+
+## Common misconceptions
+
+- **"The internet is centrally managed."** BGP is decentralised — no single authority controls it. Any AS can (incorrectly) announce any prefix, and the internet will (often) believe it.
+- **"BGP is secure."** The base protocol has no authentication of prefix ownership. RPKI adds this, but adoption is incomplete and not universal.
+
+## Learn next
+
+BGP is how [routers](/t/router) agree on global [IP address](/t/ip-address) reachability. [Anycast](/t/anycast) routing is a BGP trick; [IPv6](/t/ipv6) adds new address families that BGP also carries. Understanding BGP makes incidents like Facebook's 2021 outage legible.

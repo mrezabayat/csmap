@@ -1,0 +1,61 @@
+---
+title: Multi-Factor Authentication
+aliases: ["MFA", "2FA", "two-factor authentication", "TOTP", "passkey"]
+category: security-and-privacy
+kind: concept
+summary: Requiring a second proof of identity beyond a password — something you have (a phone app or hardware key) or something you are (biometric) — so a stolen password alone is not enough to gain access.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["security", "authentication", "2fa", "identity"]
+prerequisites: ["authentication", "password-hashing"]
+related: ["oauth", "zero-trust"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Passwords are one factor: something you know. If it leaks (phishing, data breach, password reuse), an attacker has everything they need. Multi-factor authentication adds a second requirement: something you *have* (your phone) or something you *are* (your fingerprint). Even if the attacker has your password, they cannot log in without the second factor. This single change blocks the vast majority of account takeover attacks.
+
+## More detail
+
+**Authentication factors:**
+- **Knowledge** — something you know: password, PIN, security question.
+- **Possession** — something you have: phone (TOTP app), hardware key, SIM card.
+- **Inherence** — something you are: fingerprint, face scan, voice.
+
+**Common second-factor methods:**
+
+- **TOTP (Time-based One-Time Password)** — your authenticator app (Google Authenticator, Authy, 1Password) generates a 6-digit code every 30 seconds using a shared secret and the current time. RFC 6238. The server verifies by generating the same code server-side. The code is only valid for 30 seconds; phishing that captures it must use it immediately (real-time phishing attacks do this).
+- **Push notification** — the server sends a push to your phone; you approve. Vulnerable to "MFA fatigue" attacks (spamming approve requests until the user clicks).
+- **Hardware security key (WebAuthn / FIDO2)** — a physical USB/NFC device (YubiKey, Google Titan). Uses public-key cryptography: the key signs a challenge containing the domain name. Because the signature includes the domain, phishing sites cannot capture and replay the credential — the strongest common second factor.
+- **SMS OTP** — a code sent via text. Weak: SIM-swapping attacks can redirect your SMS. Still better than no MFA but strongly discouraged for high-value accounts.
+- **Passkeys** — a WebAuthn credential stored in the device's secure enclave or a password manager. Combines authentication and second factor into one phishing-resistant flow. Increasingly replacing passwords entirely.
+
+**MFA bypass attacks:**
+- **Real-time phishing** — attacker proxies your login to the real site in real time, capturing and immediately replaying the TOTP code.
+- **MFA fatigue** — repeatedly send push notification requests until the user approves.
+- **SIM swapping** — trick carrier to transfer victim's phone number.
+
+WebAuthn/FIDO2 hardware keys or passkeys resist all of these by binding credentials to the legitimate origin domain.
+
+## Why it matters
+
+Password compromise is endemic — billions of credentials are in public breach databases. MFA is the single most effective defence against account takeover for any system that protects valuable data. NIST SP 800-63 and every major compliance framework (PCI-DSS, SOC 2, ISO 27001) require MFA for sensitive access. GitHub and Google have seen near-elimination of account takeovers on accounts with hardware keys. Engineers building any user-facing system should understand MFA requirements, phishing resistance levels, and which factors are appropriate for which threat models.
+
+## Real-world examples
+
+- GitHub requires hardware keys or passkeys for all open-source maintainers (npm and other critical packages).
+- Google advanced protection programme requires two hardware keys; no Google accounts enrolled have been phished.
+- Enterprise SSO (Okta, Azure AD, Duo) enforce MFA before access to cloud resources.
+- Banking apps use push MFA (or TOTP) for wire transfers; SMS OTP for basic login.
+
+## Common misconceptions
+
+- **"Any MFA is equally secure."** SMS OTP is significantly weaker than TOTP, which is weaker than FIDO2. The threat model determines which is appropriate.
+- **"MFA means users can reuse weak passwords."** MFA protects against credential compromise, not against brute-force on weak passwords during the password factor phase. Use both strong passwords and MFA.
+
+## Learn next
+
+MFA strengthens [authentication](/t/authentication). The most phishing-resistant forms (WebAuthn / FIDO2) use [public-key cryptography](/t/public-key-cryptography). [Zero-trust](/t/zero-trust) architecture requires continuous MFA verification, not just at login.

@@ -1,0 +1,72 @@
+---
+title: Fitts's Law
+aliases: ["Fitts' law", "Fitts law", "pointing time model", "HCI model"]
+category: human-computer-interaction
+kind: concept
+summary: A predictive model of human pointing performance — time to acquire a target depends on the distance to the target and its size, expressed as T = a + b·log₂(2D/W) — guiding the design of interactive UI elements.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["hci", "ui-design", "usability", "human-factors"]
+prerequisites: ["user-interface", "usability-test"]
+related: ["gestalt-principles", "dark-pattern"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Fitts's Law says: the time it takes to move a mouse pointer (or finger, or stylus) to a target depends on two things — how far away the target is, and how big it is. Larger and closer targets are faster to hit. This is not just intuition — it's a mathematical model validated in thousands of experiments since Paul Fitts published it in 1954. Every time a designer makes a button larger, puts frequently used controls closer to the cursor, or moves the menu bar to the top edge of the screen (where it's infinitely tall), they're applying Fitts's Law.
+
+## More detail
+
+**The formula:** `T = a + b · log₂(1 + D/W)`
+- `T` — movement time (seconds).
+- `D` — distance from the starting position to the centre of the target.
+- `W` — width of the target (in the direction of movement).
+- `a`, `b` — empirical constants depending on the input device.
+- `log₂(1 + D/W)` — the "index of difficulty" (ID). ID = 1 bit means the task is easy; ID = 5 bits is hard.
+
+**Key consequences:**
+
+*Size matters more than you think.* Doubling target size reduces difficulty by ~1 bit; halving distance also reduces by ~1 bit. For high-frequency targets (primary CTA, submit button), maximize size.
+
+*Edges and corners are infinitely large.* A menu bar at the top screen edge requires no fine motor control to stay on — you push up and the cursor stops. ID → 0. This is why macOS puts the menu bar at the screen edge rather than inside the window: it's infinitely faster to access than an in-window menu bar.
+
+*The pie menu advantage.* Radial menus (pie menus) place all options equidistant from the current cursor position — minimising D. Linear menus require scrolling or travelling to distant options. Pie menus are consistently 20–50% faster per Fitts's analysis.
+
+*Touch vs. pointer.* Touch has higher variance (fingers are imprecise, ~5mm accuracy); targets must be larger. Apple HIG recommends 44×44pt minimum touch targets; Google Material Design recommends 48×48dp.
+
+**Applications in UI design:**
+- **Primary actions get the largest buttons.** "Confirm," "Send," "Buy" buttons should be large and prominently placed.
+- **Toolbars along screen edges.** macOS Dock (bottom edge), Windows taskbar (bottom edge) — screen edge targets require less precision.
+- **Context menus.** Opening near the cursor minimises travel distance.
+- **Undo buttons.** High-frequency, should be large and accessible (Ctrl+Z is the keyboard equivalent of a tiny target becoming infinitely accessible).
+- **Avoid small targets for common actions.** A 16×16px "close tab" button in a browser tab is famously annoying — it violates Fitts's Law.
+
+**Fitts's Law and accessibility:** larger targets benefit everyone — especially users with motor impairments, tremors, or elderly users with reduced precision. WCAG 2.5.5 (Level AAA) recommends a minimum target size of 44×44px.
+
+**Limitations:**
+- Fitts's Law models pointing time only — it doesn't predict accuracy or cognitive load.
+- It assumes a 1D or 2D pointing task; 3D or touch gestures require extensions (multi-touch, gesture models).
+- Doesn't model decision time (what to click, not how to click it).
+
+## Why it matters
+
+Fitts's Law is one of the most empirically validated and directly actionable models in HCI. It translates directly into design decisions that measurably affect user performance. Every UI framework, design system, and accessibility guideline draws on it. Understanding it enables engineers and designers to evaluate UI layouts quantitatively — not just aesthetically — and to justify design decisions ("make the primary button larger") with rigorous reasoning.
+
+## Real-world examples
+
+- macOS menu bar: always at the screen edge, exploiting infinite target size. Apple's usability lead over Windows menu bars (in-window, finite) was measured by Fitts analysis.
+- Android and iOS home screens: icon minimum size guidelines (48dp / 44pt) derived from Fitts's accuracy requirements for touch.
+- Windows 11 centered taskbar: moved Start button from edge to center, reducing its effective size — criticized by HCI designers for violating Fitts's Law.
+- Game controllers: frequently-used buttons (A/X) are placed in easy thumb reach positions; rarely-used options are in harder positions.
+
+## Common misconceptions
+
+- **"Just make everything bigger."** Larger targets reduce the time to acquire them, but screen space is finite. The trade-off is information density vs. interaction speed.
+- **"Fitts's Law only applies to mouse input."** It applies to any pointing movement: mouse, touchpad, touchscreen, stylus, eye tracking, even reaching for physical objects.
+
+## Learn next
+
+Fitts's Law is one foundation of [human-computer interaction](/t/user-interface) design. [Gestalt principles](/t/gestalt-principles) explain how humans *perceive* interfaces; Fitts's Law explains how they *interact* with them. [Dark patterns](/t/dark-pattern) deliberately violate Fitts's Law to make harmful actions easy and desired actions hard.

@@ -1,0 +1,55 @@
+---
+title: Diffusion Model
+aliases: ["denoising diffusion", "DDPM", "score-based generative model", "stable diffusion"]
+category: artificial-intelligence
+kind: concept
+summary: A generative model that learns to remove noise from corrupted data, step by step — the approach behind Stable Diffusion, DALL-E, and Sora that produces startlingly realistic images and video.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["generative-ai", "image-generation", "deep-learning", "probabilistic"]
+prerequisites: ["neural-network", "training-and-inference"]
+related: ["transformer", "large-language-model", "backpropagation"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A diffusion model learns to reverse noise. During training, you take a real image and gradually add Gaussian noise until it becomes pure static (the **forward process**). You then train a neural network to reverse this — given a slightly noisy image, predict the noise that was added. At generation time, you start from pure noise and let the network denoise it step by step, arriving at a realistic image. The magic is that if you start from a different noise seed, you get a completely different image.
+
+## More detail
+
+**Forward process (fixed, not learned).** Over T timesteps, add Gaussian noise to a data sample `x₀`:
+```
+x_t = √(ᾱ_t) · x₀ + √(1 − ᾱ_t) · ε,   ε ~ N(0, I)
+```
+At T (typically 1000), `x_T` is nearly indistinguishable from random noise. The noise schedule (how fast noise is added) is a hyperparameter.
+
+**Reverse process (learned).** Train a neural network `ε_θ(x_t, t)` — usually a **U-Net** for images or a transformer — to predict the noise `ε` from the noisy input `x_t` and timestep `t`. Training loss: MSE between predicted and actual noise. The model implicitly learns the score (gradient of the log data distribution) at each noise level.
+
+**Sampling.** Start from `x_T ~ N(0, I)`. Iteratively apply the learned denoiser to estimate `x_{t-1}` from `x_t`. After T steps, `x_0` is a new sample from the learned data distribution. DDIM (Denoising Diffusion Implicit Models) reduces the number of steps from 1000 to ~50 with minor quality loss.
+
+**Conditioning.** To generate based on a text prompt (text-to-image), condition the denoiser on a text embedding — cross-attention in a transformer-based denoiser attends to the text tokens at every denoising step. This is how DALL-E 2, Stable Diffusion, and Imagen work. **Classifier-free guidance** amplifies the conditioning by blending conditional and unconditional predictions, dramatically improving prompt adherence.
+
+**Latent diffusion.** Stable Diffusion runs the diffusion process in the latent space of a VAE, not pixel space — 8× smaller, enabling practical generation on consumer GPUs.
+
+## Why it matters
+
+Diffusion models are the current state of the art for image, audio, and video generation, outperforming GANs on distribution coverage (no mode collapse) and training stability. They underpin the generative AI wave: Stable Diffusion for images, AudioLDM for audio, Sora and other video models. Understanding them is also theoretically instructive — they bridge score matching (a statistics technique), stochastic differential equations, and practical deep learning.
+
+## Real-world examples
+
+- Stable Diffusion (open-source) generates photorealistic images from text prompts on consumer hardware.
+- DALL-E 3 (OpenAI) and Imagen (Google) use diffusion for commercial image generation.
+- AudioLDM and Stable Audio generate music and sound effects from text descriptions.
+- Sora (OpenAI) extends latent diffusion to video using a transformer backbone.
+
+## Common misconceptions
+
+- **"Diffusion models memorise training images."** They generalise far beyond training examples; the stochastic sampling produces novel combinations. Some memorisation does occur for rare images and is an active research concern.
+- **"50 denoising steps means 50 forward passes."** Each denoising step is one neural-network forward pass, but the UNet is large — generation is slower than a GAN inference, though accelerators (SDXL-Turbo, LCM) reduce this to 4 steps.
+
+## Learn next
+
+Diffusion models are trained with a denoising objective over [neural networks](/t/neural-network). They are one generative AI paradigm; [large language models](/t/large-language-model) are another. [Multimodal AI](/t/multimodal-ai) combines both for systems that understand images and text.

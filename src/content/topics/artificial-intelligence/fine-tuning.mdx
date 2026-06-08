@@ -1,0 +1,54 @@
+---
+title: Fine-Tuning
+aliases: ["model fine-tuning", "transfer learning", "instruction tuning", "LoRA", "RLHF"]
+category: artificial-intelligence
+kind: concept
+summary: Continuing to train a pre-trained model on a smaller, task-specific dataset — adapting general capabilities to a narrow domain at a fraction of the cost of training from scratch.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["machine-learning", "transfer-learning", "llm", "training"]
+prerequisites: ["training-and-inference", "large-language-model"]
+related: ["transformer", "gradient-descent", "backpropagation"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Training a large model from scratch costs millions of dollars in compute. Fine-tuning says: start from a model that already knows the basics (pre-trained on billions of examples) and continue training on a small dataset of examples specific to your task — customer support conversations, medical records, code in your codebase. The model keeps its general knowledge and learns your domain on top, in hours rather than months.
+
+## More detail
+
+**Full fine-tuning** runs [backpropagation](/t/backpropagation) on all parameters. For a 7B-parameter model that is expensive but feasible on a cluster. For 70B+ it requires multi-GPU setups with 8-bit or 4-bit quantisation.
+
+**Parameter-efficient fine-tuning (PEFT)** adapts only a small fraction of parameters:
+
+- **LoRA (Low-Rank Adaptation)** — freeze the original weight matrices; add two small trainable matrices `A` and `B` whose product approximates the weight update (`W + AB`). Reduces trainable parameters by 100–1000×. At inference, merge `AB` back: no latency cost.
+- **QLoRA** — LoRA applied to a quantised 4-bit base model; enables fine-tuning a 65B model on a single 48GB GPU.
+- **Prefix tuning / prompt tuning** — prepend trainable "soft tokens" to the input; only those tokens are updated. Very few parameters, weaker adaptation than LoRA.
+- **Adapters** — insert small bottleneck modules between layers; train only those.
+
+**Instruction tuning** fine-tunes on `(instruction, response)` pairs to teach the model to follow instructions rather than just predict the next token. This is the step that turns a language model into a chat assistant. Most open-weight "Instruct" models (Llama-3-Instruct, Mistral-Instruct) are base models with instruction tuning applied.
+
+**RLHF (Reinforcement Learning from Human Feedback)** refines the model further: humans rank pairs of responses; a **reward model** is trained on those rankings; the language model is optimised to maximise the reward via PPO. This alignment step is what made ChatGPT notably more helpful and safe than the raw GPT-3.
+
+## Why it matters
+
+Fine-tuning makes powerful general models economically accessible to organisations that cannot train from scratch. A business can take an open-weight model (Llama 3, Mistral) and fine-tune it on proprietary data for far less than a GPT-4 API subscription, with full control over the model. PEFT techniques like LoRA have democratised this further — a 7B model can be meaningfully fine-tuned on a consumer GPU overnight. The tradeoff is **catastrophic forgetting** (fine-tuning can degrade general capabilities) and **overfitting** on small datasets.
+
+## Real-world examples
+
+- GitHub Copilot fine-tunes a code model on high-quality code repositories to improve suggestion quality.
+- Medical AI companies fine-tune general LLMs on clinical notes and literature for diagnosis assistance.
+- Customer-support bots fine-tune on historical ticket resolution logs to match company tone and knowledge.
+- Open-source community projects (Alpaca, Vicuna) fine-tuned LLaMA on instruction datasets to create capable chat models.
+
+## Common misconceptions
+
+- **"Fine-tuning is just re-training the model."** Fine-tuning starts from a checkpoint; re-training starts from random weights. The pre-trained representations are preserved and adapted, not discarded.
+- **"You need a large dataset to fine-tune."** LoRA can produce meaningful adaptation with a few hundred to a few thousand examples — sometimes fewer for narrow, consistent tasks.
+
+## Learn next
+
+Fine-tuning adapts a pre-trained model. The complementary approach — adding external knowledge without changing weights — is [retrieval-augmented generation](/t/retrieval-augmented-generation). Together they cover the two main ways to specialise a language model for production use.

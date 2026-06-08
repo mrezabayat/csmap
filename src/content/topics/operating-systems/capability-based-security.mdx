@@ -1,0 +1,59 @@
+---
+title: Capability-Based Security
+aliases: ["capabilities", "OCAP", "capability-based access control", "object capabilities"]
+category: operating-systems
+kind: concept
+summary: A security model where authority to access a resource is represented by an unforgeable token (a capability) that must be explicitly held and passed — removing the need for centralised access control tables and preventing ambient authority vulnerabilities.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["security", "operating-systems", "access-control", "design"]
+prerequisites: ["operating-system", "process", "sandbox"]
+related: ["microkernel-vs-monolithic", "authorization"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In traditional Unix security, a process has an identity (user ID), and the OS checks permissions by looking up that identity in access control lists. The problem: a process has *ambient authority* — if it can read files as user `alice`, it can read *all* alice's files, even in code you didn't intend to give file access to. Capability-based security flips this: you don't check identities; you hold an unforgeable token (a capability) for each resource you're allowed to use. If you don't have the capability, you cannot use the resource — period. Passing a capability to another function is an explicit grant of authority.
+
+## More detail
+
+A **capability** is an unforgeable reference to an object that includes the rights to perform certain operations on it. The holder of a file capability can read or write the file; they cannot fabricate capabilities for files they haven't been given. Capabilities are passed explicitly — you cannot exercise authority you don't possess, and you cannot obtain authority by guessing names.
+
+**Contrast with ACL/identity-based models:**
+- **ACL model:** the subject has an identity; the kernel checks a permission table at each access. Problems: confused deputy attack (a privileged program does something harmful on behalf of an unprivileged caller), ambient authority (a library call can silently exercise all the caller's permissions), and identity is checked at the time of access (revocation is hard).
+- **Capability model:** the subject must hold the capability. No identity check — the capability itself encodes authority. The confused deputy is impossible: the caller must explicitly pass the capability to the deputy to give it access.
+
+**Confused deputy problem:** a compiler (running with the user's permissions) is asked by a malicious user to write its output to `/etc/passwd`. In an ACL system, the compiler runs as the user, has ambient authority to write system files, and may comply. In a capability system, the compiler only holds capabilities given to it — it doesn't have a capability for `/etc/passwd` unless explicitly granted.
+
+**Operating system implementations:**
+- **EROS / Coyotos / seL4** — kernel objects are accessed only via capabilities. All IPC is capability-passing. seL4's capability system is formally verified.
+- **CHERI (Capability Hardware Enhanced RISC Instructions)** — hardware extension (ARM Morello prototype) that embeds capabilities in CPU pointers; every memory access is checked against the capability's bounds and permissions. Prevents buffer overflows and use-after-free by hardware enforcement.
+- **Plan 9 / Inferno** — everything is a file/name; capabilities are proxied through the file namespace.
+
+**Software object capabilities:**
+- **E language, Spritely Goblins, Joule** — programming languages where objects are capabilities. Functions only have access to objects explicitly passed to them.
+- **WebAssembly Component Model** — uses capability-based imports; a Wasm component can only call imported functions (capabilities); it cannot freely access host resources.
+- **WASI (WebAssembly System Interface)** — capability-based: modules receive specific file descriptor capabilities rather than ambient filesystem access.
+
+## Why it matters
+
+Capability-based security is considered the gold standard for access control by security researchers. Systems like seL4 and CHERI demonstrate practical implementations. The Principle of Least Authority (POLA) is most cleanly implemented via capabilities. Understanding capabilities is important for anyone designing security-sensitive systems, evaluating microkernel architectures, or working with WebAssembly or modern sandboxing technologies.
+
+## Real-world examples
+
+- seL4 is capability-based at the kernel level; all process communication is via capability-passed endpoints.
+- ARM Morello / CHERI prototype: Microsoft is evaluating CHERI for Cheriot (secure IoT), and Cambridge runs a full capability-based OS (CheriBSD).
+- WebAssembly + WASI: a Wasm module that processes images can be given only a preopened directory capability — it cannot open arbitrary files.
+- Deno (JavaScript runtime): uses a capability-based security model — you must explicitly grant `--allow-read`, `--allow-net`, etc.
+
+## Common misconceptions
+
+- **"Unix permissions and capabilities are the same."** Linux has a "capabilities" feature (`CAP_NET_ADMIN`, etc.) that is *not* object capabilities — it's a refinement of the Unix privilege model (splitting root into granular privileges). True object capabilities are a different paradigm.
+- **"Capability-based systems are impractical."** seL4 runs production drones and automotive systems. WASI is standardised. Deno is widely used. The model is practical — it's the defaults (Unix ACLs everywhere) that make it seem unusual.
+
+## Learn next
+
+Capability-based security is the access control model underlying secure [sandbox](/t/sandbox) designs and [microkernel](/t/microkernel-vs-monolithic) architectures. It is the implementation of [authorization](/t/authorization) at the OS level.

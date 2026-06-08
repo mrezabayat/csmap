@@ -1,0 +1,55 @@
+---
+title: Paxos
+aliases: ["Paxos protocol", "Multi-Paxos", "single-decree Paxos"]
+category: distributed-systems-and-cloud
+kind: protocol
+summary: The foundational consensus algorithm that proved distributed agreement is possible in the face of message loss and crashes — notoriously hard to understand, but the theoretical backbone of nearly all consensus work.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "consensus", "fault-tolerance", "theory"]
+prerequisites: ["consensus", "distributed-system"]
+related: ["raft", "gossip-protocol"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Paxos solves one precise problem: get a group of servers to agree on a single value, even if messages are delayed, duplicated, or lost, and even if some servers crash (but not all). Lamport published it in 1989 (circulated as a technical report, published 1998); it became the foundation of almost all distributed consensus theory. The algorithm is famously counterintuitive — Lamport himself wrote a paper titled "Paxos Made Simple" because the original was so hard to follow.
+
+## More detail
+
+**Single-decree Paxos** (the basic form) achieves agreement on one value in two phases:
+
+**Phase 1 — Prepare/Promise.** A **proposer** picks a unique proposal number `n` and broadcasts `Prepare(n)` to a quorum (majority) of **acceptors**. Each acceptor that hasn't already promised a higher number responds with `Promise(n, last_accepted)` — committing to reject any future proposals with number < n, and reporting any value it has already accepted.
+
+**Phase 2 — Accept/Accepted.** If the proposer receives promises from a quorum, it sends `Accept(n, v)` where `v` is either the value from the highest-numbered previous acceptance (if any acceptor reported one) or the proposer's own value. Acceptors accept the proposal if they haven't promised a higher `n`, and notify **learners**. Once a quorum accepts, consensus is reached.
+
+**Why it works:** any two quorums overlap by at least one server. That server "connects" any two phases, ensuring previously chosen values cannot be overridden.
+
+**Multi-Paxos** extends this to a log of values by electing a stable leader (the proposer) who skips Phase 1 for subsequent slots — reducing message complexity and the source of most practical implementations.
+
+**Limitations of the spec:** the original paper specifies only single-decree agreement. Leader election, log management, cluster reconfiguration, and snapshotting — all necessary for a real system — are left as exercises. This gap is why [Raft](/t/raft) was designed: to specify all those pieces explicitly.
+
+Notable variants: **Multi-Paxos** (stable leader, log-level agreement), **Fast Paxos** (lower latency by skipping the leader), **EPaxos** (leaderless, reorders commuting operations), **Flexible Paxos** (smaller quorums for read-heavy workloads).
+
+## Why it matters
+
+Every consensus algorithm in production — Raft, Zab (ZooKeeper), Viewstamped Replication — is either Paxos or a refinement of it. Understanding Paxos gives you the theoretical floor: what properties any consensus protocol must satisfy, what fault models it assumes (crash-stop, not Byzantine), and why no consensus protocol can be both safe and live in an asynchronous network (FLP impossibility). It is the lens through which to read the literature on [distributed systems](/t/distributed-system).
+
+## Real-world examples
+
+- **Google Chubby** (the lock service underlying Bigtable and Spanner) uses Multi-Paxos.
+- **Google Spanner** uses Paxos for cross-region replication of each shard.
+- **Apache Zookeeper** uses Zab, a Paxos derivative, for its atomic broadcast.
+- **Amazon DynamoDB** uses a Paxos variant for metadata coordination.
+
+## Common misconceptions
+
+- **"Paxos is provably optimal."** It is proven correct for crash-stop failures in a partially synchronous model. It makes no progress under Byzantine (arbitrary) failures — that requires BFT protocols.
+- **"Raft replaced Paxos."** Raft replaced Paxos as the preferred *implementation* choice for new systems; Paxos remains the theoretical reference point.
+
+## Learn next
+
+Paxos is the theory; [Raft](/t/raft) is the more implementation-friendly alternative. Both implement [consensus](/t/consensus) — the guarantee that all nodes agree on the same sequence of values. The difference matters in practice when choosing or reading about a distributed database.

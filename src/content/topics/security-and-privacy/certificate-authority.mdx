@@ -1,0 +1,63 @@
+---
+title: Certificate Authority
+aliases: ["CA", "PKI", "certificate chain", "root CA", "intermediate CA"]
+category: security-and-privacy
+kind: concept
+summary: A trusted organisation that issues digital certificates binding a public key to an identity — the root of trust that makes HTTPS and code signing trustworthy without pre-distributing keys.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["security", "pki", "tls", "certificates"]
+prerequisites: ["public-key-cryptography", "tls"]
+related: ["authentication", "jwt"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Public-key cryptography solves eavesdropping — but how do you know the public key you received actually belongs to `bank.com` and not an attacker? A **Certificate Authority (CA)** answers this: it is an organisation that verifies the identity of a website or company and then signs a **certificate** binding their public key to their name. Your browser trusts a list of CAs; if a certificate is signed by one of them, you can trust the key.
+
+## More detail
+
+A **digital certificate** (X.509 format) contains:
+- The subject's identity (`CN=*.bank.com` or an organisation name for EV certificates).
+- The subject's **public key**.
+- Validity period (not before / not after).
+- The **issuer** (the CA that signed it).
+- The **CA's digital signature** over all the above.
+
+**Verification:** your browser verifies that the server's certificate is signed by a CA in its **trust store** (a list of ~150 root CAs pre-installed by the OS and browser vendors). If the chain of signatures leads back to a trusted root, the certificate is valid.
+
+**Certificate chain:** Root CAs are kept offline for security. They sign **intermediate CAs**, which sign end-entity (leaf) certificates. A typical chain is: Root CA → Intermediate CA → Server certificate. Browsers verify the chain from leaf to a trusted root.
+
+**Certificate types by validation level:**
+- **DV (Domain Validation)** — CA verifies domain control only (DNS record or file on the server). Automated, free (Let's Encrypt). Gives the padlock but says nothing about the organisation.
+- **OV (Organisation Validation)** — CA verifies legal entity. Takes days.
+- **EV (Extended Validation)** — strict identity verification; used to show the company name in the browser bar (largely deprecated by browsers).
+
+**Let's Encrypt** is an automated CA (ACME protocol) that issues free DV certificates with 90-day expiry, renewed automatically by tools like Certbot and Caddy. It has issued billions of certificates and driven HTTPS adoption from ~40% to ~90% of web traffic.
+
+**Certificate Transparency (CT):** public append-only logs of all issued certificates. Browsers reject certificates not in at least two CT logs. This makes it impossible for a rogue CA to issue a certificate for `google.com` without it being detected within hours.
+
+**Revocation:** if a private key is compromised, the certificate must be revoked via CRL (Certificate Revocation List) or OCSP (Online Certificate Status Protocol). CRL checking is largely abandoned by browsers (latency, privacy); OCSP Stapling (server pre-fetches its own OCSP response and staples it to the TLS handshake) is the modern approach.
+
+## Why it matters
+
+CAs are the trust infrastructure of the entire public web and most enterprise PKI. Without them, HTTPS would require pre-distributing public keys out-of-band — impractical at internet scale. Understanding CAs explains: why browsers show certificate errors, what a wildcard certificate covers, why certificate expiry causes outages, and why misissuance by a CA (e.g., Symantec's 2017 scandal) is so serious. Engineers who configure servers, manage internal PKI, or debug TLS errors need to understand the chain of trust.
+
+## Real-world examples
+
+- Let's Encrypt issues ~400 million active certificates for free; almost every small website uses it.
+- DigiCert, Sectigo, and GlobalSign are commercial CAs used for code signing and EV certificates.
+- Internal corporate CAs (often Windows Server CA) issue certificates for internal services, VPNs, and mTLS.
+- Certificate Transparency logs (Google's Argon, Cloudflare's Nimbus) are monitored by companies like Facebook to detect rogue certificates for their domains.
+
+## Common misconceptions
+
+- **"HTTPS means the site is safe."** HTTPS means the connection is encrypted and the domain in the certificate matches the URL. It says nothing about whether the site is legitimate or the content is trustworthy.
+- **"Free certificates are less secure."** DV certificates from Let's Encrypt provide the same cryptographic security as expensive certificates — the difference is identity verification, not key strength.
+
+## Learn next
+
+Certificate authorities are the trust root for [TLS](/t/tls) — the padlock. [Public-key cryptography](/t/public-key-cryptography) is the mechanism; CAs answer "whose key is this?" [JWT](/t/jwt) certificates can also use CA-signed keys (RS256 with a CA-issued cert).

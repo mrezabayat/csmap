@@ -1,0 +1,64 @@
+---
+title: Dennard Scaling
+aliases: ["Dennard scaling", "power density scaling", "clock speed wall", "dark silicon"]
+category: hardware
+kind: concept
+summary: The empirical rule that as transistors shrink, their power consumption decreases proportionally — allowing faster clock speeds at the same power budget. It broke down around 2004, ending the era of ever-faster single-core CPUs.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["hardware", "cpu", "power", "performance", "semiconductors"]
+prerequisites: ["cpu", "moore-s-law", "binary-numbers"]
+related: ["superscalar", "asic"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Through the 1980s and 1990s, CPU clock speeds roughly doubled every 18 months — from 1 MHz in 1975 to 3 GHz in 2004. This happened because of Dennard scaling: as transistors shrank, they also got faster and used less power per switching operation. You could fit twice as many transistors and run them twice as fast using the same power. Then, around 2004, it stopped. Modern 3nm transistors leak current even when "off." You cannot run all the transistors at full speed without melting the chip. Clock speeds have been stuck at 3–5 GHz ever since.
+
+## More detail
+
+**Dennard scaling (1974):** Robert Dennard's paper showed that as transistors scale by a factor `k` (getting `k` times smaller):
+- Linear dimensions shrink by `k`.
+- Supply voltage decreases by `k`.
+- Current decreases by `k`.
+- Result: **power per unit area stays constant** (power = V × I scales as `1/k × 1/k / (1/k²) = constant`) — but you get `k²` more transistors, each switching `k` times faster.
+- Net effect: **same power, but `k³` more operations per second** as transistors shrink.
+
+This is why a 1990 CPU at 33 MHz and a 2000 CPU at 1 GHz used similar power (~10–20W) but the 2000 CPU was 30× faster — you got the speed for free via scaling.
+
+**Why Dennard scaling broke:**
+- **Gate oxide leakage:** as the gate dielectric (silicon oxide) approached ~1nm thickness, electrons tunnel through it via quantum mechanical tunnelling — even when the transistor is "off." Leakage current is proportional to the surface area of the dielectric, and scaling makes it worse.
+- **Threshold voltage floor:** transistors switch at a threshold voltage (`V_th`). You can reduce supply voltage (`Vdd`) to save power, but `Vdd - V_th` (the margin) shrinks. Going below `Vdd ≈ 0.7V` causes unreliable switching. The industry has been stuck at ~1V supply for 20 years.
+- **Short-channel effects:** as channels shorten, the gate loses electrostatic control of the channel — causing sub-threshold leakage and DIBL (Drain-Induced Barrier Lowering).
+
+**Consequence — the power wall:** around 2004, Intel cancelled Tejas (a 10 GHz Prescott successor) because the chip would have consumed 150W+ and been unmanageable thermally. Clock speeds have been roughly flat at 3–5 GHz since then.
+
+**Dark silicon:** even with transistor density continuing to grow (Moore's Law), at advanced nodes you cannot run all transistors simultaneously at full power without exceeding the thermal design power (TDP). "Dark silicon" — transistors that must be powered off — is estimated at 50%+ on leading-edge chips at peak power. Solution: specialise: power a GPU while the CPU is off; power the NPU while both are off. Apple's M-series chip uses this heavily.
+
+**Responses to the end of Dennard scaling:**
+- **Multi-core:** use multiple slower cores instead of one fast core. Same power budget, more parallelism. (2005–2015)
+- **Specialised accelerators:** GPUs, TPUs, NPUs, video encoders — each doing one thing efficiently rather than general-purpose cores doing everything slowly. (2010–present)
+- **Advanced packaging:** chiplets (AMD EPYC), 3D stacking (Intel Foveros), HBM memory — improve bandwidth and integration without relying on process scaling.
+- **Near-memory/in-memory computing:** move computation to where the data is, reducing memory bandwidth bottleneck.
+
+## Why it matters
+
+Understanding the end of Dennard scaling explains why CPU clock speeds stopped increasing, why modern chips have 8–32 cores instead of one fast core, why GPUs and NPUs exist, and why "just buy faster hardware" is no longer a reliable solution. For software engineers, it means performance now requires parallelism, cache-awareness, and algorithmic efficiency — the free lunch ended in 2004. For hardware engineers and system designers, it is the fundamental constraint shaping chip architecture today.
+
+## Real-world examples
+
+- Intel Pentium 4 "Prescott" (90nm, 2004): 3.8 GHz, 115W TDP — the wall. Intel cancelled 5+ GHz successors.
+- Intel Core 2 Duo (65nm, 2006): two cores at 2.4 GHz, 65W — multi-core as the answer.
+- Apple M4 (2024): 4 high-performance cores (3.9 GHz) + 6 efficiency cores (2.6 GHz) + 38-core GPU + 38-TOPS Neural Engine — radical heterogeneity because no single core type can do everything efficiently.
+
+## Common misconceptions
+
+- **"Multi-core makes programs 8× faster."** Multi-core helps only parallel workloads; sequential code runs on one core at ~the same speed as 2004. Amdahl's Law limits the speedup.
+- **"New chips are faster because of higher clock speeds."** Modern performance gains come from IPC improvements, wider superscalar engines, better caches, and specialised accelerators — not clock speed.
+
+## Learn next
+
+Dennard scaling is the companion to [Moore's law](/t/moore-s-law) — together they explain the history of CPU performance. Its breakdown explains why [superscalar](/t/superscalar) execution, multi-core, and specialised [ASICs](/t/asic) became essential. [FPGA](/t/fpga) and GPU acceleration exist partly because general-purpose CPUs hit the power wall.

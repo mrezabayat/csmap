@@ -1,0 +1,59 @@
+---
+title: Sandbox
+aliases: ["sandboxing", "process isolation", "seccomp", "pledge", "chroot"]
+category: security-and-privacy
+kind: concept
+summary: A restricted execution environment that limits what a process can do — restricting file access, network calls, and system calls — so that a compromise of one component cannot spread to the rest of the system.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["security", "operating-systems", "isolation", "containers"]
+prerequisites: ["process", "operating-system", "virtual-memory"]
+related: ["container", "side-channel-attack", "capability-based-security"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A sandbox is a jail for a process: it can execute code, but its ability to harm the system or other processes is severely restricted. A browser sandbox means that even if a malicious web page finds a bug in the renderer, it cannot read your files or install malware — because the renderer process has no permission to do those things. Sandboxes apply the **principle of least privilege**: grant each component only the permissions it actually needs.
+
+## More detail
+
+**Sandboxing mechanisms:**
+
+- **System call filtering (seccomp-BPF):** Linux's seccomp (secure computing mode) lets a process install a BPF filter that restricts which system calls it can make and with what arguments. Chrome's renderer processes use seccomp to block most syscalls, limiting an attacker's ability to escape. OpenBSD's `pledge(2)` syscall provides a similar but higher-level interface.
+
+- **Namespace isolation:** Linux namespaces give a process its own view of the file system (mount), network (network), process tree (PID), users, and more. The kernel enforces that the process cannot see or affect resources outside its namespace. Containers (Docker) use namespaces heavily.
+
+- **Capabilities:** Linux replaces the binary root/non-root model with fine-grained capabilities (`CAP_NET_BIND_SERVICE`, `CAP_SYS_PTRACE`, etc.). Dropping all unneeded capabilities limits damage from a compromise.
+
+- **chroot:** changes the apparent root directory for a process. A chrooted process cannot access files above its root. Weaker than namespaces (bypassed by a root process), but useful for legacy isolation.
+
+- **Mandatory Access Control (MAC):** policies like SELinux and AppArmor define what resources (files, network ports, IPC) each process may access, regardless of Unix permissions. MAC labels are enforced by the kernel.
+
+- **Hardware isolation:** ARM TrustZone and Intel SGX run code in a hardware-protected enclave with keys that are inaccessible to the OS. Used for DRM, payment processing, and attestation.
+
+**Browser sandbox architecture:** Chrome runs a multi-process model — one browser process (trusted), one GPU process, and many renderer processes (one per site origin). Renderer processes are sandboxed via seccomp + namespace + site isolation (separate OS processes per origin), so XSS or renderer bugs are confined to that origin's data.
+
+**Container sandbox:** Docker containers use namespaces + cgroups for isolation, but they share the host kernel. A kernel vulnerability can escape the container. VMs (gVisor, Firecracker) add a stronger boundary by interposing a different kernel.
+
+## Why it matters
+
+Defence in depth: no software is bug-free, so assume any component can be compromised and limit what a compromised component can do. Modern browsers, PDF viewers, document editors, and OS app sandboxes (macOS App Sandbox, iOS, Android) all rely on sandboxing to contain vulnerabilities. Escape from a sandbox (sandbox escape) is a high-severity vulnerability — browsers pay $50,000+ bounties for them. Engineers building security-sensitive systems or auditing architecture must understand what isolation mechanisms are in play.
+
+## Real-world examples
+
+- Chrome's renderer sandbox: every web page runs in a sandboxed process with seccomp + site isolation; a renderer exploit requires a separate sandbox escape.
+- macOS App Sandbox (required for Mac App Store): apps declare entitlements, kernel enforces them — apps can't read files outside their container without a file-picker dialog.
+- Android: each app runs as a separate Linux user; apps cannot read each other's data.
+- WebAssembly: the Wasm runtime enforces memory safety and has no access to OS APIs beyond what the host explicitly provides (capability-based sandbox).
+
+## Common misconceptions
+
+- **"Containers are as secure as VMs."** Containers share the host kernel; a kernel exploit can escape all containers. VMs (and microVMs like Firecracker) have a much smaller attack surface.
+- **"Sandboxing prevents all attacks."** Sandboxes contain breaches; they don't prevent the initial compromise. A sandboxed process can still be exploited — the sandbox just limits what the attacker can do next.
+
+## Learn next
+
+Sandboxes implement [capability-based security](/t/capability-based-security) principles. [Containers](/t/container) use OS sandboxing primitives. [Side-channel attacks](/t/side-channel-attack) can sometimes leak information across sandbox boundaries without breaking the sandbox itself.

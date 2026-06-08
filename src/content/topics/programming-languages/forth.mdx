@@ -1,0 +1,86 @@
+---
+title: Forth
+aliases: ["Forth programming language", "stack-based language", "Chuck Moore", "Gforth"]
+category: programming-languages
+kind: technology
+summary: A minimal, stack-based language where programs are defined as sequences of words (functions) that manipulate a data stack — notable for extreme simplicity, extensibility, and its influence on stack-based virtual machines.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "embedded", "stack", "history"]
+prerequisites: ["programming-language", "stack-and-queue"]
+related: ["webassembly", "lisp", "pointer-and-reference"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Forth is a language where you build programs by defining "words" (functions) that push and pop values from a stack, then compose them. `2 3 + .` pushes 2, then 3, adds them (leaving 5), then prints. That's it — a stack, words, and composition. Forth is tiny: a complete Forth system fits in a few KB. It was used on early spacecraft, embedded systems, and influenced the design of PostScript, Java's JVM, and WebAssembly. It strips programming to its essence.
+
+## More detail
+
+**Execution model:** Forth uses a push-down stack (the data stack) for passing values between words. Expressions are written in Reverse Polish Notation (RPN): `2 3 +` instead of `2 + 3`. Words (Forth's term for functions) take inputs from the stack and push outputs.
+
+```forth
+: SQUARE ( n -- n^2 )
+  DUP * ;
+
+: CUBE ( n -- n^3 )
+  DUP SQUARE * ;
+
+5 CUBE . \ prints 125
+```
+
+The stack effect comment `( n -- n^2 )` is a convention documenting what a word takes from and puts on the stack.
+
+**The dictionary:** all Forth words live in a dictionary — a linked list of definitions. Looking up a word means walking the dictionary. New words are defined with `: name ... ;`. The compiler and interpreter share the same dictionary; defining new words extends the language.
+
+**Two stacks:** Forth has a data stack (operands) and a return stack (call return addresses). The return stack can be used for temporary storage (carefully) with `>R` and `R>`.
+
+**Immediate words and the metacircular compiler:** some words are marked "immediate" — they execute at compile time rather than being compiled. This enables Forth to define control flow (`IF`, `THEN`, `BEGIN`, `WHILE`) as ordinary Forth words, not built-in syntax. Forth is effectively self-hosting — most of itself is defined in itself.
+
+```forth
+\ Defining a simple conditional (simplified)
+: IF ( flag -- ) ... immediate ;
+: THEN ... immediate ;
+
+\ Usage:
+2 3 > IF ." 2 is greater" THEN
+```
+
+**Extreme minimalism:** Chuck Moore's original Forth implementations were ~1 KB. A modern, full Gforth is ~1 MB. Forth systems have bootstrapped themselves on hardware with no OS — the programmer defines file I/O, the screen driver, and the compiler all in Forth.
+
+**ANS Forth / ISO Forth:** the 1994 ANSI standard standardised a core vocabulary, making Forth more portable. Most implementations (Gforth, SwiftForth, VFX Forth) conform to it.
+
+**Forth's influence:**
+- **PostScript** — Adobe's page description language is stack-based and uses RPN, directly inspired by Forth.
+- **JVM (Java Virtual Machine)** — a stack machine; bytecode instructions push and pop operands from a stack.
+- **WebAssembly** — explicitly a stack machine at the instruction level.
+- **RPL (HP calculators)** — RPN + Forth-like programmability on HP-41, HP-48.
+- **Open Firmware** — BIOS firmware standard (used in SPARC, PowerPC, early Macs) is implemented in Forth.
+
+**Where Forth is still used:**
+- NASA: Open Firmware (Forth-based) was used in SPARC workstations.
+- Embedded systems and microcontrollers where code size is paramount.
+- Retro computing and hobbyist FPGAs.
+
+## Why it matters
+
+Forth demonstrates that a programming language can be built from first principles in a few KB and be Turing-complete, interactive, and self-hosting. Understanding Forth deepens understanding of: stack machines (JVM, WASM, PostScript), how compilers and interpreters share the same framework, and what metaprogramming looks like when taken to the extreme (immediate words rewrite the compiler). It is a uniquely illuminating language even if rarely used professionally.
+
+## Real-world examples
+
+- Open Firmware (used in Sun SPARC, IBM PowerPC systems, and early Apple Macs) is implemented in Forth — the BIOS/firmware layer of billions of machines.
+- PostScript (used in laser printers and PDF) is a stack-based language directly derived from Forth concepts.
+- HP-48GX calculators use RPL (derived from Forth/Lisp hybrid) for user programming.
+- colorforth: Chuck Moore's later colour-coded Forth for his custom chip (GreenArrays).
+
+## Common misconceptions
+
+- **"RPN is backward."** RPN is how calculators work and how stack machines execute code. For writing complex expressions, it's different but not inherently worse.
+- **"Forth is obsolete."** WebAssembly's stack machine model is Forth-like at the binary level; JVM bytecode is a stack machine. The design pattern is very much alive.
+
+## Learn next
+
+Forth's stack machine model directly influenced [WebAssembly](/t/webassembly). [Lisp](/t/lisp) is the other minimal, influential language from the same era with a very different approach (trees vs. stacks). [Pointers](/t/pointer-and-reference) in C solve similar memory-manipulation problems with a different model.

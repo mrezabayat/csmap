@@ -1,0 +1,80 @@
+---
+title: Fourier Transform
+aliases: ["FFT", "Fast Fourier Transform", "DFT", "frequency domain", "spectral analysis"]
+category: mathematical-foundations
+kind: concept
+summary: A mathematical transform that decomposes a signal into its constituent frequencies — converting between time/space domain and frequency domain — the foundation of signal processing, audio compression, image compression, and convolution.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["mathematics", "signal-processing", "audio", "compression"]
+prerequisites: ["calculus-basics", "linear-algebra", "probability-statistics"]
+related: ["numerical-methods", "information-theory", "optimization-theory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Any repeating signal — a sound wave, a heartbeat, a daily temperature pattern — can be represented as a sum of sine waves of different frequencies. The Fourier transform is the tool that finds those frequencies: it tells you "this audio clip contains 440 Hz (concert A), 880 Hz (an octave up), and 1760 Hz (two octaves up)" and how much of each. This insight — that everything is a sum of sines — is one of the most powerful ideas in mathematics, underlying MP3 compression, MRI scanners, JPEG images, signal filtering, and machine learning on sequential data.
+
+## More detail
+
+**The continuous Fourier transform:**
+`F(ω) = ∫_{-∞}^{∞} f(t) e^{-iωt} dt`
+
+Given a function `f(t)` in the time domain, `F(ω)` gives its representation in the frequency domain. `e^{-iωt} = cos(ωt) - i·sin(ωt)` (Euler's formula) — the integral computes the "overlap" of `f` with each frequency `ω`.
+
+The inverse Fourier transform recovers `f(t)` from `F(ω)`:
+`f(t) = (1/2π) ∫_{-∞}^{∞} F(ω) e^{iωt} dω`
+
+**Key properties:**
+- **Linearity:** `F(af + bg) = aF(f) + bF(g)`.
+- **Convolution theorem:** `f * g` in time domain ↔ `F · G` in frequency domain (pointwise multiplication). Convolution becomes multiplication — a massive computational saving.
+- **Parseval's theorem:** total energy is preserved between domains: `∫|f(t)|² dt = (1/2π)∫|F(ω)|² dω`.
+- **Shift theorem:** a time shift ↔ a phase shift in frequency.
+
+**Discrete Fourier Transform (DFT):** for sampled signals (computer data), the DFT operates on N samples:
+`X[k] = Σ_{n=0}^{N-1} x[n] · e^{-2πink/N}`
+
+Computing all N outputs naively requires O(N²) operations.
+
+**Fast Fourier Transform (FFT):** the Cooley-Tukey FFT algorithm (1965) reduces DFT to O(N log N) by exploiting the recursive structure of the DFT when N is a power of 2. A 1 million-point DFT: naively 10¹² operations; with FFT, ~2×10⁷ operations — 50,000× faster. The FFT is one of the most important algorithms in computing.
+
+**Applications:**
+
+*Audio (MP3, AAC):* the MDCT (Modified Discrete Cosine Transform — a variant of DFT) transforms audio frames to frequency domain; frequencies where the ear is less sensitive are quantised more aggressively (perceptual coding). MP3 achieves 10:1 compression with near-transparent audio quality.
+
+*Image (JPEG):* DCT (Discrete Cosine Transform) applied to 8×8 pixel blocks; high-frequency coefficients are discarded or heavily quantised. JPEG's frequency-domain insight: the human eye is less sensitive to high-frequency detail.
+
+*Signal filtering:* apply FFT, multiply by a filter function (remove frequencies above 20 kHz from audio), apply inverse FFT. Equivalent to convolution in the time domain — but O(N log N) vs. O(N²).
+
+*MRI:* MRI scanners directly acquire data in k-space (frequency domain); an inverse FFT reconstructs the image.
+
+*Convolution in ML:* convolutional neural networks compute cross-correlation; for large kernels, FFT-based convolution is more efficient.
+
+*Spectral analysis:* FFT of a vibration signal reveals dominant frequencies — used for fault detection in rotating machinery (a bearing fault at frequency f_bearing × RPM).
+
+**Nyquist-Shannon sampling theorem:** to accurately represent a signal with maximum frequency `f_max`, you must sample at ≥ 2f_max (the Nyquist rate). Sampling below the Nyquist rate causes aliasing — high-frequency components fold back as false low-frequency artefacts. CD audio samples at 44.1 kHz (> 2 × 20 kHz human hearing limit).
+
+**Windowing:** the DFT assumes the signal is periodic. A sharp truncation (rectangular window) introduces spectral leakage — energy from one frequency bleeds into adjacent bins. Window functions (Hann, Hamming, Blackman) taper the signal at the edges, reducing leakage at the cost of frequency resolution.
+
+## Why it matters
+
+The FFT is one of the ten most important algorithms in science and engineering. It is the computational engine behind MP3, JPEG, video codecs, radar, MRI, digital communications (OFDM — the modulation scheme in WiFi and 4G/5G), earthquake seismology, and gravitational wave detection (LIGO). The convolution theorem powers efficient polynomial multiplication, large integer multiplication (Karatsuba, Schönhage-Strassen), and neural network inference for large kernels. Understanding the Fourier transform is foundational for signal processing, audio/image/video engineering, and scientific computing.
+
+## Real-world examples
+
+- MP3/AAC: frequency-domain perceptual coding; basis of all lossy audio compression.
+- JPEG: DCT-based image compression; basis of most photo storage and web images.
+- WiFi 802.11/4G/5G LTE: OFDM modulation — parallel frequency-domain sub-carriers; the entire wireless network is built on FFT.
+- LIGO (gravitational wave detector): matched filtering using FFT to detect the characteristic signal of black hole mergers in noisy data.
+
+## Common misconceptions
+
+- **"The Fourier transform only works for periodic signals."** The Fourier transform applies to any square-integrable function. Non-periodic functions have a continuous frequency spectrum rather than discrete spectral lines.
+- **"FFT and DFT are different algorithms."** FFT is an efficient algorithm for computing the DFT — same result, much faster. "FFT" is often used loosely to mean "DFT computed efficiently."
+
+## Learn next
+
+The Fourier transform is grounded in [calculus](/t/calculus-basics) and [linear algebra](/t/linear-algebra) (it's a linear operator on function spaces). [Numerical methods](/t/numerical-methods) covers the practical implementation of FFT and discrete signal processing. [Information theory](/t/information-theory) explains why frequency-domain representations enable compression.

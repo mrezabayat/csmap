@@ -1,0 +1,82 @@
+---
+title: File Systems — ext4, ZFS, Btrfs
+aliases: ["ext4", "ZFS", "Btrfs", "file system comparison", "modern file systems"]
+category: operating-systems
+kind: concept
+summary: Three dominant Unix file systems with different design philosophies — ext4 is stable and simple; ZFS is enterprise-grade with built-in integrity and pooled storage; Btrfs brings COW snapshots and checksums to Linux with a familiar interface.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operating-systems", "file-systems", "storage", "linux"]
+prerequisites: ["operating-system", "storage", "copy-on-write"]
+related: ["database", "inode"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A file system is the on-disk structure that organises files and directories. ext4 (the Linux default) is like a reliable, simple spreadsheet — it works, it's fast, but it doesn't self-check for corruption. ZFS is like a fortress: every block has a checksum, storage is pooled across drives, and snapshots are instant and free. Btrfs tries to bring ZFS-like features (COW, checksums, snapshots) to Linux as a native kernel module. Each suits different workloads and tolerance for complexity.
+
+## More detail
+
+**ext4:**
+Evolution of ext2 → ext3 → ext4. Default Linux file system for Ubuntu, Debian, Red Hat. Key features: extent-based allocation (replaces block-mapping for large files), journal (ext3-style write-ahead log for metadata consistency), delayed allocation, online defragmentation. Max file size: 16 TB; max filesystem: 1 EB.
+
+*What ext4 lacks:* checksums on data blocks (corruption is silent), snapshots, pooled storage. It relies on external tools (RAID, LVM, mdadm) for redundancy. Mature and fast, but shows its age in enterprise storage requirements.
+
+**ZFS:**
+Designed at Sun Microsystems (2005), open-sourced as OpenZFS. Available on Linux (via OpenZFS module) and natively on FreeBSD. Core design: storage pool (zpool) aggregates multiple drives; ZFS manages RAID and file systems in one layer.
+
+Key features:
+- **End-to-end checksumming:** every block has a SHA-256 or Blake3 checksum; reads verify integrity and can self-heal using RAID parity. Detects and corrects silent data corruption (bit rot) that ext4 would pass through silently.
+- **COW (copy-on-write):** writes go to new blocks; old blocks remain valid. Snapshots are instantaneous (just pin the current block tree) and space-efficient.
+- **RAID-Z (1/2/3):** software RAID integrated into ZFS, without the "RAID-5 write hole" of traditional software RAID.
+- **ARC cache:** adaptive read cache with optional L2ARC (SSD cache) and ZIL (ZFS Intent Log — synchronous write acceleration via NVMe).
+- **Deduplication and compression:** LZ4 compression is always worth enabling (CPU overhead < I/O savings); dedup is storage-efficient but RAM-intensive.
+
+*ZFS downside:* licensing (CDDL, not GPL) prevented inclusion in the Linux kernel; installed as out-of-tree module. RAM-hungry (1 GB ARC minimum for production). Resizing pools is more complex than LVM.
+
+**Btrfs:**
+Linux-native COW file system, merged into Linux kernel 2.6.29 (2009). Facebook, SUSE, and Synology use it in production.
+
+Key features:
+- **COW + snapshots:** instant, space-efficient snapshots. `btrfs subvolume snapshot` is near-instant. Used extensively by Fedora (Snapper), Timeshift (Linux backup).
+- **RAID 0/1/5/6/10:** built-in software RAID. RAID 5/6 has had stability issues historically; RAID 1/10 is production-safe.
+- **Checksums:** CRC32c (default) or SHA256 for data and metadata integrity. Scrub (`btrfs scrub start`) verifies all blocks.
+- **Subvolumes:** independent file system trees within a single Btrfs volume; lightweight, can have separate mount options and quotas.
+- **Compression:** LZO, ZLIB, ZSTD per-file or per-subvolume.
+
+*Btrfs status:* RAID 5/6 is considered unstable; RAID 1 and single are production-safe. Btrfs is the default for Fedora and SLE (SUSE Linux Enterprise).
+
+**Comparison summary:**
+
+| Feature | ext4 | ZFS | Btrfs |
+|---|---|---|---|
+| Checksums | Metadata only | Full | Full |
+| Snapshots | No | Yes (COW) | Yes (COW) |
+| Built-in RAID | No | RAID-Z | Yes (RAID 1/10 stable) |
+| Kernel-native | Yes | Out-of-tree | Yes |
+| Maturity | Very mature | Mature (enterprise) | Maturing |
+| Best for | General Linux use | Enterprise NAS/servers | Desktop Linux, NAS |
+
+## Why it matters
+
+File system choice affects data integrity, performance, backup strategy, and administration complexity. Engineers who manage databases, NAS servers, production Linux systems, or backup infrastructure need to understand the trade-offs. ZFS's checksumming catches silent corruption that has historically caused data loss in ext4 systems running on aging hardware. Btrfs snapshots power Linux system rollbacks. The choice shapes how you handle RAID, snapshots, and scrubbing.
+
+## Real-world examples
+
+- Ubuntu, Debian, RHEL default to ext4 for the root filesystem.
+- FreeBSD and TrueNAS (home NAS) use ZFS for all storage; TrueNAS is the most popular NAS OS.
+- Facebook uses Btrfs on its Linux servers for its snapshot and self-healing features.
+- Synology NAS devices support Btrfs (for snapshots) and ext4 (for compatibility).
+- Oracle Solaris and illumos (OpenIndiana) use ZFS natively as both a volume manager and file system.
+
+## Common misconceptions
+
+- **"ZFS is only for enterprise storage."** ZFS on Linux (OpenZFS) works on a home server with a few drives and gives you integrity checking, compression, and snapshots for free.
+- **"Btrfs is not production-ready."** RAID 1/10 and single-device Btrfs are production-safe. RAID 5/6 remain a known risk and should be avoided for critical data.
+
+## Learn next
+
+All three file systems use [copy-on-write](/t/copy-on-write) in different ways. Understanding [RAID](/t/raid) helps evaluate the built-in RAID alternatives. ZFS and Btrfs snapshots are the foundation of many Linux backup and rollback tools.

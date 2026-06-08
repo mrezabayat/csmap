@@ -1,0 +1,75 @@
+---
+title: Continuation
+aliases: ["continuation-passing style", "CPS", "callcc", "coroutine", "delimited continuation"]
+category: programming-languages
+kind: concept
+summary: A representation of "the rest of the computation" as a first-class value — enabling full control over control flow, the basis for implementing coroutines, generators, exceptions, and async/await at the language level.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "functional-programming", "control-flow", "compilers"]
+prerequisites: ["closure", "lambda-calculus"]
+related: ["homoiconicity"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When a function is called, the "continuation" is everything that will happen after it returns — the rest of the program. Normally, this is implicit (managed by the call stack). Continuations make this explicit and first-class: you can capture it, store it, and invoke it later. This gives programs the ability to "save their place" in the middle of execution and jump back to it. Generators, coroutines, exceptions, backtracking, and async/await are all implementable using continuations — they are the most general control-flow primitive.
+
+## More detail
+
+**Continuation-passing style (CPS):** a transformation where every function takes an extra argument — the continuation `k` — and instead of returning a value, calls `k` with the result.
+
+```javascript
+// Direct style
+function add(a, b) { return a + b; }
+
+// CPS
+function addCPS(a, b, k) { k(a + b); }
+
+addCPS(1, 2, result => console.log(result)); // 3
+```
+
+CPS makes control flow explicit — there's no implicit "return to caller." Every transition in control is explicit as a function call. CPS is used by compilers (Scheme-to-C, SML/NJ) as an intermediate representation because it makes optimizations like inlining and tail-call elimination obvious.
+
+**call/cc (call-with-current-continuation):** Scheme's primitive for capturing the current continuation as a first-class value. `(call/cc (lambda (k) ...))` gives the body a reference `k` to the continuation — the "rest of the computation after this call/cc." Calling `k` with a value jumps out of the current computation and resumes where the `call/cc` was.
+
+**What you can build with call/cc:**
+- **Early exit / exceptions:** call `k` to escape a computation without unwinding the stack manually.
+- **Backtracking:** store the continuation; invoke it after a failed search to resume at the choice point.
+- **Coroutines / cooperative multitasking:** store each coroutine's continuation; switch between them by invoking continuations.
+- **Generator functions** (Python `yield`, JavaScript `function*`) are implementable with delimited continuations.
+- **Async/await** — the Babel transpiler transforms JavaScript async functions into a state machine that is exactly a continuation-passing transformation.
+
+**Delimited continuations:** `call/cc` captures the *entire* remaining computation (to the top level). Delimited continuations (`shift`/`reset` or `control`/`prompt`) capture only up to a delimiter — a more composable and efficient primitive. Algebraic effects (Koka, OCaml 5, Unison) are built on delimited continuations.
+
+**Tail call optimisation (TCO):** a function in tail position calls `k` directly without adding a stack frame — the tail call is optimised to a jump. CPS + TCO means the call stack is never used (continuations are heap-allocated), enabling unbounded recursion without stack overflow. Proper tail calls are required by Scheme (R5RS); JavaScript added TCO in ES6 (though few engines fully implement it).
+
+**Continuation in modern languages:**
+- **Scheme** — full continuations via `call/cc`.
+- **Ruby** — `Fiber` (delimited continuations via `Fiber#resume` and `Fiber.yield`).
+- **Python** — generators (`yield`) are a limited form of continuations; `asyncio` uses coroutines.
+- **Go** — goroutines are stackful coroutines (not continuations, but similar effect).
+- **OCaml 5** — first-class algebraic effects (a typed, delimited continuation mechanism).
+
+## Why it matters
+
+Continuations are the theoretical foundation of all advanced control flow. Understanding them explains: why async/await desugars into a state machine (it's a CPS transform), how generators work, how exception handling is implemented, and how green threads and event loops are built. For language implementers and PL researchers, continuations are the universal control-flow primitive. For application programmers, understanding them demystifies async/await, generators, and backtracking in logic programming.
+
+## Real-world examples
+
+- Babel's async-to-generator transform converts async/await functions into state machines that are exactly a CPS transformation.
+- React Fiber's reconciler uses an explicit continuation (the work-loop) to implement cooperative multitasking — pausing rendering work and resuming later.
+- Kotlin's coroutines compile to a state machine (continuation-passing style) — each `suspend` point is a continuation that can be resumed later.
+- Prolog's backtracking is implemented via continuations — each choice point stores the continuation to retry on failure.
+
+## Common misconceptions
+
+- **"Continuations are only for functional programming."** They underlie async/await in JavaScript, coroutines in Python, fibers in Ruby, and goroutines in Go — across all paradigms.
+- **"Continuations and callbacks are the same."** A callback is a function called once. A continuation is the rest of the computation — it can be called multiple times (as in backtracking) or stored and resumed later.
+
+## Learn next
+
+Continuations are a formalisation from [lambda calculus](/t/lambda-calculus) applied at the language level. They enable [closures](/t/closure) to implement stateful control abstractions. Understanding them deeply leads into programming language theory and [formal verification](/t/formal-verification).

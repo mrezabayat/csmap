@@ -1,0 +1,70 @@
+---
+title: Type Theory
+aliases: ["type system", "dependent types", "Martin-Löf type theory", "Curry-Howard", "Hindley-Milner"]
+category: foundations
+kind: concept
+summary: A formal framework for classifying values by their kind — preventing invalid operations, enabling type inference, and at its most powerful, encoding mathematical proofs as programs through the Curry-Howard correspondence.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["foundations", "theory", "programming-languages", "types"]
+prerequisites: ["type-system", "lambda-calculus", "programming-language"]
+related: ["formal-verification", "category-theory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A type system classifies values — `42` is an `Int`, `"hello"` is a `String` — and rejects programs that apply operations to the wrong kind of value (can't add a string to an integer). Type theory is the mathematical study of type systems: what types are, what type systems can express, and what properties they guarantee. At its core, it asks: what can we know about a program just from its types, before running it?
+
+## More detail
+
+**Levels of type systems:**
+
+**Simply Typed Lambda Calculus (STLC):** the simplest typed system. Every term has exactly one type; functions have type `A → B`. Well-typed programs never get "stuck" (progress theorem) and types are preserved by evaluation (preservation). This is the core of most mainstream languages' type systems.
+
+**Hindley-Milner type inference:** the type system of ML, Haskell, OCaml, and F#. Introduces **parametric polymorphism** — `identity : ∀a. a → a` works for any type `a`. The algorithm W infers the most general type of any expression without type annotations, making the language statically typed without requiring the programmer to write types. This is why Haskell rarely needs explicit type annotations despite having a very strong type system.
+
+**Subtyping:** types form a hierarchy; a value of a subtype can be used wherever the supertype is expected. Java/C# class hierarchies, TypeScript's structural typing, and covariant/contravariant variance rules for generics are all subtyping. Combining subtyping with parametric polymorphism is theoretically complex (F-bounded quantification, variance annotations).
+
+**Dependent types:** types that depend on values. In Haskell, `[Int]` is a list of integers of *any* length. With dependent types (Agda, Coq, Lean, Idris): `Vector Int n` is a list of exactly `n` integers, where `n` is a value. Functions can be typed as `append : ∀n m. Vector a n → Vector a m → Vector a (n+m)` — the type carries the proof that the output length equals the sum of the input lengths. This is the foundation of proof assistants: programs and proofs are the same thing (Curry-Howard).
+
+**Curry-Howard correspondence:** a deep isomorphism:
+
+| Type Theory | Logic |
+|---|---|
+| Type | Proposition |
+| Term (program) | Proof |
+| Function type `A → B` | Implication `A ⟹ B` |
+| Product type `A × B` | Conjunction `A ∧ B` |
+| Sum type `A + B` | Disjunction `A ∨ B` |
+| Dependent type `Σx:A.B(x)` | Existential `∃x:A.B(x)` |
+| β-reduction | Proof simplification |
+
+A well-typed term *is* a proof. Type-checking *is* proof-checking. This unification means proof assistants like Coq and Lean are simultaneously programming languages and theorem provers.
+
+**Practical type system features:**
+- **Algebraic Data Types (ADTs):** sum types (`Option`, `Result`, `Either`) + product types (records, tuples). Force exhaustive handling of all cases.
+- **Linear types / uniqueness types (Rust's ownership):** each value is used exactly once. Prevents use-after-free and data races, checked at compile time.
+- **Effect types (Koka, Unison, OCaml 5):** types track computational effects — `IO`, `Exception`, `State`. Functions are pure unless the type says otherwise.
+
+## Why it matters
+
+Type theory is the foundation of programming language design, formal verification, and the science of program correctness. Hindley-Milner enabled ML and Haskell's powerful type inference. Dependent types enable Coq and Lean to verify mathematics and software. Rust's ownership system is a restricted linear type system. Understanding type theory explains: why TypeScript's types are structural (not nominal), why Rust's borrow checker works, why Haskell's monads are typed, and how proof assistants can verify both code and mathematics.
+
+## Real-world examples
+
+- Haskell's GHC implements a stratified type system based on System F (rank-2 polymorphism, type classes).
+- TypeScript implements a structural subtyping system with algebraic types and gradual typing.
+- Rust's ownership system is an affine type system (values are used at most once, or explicitly shared).
+- Coq's Calculus of Inductive Constructions (CIC) is a dependently typed lambda calculus used to prove theorems and verify seL4.
+
+## Common misconceptions
+
+- **"Strong typing means no type coercions."** Strong vs. weak typing is not a well-defined term. Python is "dynamically typed but strongly typed" (no implicit coercions); JavaScript is "dynamically and weakly typed" (many implicit coercions); Haskell is "statically and strongly typed."
+- **"Type inference means dynamic typing."** Type inference (Hindley-Milner) infers types *at compile time* — Haskell, OCaml, and Rust use it. The distinction is static (compile-time) vs. dynamic (runtime) typing, not whether annotations are required.
+
+## Learn next
+
+Type theory builds on [lambda calculus](/t/lambda-calculus). Dependent types are used in [formal verification](/t/formal-verification). [Category theory](/t/category-theory) provides the algebraic foundation for type theory (monads, functors, and natural transformations all come from category theory).

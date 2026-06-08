@@ -1,0 +1,58 @@
+---
+title: Moore's Law
+aliases: ["Moore's Law", "transistor scaling", "chip density", "semiconductor roadmap"]
+category: hardware
+kind: concept
+summary: Gordon Moore's 1965 observation that the number of transistors on a chip doubles roughly every two years — the empirical trend that drove 50 years of computer performance improvements and is now slowing.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["hardware", "history", "semiconductors", "performance"]
+prerequisites: ["cpu", "binary-numbers"]
+related: ["dennard-scaling", "asic", "fpga"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In 1965, Gordon Moore (later Intel co-founder) observed that the number of transistors engineers could fit on a chip was doubling every year (later revised to every two years). This meant computing power would double every two years at the same price — roughly. For 50 years, this held. A 1971 Intel 4004 had 2,300 transistors; a 2024 Apple M4 has 28 billion. Computers got better faster than anything in human history. Now, the pace is slowing.
+
+## More detail
+
+**The original observation:** Moore published "Cramming more components onto integrated circuits" in 1965, noting that component counts had doubled each year since integrated circuits were invented (1959) and predicting this would continue for at least another decade.
+
+**Why it held:** shrinking transistors allows more transistors per mm² (density), and smaller transistors switch faster (performance) and use less power (Dennard scaling — see below). The semiconductor industry organised itself around Moore's Law as a roadmap — ITRS (International Technology Roadmap for Semiconductors) coordinated research to hit two-year cadence targets.
+
+**Economic corollary:** as density doubled, cost per transistor halved. Computing power per dollar doubled every two years. This compounding made electronics progressively cheaper and enabled entirely new markets: mainframes → minicomputers → PCs → smartphones → cloud → IoT.
+
+**The slowing:** from 1971 to ~2012, Moore's Law held with density roughly doubling every 18–24 months. Since then:
+- Physics limits: quantum tunnelling through gate oxide when gates reach ~1nm makes further shrinking increasingly difficult.
+- Economic limits: a 5nm TSMC wafer costs ~$20,000; equipment (EUV lithography machines: $150M each) costs are enormous.
+- Power limits: even if you pack more transistors in, you can't always run them all at once (dark silicon).
+- The density is still increasing, but more slowly (~2–3× per process generation, not consistently 2×).
+
+**Moore's Law ≠ Dennard scaling:** Dennard scaling (transistors shrink and use proportionally less power) broke down around 2005 when leakage current became significant — transistors got leakier as they got smaller. This is why clock speeds plateaued around 4 GHz. CPU performance improvement since then comes from multi-core, wider pipelines (superscalar), specialised accelerators (NPUs, GPUs), and architecture improvements — not raw clock speed increases.
+
+**What continues:** transistor density is still increasing at TSMC 3nm and 2nm, though more expensively and slowly. Chiplet design (combining multiple dies in one package — AMD EPYC, Intel Meteor Lake) extends density gains economically. 3D stacking (TSMC SoIC, Samsung X-Cube, HBM memory) adds vertical layers.
+
+**End of Moore's Law predictions:** industry leaders have said "Moore's Law is dead" many times; it keeps limping along. TSMC's 2nm (2025) and 1.4nm (2027) suggest density gains continuing, but at diminishing returns. The era of automatic performance doubling every two years without architectural innovation is over.
+
+## Why it matters
+
+Moore's Law is the foundation of the modern world. Every assumption about computing cost and capability — that a smartphone costs $500, that cloud VMs are affordable, that machine learning is tractable — rests on 50 years of exponential improvement. Understanding its slowdown is essential for predicting where performance gains will come from in the future: specialised hardware (NPUs, TPUs, FPGAs), software optimisation, new computing paradigms (quantum computing, neuromorphic). Engineers who assume "hardware will get faster" need to understand that this is now a much slower and less certain process.
+
+## Real-world examples
+
+- Intel 4004 (1971): 2,300 transistors at 10µm. Apple M4 (2024): 28 billion transistors at 3nm — ~12 million× more dense in 53 years.
+- TSMC is the world's most advanced foundry; EUV lithography (Extreme Ultraviolet, λ=13.5nm) is used for 7nm and below.
+- NVIDIA's H100: 80 billion transistors on a 4nm node — the GPU equivalent of Moore's Law for ML hardware.
+
+## Common misconceptions
+
+- **"Moore's Law is a physical law."** It is an empirical observation and economic prediction, not a law of physics. It held because the semiconductor industry organised itself to make it hold.
+- **"Moore's Law means computers double in speed every two years."** It describes transistor density. Performance gains (IPC, clock speed) are separate and involve many other factors.
+
+## Learn next
+
+[Dennard scaling](/t/dennard-scaling) explains why the transistor density gains from Moore's Law stopped automatically translating into proportional performance gains after ~2005. Understanding the limits of Moore's Law motivates [ASICs](/t/asic), [FPGAs](/t/fpga), and [GPU](/t/gpu) acceleration — because general-purpose scaling is no longer enough.

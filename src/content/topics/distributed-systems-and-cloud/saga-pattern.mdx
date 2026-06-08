@@ -1,0 +1,52 @@
+---
+title: Saga Pattern
+aliases: ["saga", "distributed transaction saga", "choreography saga", "orchestration saga"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A pattern for managing long-lived distributed transactions by breaking them into a sequence of local transactions, each with a compensating action to undo it if a later step fails.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "transactions", "microservices", "patterns"]
+prerequisites: ["microservices", "distributed-system"]
+related: ["message-queue", "eventual-consistency"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In a single database you can wrap multiple operations in a transaction and roll everything back if anything fails. Across multiple microservices, there is no global transaction — each service owns its own database. The saga pattern solves this: break the distributed operation into a sequence of local transactions, and for each step define a **compensating transaction** that undoes it. If step 4 fails, run the compensating transactions for steps 3, 2, and 1 in reverse to undo the side effects.
+
+## More detail
+
+A saga is a sequence of `(T₁, C₁), (T₂, C₂), …, (Tₙ, Cₙ)` pairs, where `Tᵢ` is a local transaction and `Cᵢ` is its compensation. If `Tᵢ` fails, the saga runs `Cᵢ₋₁, Cᵢ₋₂, …, C₁` to roll back as far as necessary. Compensating transactions are business actions (cancel a reservation, issue a refund) not database rollbacks — they are new committed transactions, not undo logs.
+
+**Two coordination styles:**
+
+- **Choreography:** each service publishes an event after its transaction, and the next service listens and reacts. No central coordinator. Works well for short sagas; harder to visualise and debug as complexity grows.
+- **Orchestration:** a central **saga orchestrator** (a state machine, often a separate service) sends commands to each participant and tracks progress. Easier to observe and retry; the orchestrator is a single point of coordination (not failure, if implemented with a durable state store).
+
+**Challenges:**
+- **Idempotency** — at-least-once delivery means steps can be called multiple times; each must be idempotent (produce the same result regardless of how many times it runs).
+- **Isolation** — sagas do not provide the I in ACID; intermediate states are visible to concurrent transactions, which may cause dirty reads. Business logic must handle this (lock resources, use semantic locking, or tolerate transient inconsistency).
+- **Pivot transaction** — the last step that can still be rolled back. Everything after it cannot be compensated (e.g., sending an email is irreversible).
+
+## Why it matters
+
+Long-running distributed workflows — order fulfilment (reserve inventory → charge payment → ship), travel booking (hotel + flight + car), bank transfer across systems — cannot use two-phase commit across microservices in production (it couples availability). Sagas trade strong isolation for availability, using [eventual consistency](/t/eventual-consistency) and compensating actions. Understanding sagas makes it possible to design microservices that handle failure without orphaned state.
+
+## Real-world examples
+
+- E-commerce order flow: place order → reserve inventory (saga step 1) → charge credit card (step 2) → notify warehouse (step 3). If payment fails, release inventory (compensate step 1).
+- Airline booking systems coordinate across hotel, flight, and car rental services using saga-style compensations.
+- Uber's order platform uses an orchestration saga to manage the lifecycle of a trip across driver matching, payment, and receipt services.
+
+## Common misconceptions
+
+- **"Sagas are distributed transactions."** Sagas are a pattern for *coordinating* local transactions — they do not provide atomicity or isolation at the distributed level. They are semantically weaker than two-phase commit.
+- **"Compensations are database rollbacks."** Compensations are forward actions that reverse the business effect; they commit new state, they don't undo committed state.
+
+## Learn next
+
+Sagas coordinate services through [message queues](/t/message-queue) (for events) or an orchestration service. They are needed because [microservices](/t/microservices) each own their own data store. The tradeoffs are framed by [CAP theorem](/t/cap-theorem) and [eventual consistency](/t/eventual-consistency).

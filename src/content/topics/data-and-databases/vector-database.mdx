@@ -1,0 +1,54 @@
+---
+title: Vector Database
+aliases: ["vector store", "embedding database", "similarity search database"]
+category: data-and-databases
+kind: technology
+summary: A database optimised for storing and searching high-dimensional embedding vectors by similarity — the storage layer behind semantic search and retrieval-augmented generation.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "embeddings", "similarity-search", "ai"]
+prerequisites: ["database", "indexing"]
+related: ["embedding", "retrieval-augmented-generation", "b-tree"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Traditional databases answer "give me all rows where `name = 'Alice'"` — exact match. A vector database answers "give me the 10 documents most *similar* to this query" — approximate nearest-neighbour search. Similarity is measured as distance in a high-dimensional space (cosine similarity or Euclidean distance between [embedding](/t/embedding) vectors). This is fundamentally different from B-tree or hash-index lookups, requiring specialised indexing structures.
+
+## More detail
+
+**The problem:** embeddings are 768–4096-dimensional float vectors. Brute-force similarity search is `O(N × D)` — fine for thousands of vectors, unworkable for hundreds of millions. Vector databases build approximate nearest-neighbour (ANN) indexes that trade a small accuracy loss for dramatic speed improvements.
+
+**Core ANN algorithms:**
+
+- **HNSW (Hierarchical Navigable Small World)** — a multi-layer graph where each node links to nearby nodes at multiple scales. Navigation hops across long-range links (upper layers) then short-range links (lower layers) to find neighbours in O(log N) hops. High recall, low latency, high memory usage.
+- **IVF (Inverted File Index)** — cluster vectors with k-means; store each vector in its cluster's inverted list. Query: find the closest clusters, then search within them. Lower memory than HNSW; configurable accuracy/speed tradeoff.
+- **PQ (Product Quantisation)** — compress vectors by splitting them into sub-vectors and quantising each independently. Reduces memory 8–64×; enables billion-scale search on moderate hardware. Often combined with IVF (IVF-PQ).
+- **DiskANN / ScaNN** — disk-based indexes that store most vectors on SSD and a small navigation graph in memory, enabling billion-scale search with limited RAM.
+
+**Filtering:** real queries combine vector similarity with metadata filters ("most similar to X, where `category = 'tech'` and `date > 2024`"). Efficient filtered ANN is an open problem; strategies include pre-filtering (index only matching subset) and post-filtering (ANN then apply filter, risk of missing results).
+
+**Products:** Pinecone, Weaviate, Qdrant, Chroma, pgvector (PostgreSQL extension), Milvus, Redis Stack (vector extension), OpenSearch/Elasticsearch k-NN.
+
+## Why it matters
+
+Vector databases are the storage layer of [retrieval-augmented generation (RAG)](/t/retrieval-augmented-generation) — every chatbot that answers from a private knowledge base stores embeddings in one. They power semantic search (search by meaning, not keyword), recommendation systems (find similar items), and image/audio search. As embeddings become the universal representation for AI-generated content, vector databases become essential infrastructure.
+
+## Real-world examples
+
+- Pinecone stores embeddings for millions of documents; a RAG chatbot queries it to retrieve relevant context before generating a response.
+- Spotify's music recommendation system embeds songs into a shared vector space and finds similar tracks with ANN search.
+- Google Photos' "search for photos of beaches" uses visual embeddings and approximate nearest-neighbour search.
+- Stack Overflow's semantic search uses embedding similarity to surface related questions beyond keyword matches.
+
+## Common misconceptions
+
+- **"A vector database is just a regular database with a new column type."** The indexing requirements (HNSW, IVF-PQ) are fundamentally different from B-trees or hash indexes; a naive relational approach is orders of magnitude slower at scale.
+- **"You need a separate vector database."** For moderate scales (< 1M vectors), `pgvector` in PostgreSQL is often sufficient and avoids an extra service. Dedicated vector databases are for large scale or very low-latency requirements.
+
+## Learn next
+
+Vector databases store [embeddings](/t/embedding) and are central to [retrieval-augmented generation](/t/retrieval-augmented-generation). The indexing challenge is different from the B-tree [indexing](/t/indexing) in relational databases — compare both to understand when each is appropriate.

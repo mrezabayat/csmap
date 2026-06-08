@@ -1,0 +1,63 @@
+---
+title: Superscalar Execution
+aliases: ["superscalar", "instruction-level parallelism", "ILP", "out-of-order execution", "issue width"]
+category: computer-architecture
+kind: concept
+summary: A CPU design that issues multiple independent instructions per clock cycle by maintaining several execution units in parallel — extracting instruction-level parallelism (ILP) from sequential code automatically.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cpu", "architecture", "performance", "parallelism"]
+prerequisites: ["cpu", "instruction-set", "cpu-pipeline"]
+related: ["speculative-execution", "simd", "branch-prediction"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A simple pipeline executes one instruction per cycle (in steady state). A superscalar processor issues two, four, or eight instructions per cycle by running multiple execution units simultaneously. If the next four instructions in your program don't depend on each other (no data hazards), they can all execute at once — the CPU finds this parallelism automatically, without the programmer or compiler doing anything special. Modern cores issue 4–6 instructions per cycle, which is why a single core runs sequential code much faster than its clock frequency alone would suggest.
+
+## More detail
+
+**Instruction-level parallelism (ILP):** independent instructions (no shared data, no control dependencies) can be executed simultaneously. Research shows that typical programs have ILP of 5–7 among nearby instructions — modern superscalar processors try to exploit this.
+
+**Front end and back end:**
+- **Front end:** fetches, decodes, and dispatches instructions. Superscalar front ends are wide (4–8 decode units) to keep the execution engine fed.
+- **Reorder buffer (ROB):** a circular buffer holding in-flight instructions in program order. Instructions are dispatched out of order for execution but retired in order (preserving the sequential illusion).
+- **Reservation stations / issue queues:** instructions wait here until their operands are ready (all dependencies resolved). The scheduler scans these queues and issues ready instructions to functional units.
+- **Execution units:** integer ALUs, floating-point units, SIMD units, load/store units — multiple of each. A core may have 4 integer ALUs, 2 FPUs, and 2 load/store units.
+- **Register renaming (Tomasulo's algorithm):** false dependencies from register reuse (WAW, WAR hazards) are eliminated by mapping architectural registers to a larger pool of physical registers — enabling more instructions to execute in parallel.
+
+**Modern superscalar CPUs:**
+- Intel Core i9 (Raptor Lake): 6-wide decode, ~512-entry ROB, 12 execution units.
+- AMD Ryzen (Zen 4): 4-wide decode, 320-entry ROB.
+- Apple M-series: 8-wide decode, ~800-entry ROB — the widest in production, contributing to Apple's excellent single-threaded performance.
+
+**Limits to ILP:**
+- **Data dependencies:** a dependent instruction must wait for the producing instruction's result.
+- **Memory aliasing:** the CPU cannot always determine if two memory accesses reference the same location.
+- **Branch misprediction:** a mispredicted branch flushes the entire ROB — wasting dozens of cycles.
+- **Roofline:** diminishing returns as the issue width increases; most programs don't have enough independent instructions to fill a 10-wide machine.
+
+**Out-of-order (OoO) vs. in-order:** in-order cores (ARM Cortex-A55, early Atom) execute instructions in program order — simpler, lower power, but cannot tolerate cache misses. OoO cores tolerate latency by executing other instructions while waiting for a cache miss to resolve.
+
+## Why it matters
+
+Superscalar out-of-order execution is why modern CPUs execute sequential code far faster than their GHz rating suggests. Understanding it explains: why instruction reordering by the CPU matters for concurrency (requires memory barriers), why branch misprediction is expensive, why Apple M-series beats Intel on single-thread benchmarks, and what the limits of single-core scaling are. It is the core technique that has delivered performance improvements for 30 years, alongside frequency scaling.
+
+## Real-world examples
+
+- SPEC CPU 2017 benchmarks measure single-core ILP exploitation; Apple M4's 8-wide OoO core dominates.
+- JVM's JIT compilers analyse hot loops to expose ILP explicitly through inlining and loop unrolling.
+- LLVM backend scheduling reorders instructions to fill execution unit slots and hide latency.
+- Software pipelining (loop unrolling + instruction interleaving) by compilers helps fill superscalar pipelines for numeric code.
+
+## Common misconceptions
+
+- **"Superscalar means parallel processors."** Superscalar is ILP within a single core — finding parallelism in a single instruction stream. Multi-core (TLP) and SIMD are different forms of parallelism.
+- **"Faster clock = more instructions per second."** Clock × IPC = instructions per second. Apple's M4 at 4 GHz with 8 IPC beats Intel at 5 GHz with 4 IPC for many workloads.
+
+## Learn next
+
+Superscalar execution works alongside [speculative execution](/t/speculative-execution) (which feeds the wide pipeline with predicted instructions) and [SIMD](/t/simd) (which processes multiple data per instruction). [Branch prediction](/t/branch-prediction) is critical — mispredictions drain the ROB and stall the superscalar engine.

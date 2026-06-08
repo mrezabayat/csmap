@@ -1,0 +1,57 @@
+---
+title: Side-Channel Attack
+aliases: ["timing attack", "cache side channel", "Spectre", "Meltdown", "power analysis"]
+category: security-and-privacy
+kind: concept
+summary: An attack that extracts secrets by observing physical side effects of a computation — timing, power consumption, cache behaviour, or electromagnetic emissions — rather than breaking the algorithm mathematically.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["security", "cryptography", "hardware", "attacks"]
+prerequisites: ["cryptography", "cache", "speculative-execution"]
+related: ["sandbox", "elliptic-curve-cryptography"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A perfect cryptographic algorithm running on a real computer leaks information through physical effects. If decrypting a message takes 1 nanosecond longer when a certain bit is zero, an attacker measuring millions of decryptions can statistically learn the private key. This is a side channel: an unintended information pathway that bypasses the algorithm's mathematical hardness. Side-channel attacks have broken smartcards, stolen AES keys from OpenSSL, and (in Spectre/Meltdown) let browser JavaScript read kernel memory.
+
+## More detail
+
+**Timing attacks:** if a computation takes variable time depending on secret data, timing measurements leak information. Classic example: string comparison `if (a[i] != b[i]) return false` — returns early on the first mismatch, leaking how many bytes match. Fix: constant-time comparison that always examines all bytes regardless of matches. Most cryptographic libraries use constant-time operations for this reason.
+
+**Cache side channels:** CPUs share caches between processes. If attacker code can measure cache access time, it can infer which cache lines victim code accessed — which reveals the secret data that determined those accesses. **FLUSH+RELOAD** and **PRIME+PROBE** are standard techniques for measuring another process's cache activity.
+
+**Spectre and Meltdown (2018):** exploited speculative execution. The CPU speculatively executes code along a predicted branch (including code that would fault) and populates the cache. Although the speculative results are discarded, the cache state is not — an attacker can measure which cache lines are warm to read speculatively-loaded secret data. Spectre affects essentially all modern CPUs. Mitigations (microcode updates, retpoline, kernel page-table isolation) have significant performance costs (2–30% on I/O-bound workloads).
+
+**Power analysis:** measuring the instantaneous power draw of a smartcard or microcontroller during cryptographic operations reveals secret key bits. **DPA (Differential Power Analysis)** statistically correlates power traces with hypothesised key bits, recovering AES-128 keys in minutes. Modern hardware cryptographic engines use power-balancing circuits.
+
+**Electromagnetic attacks:** similar to power analysis but using EM emissions; can be performed at distance.
+
+**Countermeasures:**
+- **Constant-time programming** — eliminate all secret-dependent branches and memory accesses.
+- **Masking / blinding** — randomise intermediate values so power traces are decorrelated from the key.
+- **Hardware isolation** — separate security enclaves (ARM TrustZone, Intel SGX) with distinct physical memory.
+- **Spectre mitigations** — KPTI, retpoline, serialising instructions (LFENCE), site isolation in browsers.
+
+## Why it matters
+
+Side-channel attacks bridge the gap between theoretical cryptographic security and real-world systems. An algorithm proven secure can still be broken if the implementation leaks. Every cryptographic library must be audited for constant-time behaviour; every shared-hardware environment (cloud VMs sharing physical CPUs, browser tabs, IoT devices) is potentially exposed to cache or timing attacks. Understanding side channels is essential for anyone writing security-sensitive code or deploying multi-tenant infrastructure.
+
+## Real-world examples
+
+- **Heartbleed (2014)** — not a side-channel but revealed how memory disclosure can leak private keys; Heartbleed + timing attacks are often combined.
+- **Spectre/Meltdown (2018)** — affected every major cloud provider; required emergency microcode and OS patches; Google, Amazon, and Microsoft had to reboot fleets.
+- **OpenSSL** has historically had several timing vulnerabilities in RSA and ECDSA implementations; all modern versions use constant-time variants.
+- **GnuPG 2.1** (2017) — ECDSA nonce bias discovered via lattice attack on timing measurements.
+
+## Common misconceptions
+
+- **"My crypto library is safe because it uses AES-NI hardware instructions."** AES-NI eliminates table-lookup timing attacks on AES, but the surrounding code may still have timing leaks in key scheduling, padding, or MAC operations.
+- **"Side-channel attacks require physical access."** Spectre-class attacks work remotely via JavaScript in a browser or via VM co-location in the cloud.
+
+## Learn next
+
+Side-channel attacks exploit [speculative execution](/t/speculative-execution) hardware features and [cache](/t/cache) behaviour. [Sandbox](/t/sandbox) environments attempt to isolate code that might perform these attacks. Understanding them is part of using [cryptography](/t/cryptography) correctly in practice.

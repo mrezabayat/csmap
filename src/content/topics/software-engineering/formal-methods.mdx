@@ -1,0 +1,62 @@
+---
+title: Formal Methods
+aliases: ["formal specification", "model checking", "TLA+", "B method", "Z notation"]
+category: software-engineering
+kind: concept
+summary: Mathematical techniques for specifying, developing, and verifying software and hardware systems — using logic and proof to detect design flaws and guarantee correctness properties that testing cannot exhaustively check.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["software-engineering", "correctness", "verification", "mathematics"]
+prerequisites: ["design-pattern", "algorithms"]
+related: ["formal-verification", "test-driven-development", "type-theory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Testing shows a program works for the cases you tried. Formal methods prove it works for *all* cases — using mathematics. You write a precise specification of what the system should do (in a language like TLA+, Z, or Alloy), and then use tools to check whether the implementation matches. Formal methods find bugs at the design level — distributed protocol race conditions, state machine deadlocks, invariant violations — before a single line of production code is written.
+
+## More detail
+
+Formal methods span a spectrum of rigour and tool support:
+
+**Lightweight formal methods (specification and model checking):**
+- **TLA+ (Temporal Logic of Actions):** Leslie Lamport's language for specifying concurrent and distributed systems. You describe the system as a state machine with actions; TLC (the model checker) explores all reachable states and verifies invariants and temporal properties. AWS uses TLA+ to verify designs of S3, DynamoDB, and EBS protocols.
+- **Alloy:** a relational modelling language based on first-order logic with a SAT-based model finder (Alloy Analyser). Good for modelling access control, data structures, and protocols. Bounded verification — finds counterexamples up to a given model size.
+- **SPIN/Promela:** model checker for concurrent systems (process communication, mutual exclusion protocols). Verifies LTL (Linear Temporal Logic) properties.
+
+**Heavyweight formal methods (theorem proving):**
+- **Coq / Rocq:** dependent type theory proof assistant. CompCert (verified C compiler) and seL4 (verified microkernel) are verified in Coq. Proofs are machine-checked; the Coq kernel is the only trusted component.
+- **Isabelle/HOL:** used for seL4 verification and the Formal Mathematics library. Higher-Order Logic with a powerful automation layer (Sledgehammer, auto).
+- **Lean 4:** rapidly growing proof assistant with an ambitious goal (Lean Mathlib formalises undergraduate mathematics). Mathlib has ~130,000 theorem statements; growing rapidly.
+
+**SMT-based verification:**
+- **Dafny:** a verifying programming language — annotate functions with pre/postconditions and loop invariants; Dafny compiles to verification conditions solved by Z3. Engineers write real code with formal annotations.
+- **CBMC:** bounded model checker for C. Verifies absence of buffer overflows, division by zero, and user assertions for up to N loop iterations.
+- **AWS Zelkova / IAM policy analysis:** Z3-based tool that formally verifies IAM policy properties ("can any principal outside our account access this S3 bucket?").
+
+**The specification gap:** formal methods are most effective at finding design-level bugs — not implementation bugs. A TLA+ spec of a distributed protocol catches race conditions; the spec doesn't verify the Java implementation. Tools like Dafny bridge this gap by coupling spec and code.
+
+**Cost-benefit:** lightweight formal methods (TLA+ for protocol design, Alloy for access control models) add days to weeks of upfront work and pay back by eliminating entire classes of distributed system bugs. Heavyweight methods (seL4-style Isabelle verification) require months to years and are justified only for safety-critical or security-critical components.
+
+## Why it matters
+
+Formal methods are how the highest-assurance systems are built. seL4's formal verification means its security properties hold unconditionally — not "we tested a lot" but "we proved it." For engineers working on safety-critical systems (medical, aviation, automotive), security kernels, or distributed protocols at scale, understanding formal methods is the difference between hoping the design is correct and knowing it. Increasingly, lightweight formal methods (TLA+, Dafny) are applicable to everyday engineering.
+
+## Real-world examples
+
+- AWS uses TLA+ to verify every distributed protocol before implementation; engineers found 7 bugs in existing designs that would have caused data loss.
+- seL4 microkernel: 9000 lines of C formally verified in 200,000 lines of Isabelle proof; takes 7+ hours to verify from scratch.
+- CompCert (verified C compiler) is used in aviation software (Airbus uses it for A350 software) where compiler bugs are unacceptable.
+- Facebook/Meta uses Z3 for type-checking and analysis in Hack (their PHP successor) and Infer (static analysis tool).
+
+## Common misconceptions
+
+- **"Formal methods require PhDs to use."** TLA+ can be learned by a skilled engineer in a week. AWS engineers who are not formal methods researchers use it routinely.
+- **"Formal methods only verify the spec, not the code."** Dafny, CBMC, and Frama-C verify the actual code (with annotations). seL4's verification includes a proof that the C implementation refines the abstract spec.
+
+## Learn next
+
+Formal methods draw on [type theory](/t/type-theory) and [lambda calculus](/t/lambda-calculus) for their logical foundations. They are the most rigorous form of [formal verification](/t/formal-verification). [Test-driven development](/t/test-driven-development) is a complementary empirical approach — lighter weight but much more widely applicable.

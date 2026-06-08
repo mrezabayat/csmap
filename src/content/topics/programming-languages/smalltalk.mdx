@@ -1,0 +1,67 @@
+---
+title: Smalltalk
+aliases: ["Smalltalk-80", "Squeak", "Pharo", "message passing OOP", "Alan Kay"]
+category: programming-languages
+kind: technology
+summary: The language that invented modern object-oriented programming — Alan Kay's vision of objects communicating purely via message passing, pioneering the GUI, the REPL, live programming environments, and the MVC pattern.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "oop", "history", "xerox-parc"]
+prerequisites: ["programming-language", "design-pattern"]
+related: ["erlang", "closure", "homoiconicity"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Smalltalk was created at Xerox PARC in the 1970s by Alan Kay, Dan Ingalls, and Adele Goldberg. Kay envisioned a computer as a "dynamic medium" where everything is an object and objects communicate only by sending messages — no global state, no procedure calls, just objects talking to each other. Smalltalk pioneered the graphical user interface (Xerox Alto), the first modern windowing system, the MVC (Model-View-Controller) pattern, and live programming (change code while the program runs). Java, Python, Ruby, Objective-C, and Swift all acknowledge Smalltalk as a direct ancestor.
+
+## More detail
+
+**Everything is an object:** in Smalltalk, *literally* everything — integers, booleans, classes, blocks of code — is an object. `3 + 4` is not a built-in operation; it sends the `+` message to the integer object `3` with argument `4`. `true ifTrue: [...]` sends `ifTrue:` to the boolean object `true`. There are no primitive types in the VM sense — the integer object handles `+` internally.
+
+**Message sending:**
+```smalltalk
+| x |
+x := OrderedCollection new.
+x add: 42.
+x add: 'hello'.
+x do: [:each | Transcript showCrLf: each printString].
+```
+
+Three message types:
+- **Unary messages** — `x size` (no arguments, highest precedence).
+- **Binary messages** — `3 + 4`, `x = y` (one argument, medium precedence).
+- **Keyword messages** — `x at: 1 put: 'a'` (named args, lowest precedence).
+
+**Blocks (closures):** `[:x | x + 1]` is a block — a first-class closure over its lexical scope. Blocks are passed as arguments to control structures. `ifTrue:`, `whileTrue:`, `do:` are not language keywords; they're messages sent to booleans, blocks, and collections.
+
+**The live environment:** Smalltalk is not compiled to a binary and run. The entire Smalltalk system lives in a persistent **image** — a snapshot of the heap containing all objects, classes, and running state. The IDE, the compiler, the debugger, and the running application all exist in the same image. You can modify the source of a running class and the behaviour changes immediately — the first "hot reload."
+
+**MVC (Model-View-Controller):** Smalltalk-80 introduced MVC as the canonical pattern for GUI application structure. The Model holds domain state; the View displays it; the Controller handles input and updates the Model. This pattern underlies web frameworks (Rails, Django, Spring MVC) and GUI toolkits (Cocoa, Qt) to this day.
+
+**Reflection:** every object knows its class; every class knows its methods. You can list a class's methods, inspect an object's slots, and change a class's implementation at runtime. Smalltalk's reflection influenced Java reflection, Python's `inspect` module, and Ruby's `method_missing`.
+
+**Modern Smalltalk:** Pharo (open-source, MIT) and Squeak (educational, OLPC) are active Smalltalks. Pharo has a thriving community, a Smalltalk-80 image model, and modern tools. Amber Smalltalk compiles to JavaScript.
+
+## Why it matters
+
+Smalltalk is where modern OOP was defined — not "encapsulation + inheritance" (which came later as a watered-down version) but "objects + message passing + polymorphism." Alan Kay has since lamented that Java/C++ OOP missed the message-passing essence. Smalltalk's live image environment was decades ahead of its time and is re-emerging in "live programming" research, hot reload in React Native, and Notebook (Jupyter) computing. Understanding Smalltalk explains where OOP's ideas actually came from and what was lost in translation to C++/Java.
+
+## Real-world examples
+
+- The Xerox Alto (1973) was the first computer with a GUI; it was programmed in Smalltalk and Interlisp.
+- Objective-C was created by Brad Cox in 1984 as "Smalltalk messaging on top of C" — and became the language of iOS until Swift.
+- Ruby was explicitly designed by Matz to feel like Smalltalk with a friendlier syntax.
+- JPMorgan used VisualWorks Smalltalk for financial systems for decades; some systems still run today.
+
+## Common misconceptions
+
+- **"Smalltalk is slow."** Modern Smalltalk VMs (Pharo's Cog VM) are highly optimised with JIT compilation, competitive with Python and Ruby for most workloads.
+- **"OOP in Java and Python is the same as OOP in Smalltalk."** Java OOP uses method dispatch (not pure message passing), has primitive types (not objects), and compiles to fixed bytecode (not a live image). The philosophies differ significantly.
+
+## Learn next
+
+Smalltalk's message-passing model influenced [Erlang](/t/erlang)'s actor model. Its [closures](/t/closure) (blocks) are first-class. Alan Kay's vision also inspired the [Xerox PARC](/t/xerox-parc) research environment that created the GUI and other computing fundamentals.

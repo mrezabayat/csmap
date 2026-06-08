@@ -1,0 +1,75 @@
+---
+title: RDMA
+aliases: ["Remote Direct Memory Access", "InfiniBand", "RoCE", "iWARP", "RDMA over Converged Ethernet"]
+category: low-latency-systems
+kind: concept
+summary: A technology that allows one computer to directly read or write another computer's memory over a network — bypassing both CPUs — achieving ~1 µs latency and near-line-rate bandwidth for distributed computing, ML training, and storage.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["networking", "performance", "distributed", "hpc", "low-latency"]
+prerequisites: ["tcp", "memory", "distributed-system", "kernel-bypass"]
+related: ["mpi-basics", "numa-awareness", "huge-pages"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally, when server A wants to send data to server B, both CPUs are involved: A's CPU copies data to a socket buffer, the OS sends it over the network, B's OS receives it, B's CPU copies it from the socket buffer to the application. Four copies, two OS calls, two CPUs involved. RDMA lets A's NIC reach directly into B's memory and read or write it — no CPU involvement on either side. Latency drops from ~50 µs (TCP) to ~1 µs. This is why ML training clusters and HPC use RDMA: moving gigabytes between GPUs across thousands of nodes would otherwise saturate CPUs with memory copies.
+
+## More detail
+
+**RDMA verbs (operations):**
+- **RDMA Write:** the initiating NIC writes data directly to the target machine's memory. The target CPU is not involved; it is notified only optionally. Zero CPU overhead on the responder.
+- **RDMA Read:** initiating NIC fetches data from the remote machine's memory. Similar zero-CPU property.
+- **Send/Receive (two-sided):** like UDP; the responder's NIC places incoming data in a pre-posted receive buffer. Both sides' NICs involved; both CPUs set up the operation but are not in the data path.
+
+**Memory registration:** before RDMA can access a region of memory, it must be **registered** with the NIC: the OS pins the pages (prevents swapping) and maps virtual → physical addresses for the NIC's DMA engine. Registration is expensive (~milliseconds); registered memory cannot be paged. Applications pre-register large memory regions at startup.
+
+**Queue pairs:** RDMA operations are posted to hardware queues called Queue Pairs (QPs). A send QP and a receive QP per connection. The NIC polls (or interrupt-signals) completion queues when operations finish. Multiple QPs allow concurrency.
+
+**Transport protocols:**
+
+*InfiniBand (IB):* the original RDMA fabric — a dedicated network (separate from Ethernet) with its own switches, cables, and NIC (HCA — Host Channel Adapter). Ultra-low latency (~0.6 µs RTT), high bandwidth (up to NDR 400 Gbit/s per link). Dominant in HPC (Top500 list: ~half use InfiniBand). NVIDIA (owns Mellanox) is the primary vendor.
+
+*RoCE (RDMA over Converged Ethernet):* RDMA protocol encapsulated in Ethernet frames (RoCEv2 uses UDP/IP). Runs on standard (enhanced) Ethernet infrastructure. Latency ~1–2 µs RTT. Requires PFC (Priority Flow Control) to prevent packet drops that would force RDMA retransmits. Used in cloud data centres (Azure, Alibaba, Baidu) at scale.
+
+*iWARP:* RDMA over TCP/IP. No PFC required; works on any network. Higher latency (~10 µs) due to TCP overhead. Less popular.
+
+**Performance:**
+- InfiniBand HDR (200 Gbit/s): ~0.6 µs RTT, 200 Gbit/s per port.
+- RoCEv2 at 100 Gbit/s: ~1–2 µs RTT.
+- Compare to: TCP over 100G Ethernet: ~20–50 µs RTT.
+
+**Applications:**
+
+*MPI (distributed HPC):* MPI's RDMA transport (OpenMPI, MVAPICH2) uses one-sided RDMA Put/Get for scatter-gather, reducing AllReduce latency in scientific simulations (climate, CFD).
+
+*ML training:* NCCL (NVIDIA Collective Communications Library) uses RDMA for all-reduce operations during distributed training. GPT-3/4 training used InfiniBand across thousands of A100 GPUs; the collective bandwidth of the RDMA fabric (400 Gbit/s × 8 links per node) is the limiting factor, not GPU compute, in some training configurations.
+
+*Distributed storage:* NVMe-oF (NVMe over Fabrics) with RDMA transports (NVMe-oF/RDMA, also called NVMe-oF/IB) allows remote NVMe SSDs to appear with near-local latency. Azure's storage infrastructure uses RoCE for its backend network.
+
+**Azure RDMA:* Microsoft has deployed RoCE at massive scale in Azure. Their RDMA network carries storage traffic between compute nodes and Azure Storage at ~1 µs latency, serving as the backend for Azure Blob Storage, Azure NetApp Files, and HPC VMs.
+
+**Programming model:** low-level RDMA programming uses the ibverbs API (POSIX-like C API). Higher-level libraries: UCX (Unified Communication X — used by OpenMPI), libfabric, NCCL. NVIDIA's GPUDirect RDMA allows direct GPU memory transfers over InfiniBand without staging through CPU RAM — critical for ML training performance.
+
+## Why it matters
+
+RDMA is the communication fabric that makes large-scale distributed ML training practical. Without RDMA, AllReduce operations during training would require multiple CPU-mediated copies, saturating CPUs and adding 50–100 µs latency per step. With RDMA, parameter servers and collective operations run at near-memory speeds. HPC clusters have used RDMA (InfiniBand) for 20 years for the same reason. Cloud providers are deploying RoCE at scale. Engineers building distributed ML, HPC systems, or low-latency cloud storage need to understand RDMA.
+
+## Real-world examples
+
+- NVIDIA DGX A100/H100 systems: 8 A100 GPUs per node, 8 × 200 Gbit/s InfiniBand HDR ports per node. All collective operations (AllReduce) go via RDMA.
+- Microsoft Azure: entire backend storage network uses RoCE (via DCQCN congestion control). Described in the 2016 SIGCOMM paper "RoCEv2 in Azure".
+- Alibaba, Baidu: large-scale RDMA deployments for distributed ML training clusters.
+- Top500 supercomputers: Oak Ridge Summit (IBM + InfiniBand), Frontier, Aurora — all use InfiniBand for MPI communication.
+
+## Common misconceptions
+
+- **"RDMA replaces TCP for everything."** RDMA requires special hardware and fabric management; it's not suitable for general internet traffic. TCP over standard Ethernet remains dominant for web services.
+- **"RDMA bypasses the NIC too."** RDMA bypasses the CPU but not the NIC. The NIC performs the DMA operations and manages the RDMA protocol — it is actually more complex and capable than a standard NIC.
+
+## Learn next
+
+RDMA is the remote-access extension of [kernel bypass](/t/kernel-bypass). [MPI basics](/t/mpi-basics) uses RDMA as its high-performance transport. [NUMA-awareness](/t/numa-awareness) and [huge pages](/t/huge-pages) optimise the local memory side of the RDMA pipeline.

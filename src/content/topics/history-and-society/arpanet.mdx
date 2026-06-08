@@ -1,0 +1,70 @@
+---
+title: ARPANET
+aliases: ["ARPANET", "packet switching", "internet history", "TCP/IP origins"]
+category: history-and-society
+kind: concept
+summary: The Advanced Research Projects Agency Network (1969) — the first packet-switched computer network, connecting US university research sites, and the direct technological ancestor of the modern internet.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["history", "internet", "networking", "arpa"]
+prerequisites: ["internet-history", "ip-address", "tcp"]
+related: ["tim-berners-lee", "linus-torvalds", "xerox-parc"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In 1969, the US Department of Defense's Advanced Research Projects Agency (ARPA) funded a network connecting four university computers — UCLA, SRI, UCSB, and the University of Utah. This was ARPANET, and it sent the first ever packet-switched network message on October 29, 1969 (the target was "LOGIN"; the system crashed after "LO"). From those four nodes, it grew into the internet — the global network connecting 5+ billion people today. Every IP address, every TCP connection, every internet protocol traces to ARPANET and the engineers who built it.
+
+## More detail
+
+**Context and motivation:** in the late 1950s, the US government was concerned about the resilience of military communications after a nuclear strike. A centralised telephone network could be disabled by destroying a single node. ARPA funded Paul Baran (at RAND) to study distributed communications; his 1964 paper proposed "distributed communications networks" using **packet switching** — breaking data into independently-routed packets rather than establishing a fixed circuit.
+
+**Packet switching (vs. circuit switching):**
+- **Circuit switching** (traditional telephone): a dedicated physical path is reserved for the entire call duration. Efficient when continuous; wasteful for bursty data.
+- **Packet switching:** data is broken into packets, each routed independently through the network and reassembled at the destination. The network is shared; unused capacity carries other packets. More resilient (routes around failures) and more efficient for bursty data.
+
+**ARPANET timeline:**
+- **1969:** First nodes: UCLA (Len Kleinrock's lab), SRI (Doug Engelbart's lab), UCSB, and U Utah. First message: "LO" (LOGIN crash). NCP (Network Control Protocol) as the initial protocol.
+- **1971:** 23 nodes; email (MAIL command) invented by Ray Tomlinson at BBN; the `@` symbol in email addresses originated here.
+- **1972:** First public demonstration of ARPANET at the International Computer Communication Conference.
+- **1973:** Vint Cerf and Bob Kahn begin designing TCP (Transmission Control Protocol) — a new protocol to allow different networks to interconnect. NCP cannot bridge different network technologies.
+- **1974:** Cerf and Kahn publish "A Protocol for Packet Network Intercommunication" — the foundational TCP paper.
+- **1983:** ARPANET switches from NCP to TCP/IP on January 1, 1983 — the "flag day" of the modern internet. This date is often called the "birth of the internet."
+- **1984:** DNS (Domain Name System) introduced to replace numeric IP addresses with human-readable hostnames.
+- **1986:** NSFNET (National Science Foundation) creates a higher-speed backbone; ARPANET gradually displaced.
+- **1990:** ARPANET decommissioned; the internet carries its traffic.
+- **1991:** Tim Berners-Lee launches the World Wide Web on the internet.
+
+**Key people:**
+- **Vint Cerf and Bob Kahn:** co-designed TCP/IP. Often called "fathers of the internet." Cerf became Google's Chief Internet Evangelist.
+- **Larry Roberts:** DARPA programme manager who oversaw ARPANET's creation.
+- **Len Kleinrock:** queuing theory for packet networks; supervised the first node at UCLA.
+- **Ray Tomlinson:** invented email and chose `@` to separate username from host.
+- **Jon Postel:** managed IP address allocation and DNS for decades; author of many foundational RFCs.
+
+**From ARPANET to internet:** ARPANET was a research network. The internet emerged when TCP/IP allowed multiple different networks (university, corporate, government) to interconnect. NSFNET created a public backbone; when it was privatised in 1995, commercial ISPs took over. The modern internet is a confederation of tens of thousands of autonomous systems (ASes) connected via BGP.
+
+**Email's origins:** Ray Tomlinson wrote the first email program in 1971 on ARPANET — it was a practical hack to send messages between machines. The `@` sign (to separate user from host) was Tomlinson's choice, selected because it wasn't used in names. Email predates the web by 20 years.
+
+## Why it matters
+
+ARPANET is the direct technical ancestor of the internet. Its design choices — packet switching, decentralised routing, end-to-end principle (intelligence at the edges, dumb core) — shaped the internet's fundamental architecture. The end-to-end principle explains why the internet can carry any protocol (HTTP, FTP, SMTP, BitTorrent) without the core network needing to understand them. This design is also why the internet is hard to control or censor — there is no single chokepoint. Understanding ARPANET explains why the internet is architected the way it is and where concepts like TCP/IP, BGP, and DNS came from.
+
+## Real-world examples
+
+- UCLA's Boelter Hall, Room 3420: the original ARPANET node. Still in use as a teaching room.
+- BBN Technologies (now Raytheon BBN): built the original ARPANET routers (IMPs — Interface Message Processors); BBN's C implementation of TCP/IP was widely deployed.
+- Internet Archive: preserves digital history on the same internet whose history it documents.
+- RFC (Request for Comments): the ARPANET's informal document series became the standard publication mechanism for internet standards; RFC 791 (IP) and RFC 793 (TCP) are still the foundational documents.
+
+## Common misconceptions
+
+- **"ARPANET was designed to survive nuclear war."** This is a partial myth. Paul Baran's packet-switching research was motivated by nuclear resilience, but ARPANET itself was a research network for computer scientists to share resources. The military communications concern was a funding motivation, not a design constraint of the actual network.
+- **"The internet was invented by one person."** ARPANET was a large collaborative project spanning dozens of universities and companies; TCP/IP was Cerf and Kahn; DNS was Paul Mockapetris; BGP was Yakov Rekhter and Kirk Lougheed. The internet is a collective achievement.
+
+## Learn next
+
+ARPANET is the origin of [TCP](/t/tcp), [IP addresses](/t/ip-address), and [DNS](/t/dns). [Tim Berners-Lee](/t/tim-berners-lee) built the World Wide Web on this infrastructure. [Xerox PARC](/t/xerox-parc) was also funded by ARPA and developed many of the technologies that made networked computing useful.

@@ -1,0 +1,62 @@
+---
+title: Copy-on-Write
+aliases: ["COW", "copy-on-write fork", "COW pages"]
+category: operating-systems
+kind: concept
+summary: A resource management optimisation where copying is deferred until modification — shared pages are kept as a single copy until one party writes, triggering a private copy only then.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operating-systems", "memory", "virtualization", "performance"]
+prerequisites: ["virtual-memory", "process", "memory"]
+related: ["garbage-collection", "container"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When a Unix process forks a child, the child is a copy of the parent — potentially hundreds of megabytes. Copying all that memory immediately would be slow and wasteful if the child immediately calls `exec()` anyway. Copy-on-write (COW) defers the copy: child and parent share the same physical pages, marked read-only. The moment either party writes to a page, the OS intercepts the write fault, copies just that one page (4 KB), and lets the write proceed on the private copy. If neither ever writes, the copy never happens.
+
+## More detail
+
+**How it works:**
+1. On `fork()`, the OS marks all parent and child page table entries as read-only and shared (pointing to the same physical pages). Reference counts are incremented.
+2. When either process writes to a shared page, the CPU raises a protection fault.
+3. The OS fault handler detects this is a COW fault (not a real permission violation), allocates a new physical page, copies the old page content, updates the faulting process's page table to point to the new page, marks the new page writable, and resumes execution.
+4. The original page remains shared with the other process (and its reference count decremented).
+
+**Benefits:**
+- `fork()` is O(1) in the common case (just copies page tables, ~microseconds for a large process).
+- `fork()` + `exec()` (the typical shell/server pattern) barely touches the parent's memory.
+- Process memory is only duplicated proportionally to actual divergence.
+
+**Where COW is used:**
+- **Unix `fork()`** — the canonical use. Linux, macOS, and all Unix-derived systems implement this.
+- **mmap with `MAP_PRIVATE`** — multiple processes can map the same file; writes create private copies.
+- **Persistent data structures** — immutable/persistent data structures (Clojure, Haskell's ropes, Redis's AOF fork) share structure; modifications copy only the affected nodes.
+- **Container image layers** — Docker layers and overlay filesystems use COW semantics: a new container layer copies only modified files from the base image.
+- **Snapshotting in databases/VMs** — QEMU/KVM snapshots use COW on disk images (qcow2 format). ZFS and Btrfs use COW for all writes (snapshots are free).
+- **Redis `BGSAVE`** — forks the process; the child writes the RDB snapshot using shared COW pages. The parent continues serving writes; only written pages incur copy overhead.
+
+**COW and garbage collection:** managed runtimes (JVM, Python) moving GC that updates pointers in a forked process can cause high COW page faults — because GC touches many pages, making most pages diverge. This is why Redis warns about "copy-on-write amplification" during BGSAVE when the parent is under heavy write load.
+
+## Why it matters
+
+COW makes `fork()` fast, enables cheap snapshots, and underlies container layering and persistent data structures. Any engineer working with Unix processes, containers, databases with snapshot capabilities, or functional data structures needs to understand COW to reason about memory usage and performance — especially the counterintuitive cost: writes *after* a fork or snapshot are more expensive than usual because they trigger page copies.
+
+## Real-world examples
+
+- Linux `fork()` uses COW; `strace` shows `clone()` completing in microseconds for a 1 GB process.
+- Redis BGSAVE: parent writes during snapshot increase RSS of both parent and child due to COW. Redis tracks `rdb_cow_size` in INFO.
+- Docker: `overlay2` storage driver uses COW — modifying a file in a container copies it to the container's writable layer, leaving the image layer unchanged.
+- ZFS: every write goes to a new block; old blocks are snapshotted for free. ZFS snapshots are O(1) and near-zero overhead at creation.
+
+## Common misconceptions
+
+- **"COW means the copy is free."** COW defers cost, not eliminates it. Heavy write traffic after a fork leads to many page faults — sometimes worse than copying upfront.
+- **"COW only applies to memory."** COW is a general technique applied to file systems (ZFS, Btrfs, APFS), container layers, and data structures — not just OS page management.
+
+## Learn next
+
+Copy-on-write is a key optimisation in [virtual memory](/t/virtual-memory) and is tightly related to [process](/t/process) creation via `fork()`. [Containers](/t/container) use COW-based file system layers. [Garbage collectors](/t/garbage-collection) must account for COW effects in multi-process runtimes.

@@ -1,0 +1,63 @@
+---
+title: Speculative Execution
+aliases: ["branch prediction", "out-of-order execution", "Spectre", "speculative load"]
+category: computer-architecture
+kind: concept
+summary: A CPU technique that executes instructions before knowing whether they will be needed — predicting branches and precomputing results to keep execution units busy, with disastrous security consequences when exploited by Spectre-class attacks.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cpu", "architecture", "performance", "security"]
+prerequisites: ["cpu", "cpu-pipeline", "branch-prediction"]
+related: ["superscalar", "tlb", "side-channel-attack", "cache"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A CPU branch (`if/else`) stalls the pipeline while the condition is evaluated — wasting cycles. Modern CPUs predict which branch will be taken and start executing *before* knowing the answer. If the prediction is correct (usually 95–99% of the time), those cycles weren't wasted. If wrong, the speculatively executed instructions are discarded. The trouble: even discarded speculative results leave traces in the CPU cache, and Spectre-class attacks read those traces to steal data from other processes.
+
+## More detail
+
+**Branch prediction:** the branch predictor examines past history to predict whether a conditional branch will be taken. Modern predictors (perceptron-based, TAGE) achieve 99%+ accuracy on most workloads. Prediction accuracy is critical: a 5-cycle branch penalty × 1% misprediction rate on a branch every 5 instructions cuts throughput by 1%. A 20-stage pipeline with 1% misprediction → 20% performance loss without speculation.
+
+**Speculative execution flow:**
+1. The front end predicts the branch outcome and fetches instructions from the predicted path.
+2. Those instructions execute speculatively in execution units, may load data from memory, and update cache state.
+3. The branch condition is resolved (often many cycles later).
+4. If the prediction was correct: speculative results commit — the work was useful.
+5. If the prediction was wrong: the pipeline is flushed (squashed), registers are restored from the reorder buffer checkpoint, and execution restarts from the correct path.
+
+Architectural state (registers, memory) from squashed instructions is never committed — correct in terms of program semantics.
+
+**Spectre (2018):** the problem is that cache state is *not* fully restored on a squash. Speculative instructions may have loaded secret data into cache. An attacker can probe which cache lines are warm (via timing) to determine what data the speculative path accessed — even though the CPU never "officially" performed that access. Spectre variant 1 (bounds-check bypass) uses speculative execution to read beyond array bounds; Spectre variant 2 (branch target injection) poisons the branch target buffer to redirect speculative execution to attacker-chosen code.
+
+**Mitigations:**
+- **Retpoline:** replaces indirect branches with a construct that defeats BTB poisoning without speculative execution.
+- **LFENCE:** serialises instruction dispatch — no speculation after an LFENCE. High performance cost; used selectively.
+- **Site isolation:** browsers moved to one process per origin, limiting Spectre's cross-origin reach.
+- **Microcode updates:** Intel/AMD released patches for specific Spectre variants; some required significant performance trade-offs.
+- **Speculative store bypass disable (SSBD):** disables a specific speculation optimisation that enables variant 4.
+
+**Store-to-load forwarding:** speculative execution also includes predicting when a store's value is needed by a subsequent load (before the store commits), forwarding the value from the store buffer directly.
+
+## Why it matters
+
+Speculative execution is responsible for 2–4× of modern CPU performance — but it is also the source of the most significant CPU security vulnerabilities in decades (Spectre, Meltdown, MDS). Every cloud provider, OS vendor, and browser had to deploy emergency patches in January 2018. Understanding it explains: why `if (condition) array[index]` in a hot loop is a potential Spectre gadget, why `lfence` appears in Linux kernel code, and why timing isolation is a fundamental challenge in shared-hardware environments.
+
+## Real-world examples
+
+- Spectre was disclosed in January 2018 simultaneously across Google Project Zero, Qualcomm, Microsoft, and academia.
+- Google's Cloud Datacenters patched all physical servers within days; the performance impact on I/O-bound workloads was significant (initially up to 30% for some syscall-heavy workloads; later mitigations reduced this).
+- V8 JavaScript engine was patched within 24 hours to reduce Spectre gadget opportunities; SharedArrayBuffer was disabled temporarily.
+- Linux kernel retpoline patches were applied; `nospectre_v2=retpoline` kernel parameter enables them.
+
+## Common misconceptions
+
+- **"Speculative execution only matters for security researchers."** Every systems programmer working with untrusted code, shared hardware, or security-sensitive applications needs to understand Spectre-class attacks.
+- **"Disabling speculative execution fixes Spectre."** Full disabling would reduce performance by 50–70%. Targeted mitigations (retpoline, IBRS, STIBP) address specific variants with narrower performance impact.
+
+## Learn next
+
+Speculative execution is the context for [superscalar](/t/superscalar) execution — speculation fills the wide pipeline. The cache timing side channel is explained in [side-channel attack](/t/side-channel-attack). [TLB](/t/tlb) speculation and kernel page table isolation (KPTI — Meltdown mitigation) are related.

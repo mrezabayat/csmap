@@ -1,0 +1,53 @@
+---
+title: QUIC
+aliases: ["HTTP/3", "QUIC protocol", "Quick UDP Internet Connections"]
+category: networks-and-internet
+kind: protocol
+summary: A transport protocol built on UDP that combines TCP's reliability with TLS's encryption in a single handshake — eliminating head-of-line blocking and reducing connection setup latency.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["networking", "protocols", "http3", "performance"]
+prerequisites: ["udp", "tcp", "tls"]
+related: ["http", "socket"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+TCP + TLS has a problem: setting up a secure connection takes 2–3 round trips before data can flow, and if one packet is lost, everything else in the stream must wait (head-of-line blocking). QUIC rebuilds reliable, encrypted transport on top of UDP, combining the handshake into one round trip and multiplexing streams so a lost packet only stalls its own stream, not all the others. HTTP/3 runs over QUIC; as of 2024 it carries around 30% of web traffic.
+
+## More detail
+
+**Key improvements over TCP+TLS 1.3:**
+
+- **0-RTT or 1-RTT connection setup.** QUIC merges the transport handshake and the TLS 1.3 handshake into a single exchange. A first connection takes 1-RTT; a resumed connection can use 0-RTT data (with replay-attack caveats).
+- **No head-of-line blocking.** TCP is a single ordered byte stream: a lost packet blocks all subsequent data. QUIC multiplexes independent **streams** within a connection. A lost packet only stalls the stream it belongs to; other streams keep flowing. This is the key win for HTTP/3: images, scripts, and CSS load in parallel without one stalling the others.
+- **Connection migration.** A QUIC connection is identified by a **Connection ID** (a random number), not by IP+port. When a phone switches from Wi-Fi to cellular, the connection ID stays valid and the connection migrates without a new handshake.
+- **Always encrypted.** QUIC encrypts all payload and most header fields with TLS 1.3; middleboxes (NATs, firewalls) cannot inspect or tamper with the content.
+- **Built at user space.** QUIC runs in user-space libraries (not the kernel), so new features can be deployed without waiting for OS updates. Google, Facebook, and Cloudflare all have production QUIC implementations.
+
+**UDP as the substrate:** QUIC uses UDP because UDP passes through existing firewalls and NATs, and because user-space implementations can evolve independently. QUIC implements its own reliability, congestion control (CUBIC, BBR, or QUIC-specific variants), and flow control.
+
+**Congestion control:** QUIC uses pluggable congestion controllers; BBR and Cubic are the most common. The QUIC packet number space is separate from the stream offset, enabling cleaner loss detection and retransmission.
+
+## Why it matters
+
+QUIC eliminates the latency taxes of TCP+TLS that show up most on mobile networks (high loss rates, network switching) and for pages with many parallel resources (head-of-line blocking). For a page that requests 30 resources, QUIC's stream multiplexing can cut page load times measurably. HTTP/3 is now standard across Google, Cloudflare, and Meta. All major browsers support it. QUIC also generalises beyond HTTP — QUIC-based tunnels (WireGuard-over-QUIC) and gaming protocols use it for its low-latency, encrypted, multiplexed transport.
+
+## Real-world examples
+
+- Google has run QUIC in production since 2013; it carries a large fraction of Google.com and YouTube traffic.
+- Cloudflare's edge network handles HTTP/3 for millions of domains.
+- All major browsers (Chrome, Firefox, Safari, Edge) support HTTP/3 over QUIC.
+- Meta's MVFST library powers QUIC for WhatsApp, Instagram, and internal services.
+
+## Common misconceptions
+
+- **"QUIC is just UDP."** QUIC provides reliability, ordering, congestion control, and encryption on top of UDP — everything TCP+TLS provides, but without the ossification and blocking.
+- **"HTTP/3 means the web gets slower."** Some middleboxes block or throttle UDP; in those environments HTTP/3 falls back to HTTP/2. But where QUIC reaches the server, it is almost always faster than TCP for multi-resource page loads.
+
+## Learn next
+
+QUIC replaces [TCP](/t/tcp) + [TLS](/t/tls) at the transport layer for [HTTP](/t/http)/3. The motivation is [socket](/t/socket)-level multiplexing without head-of-line blocking — understanding TCP's stream model makes QUIC's improvement concrete.

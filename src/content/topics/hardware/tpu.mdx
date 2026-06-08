@@ -1,0 +1,88 @@
+---
+title: TPU
+aliases: ["Tensor Processing Unit", "Google TPU", "ML accelerator", "neural network accelerator"]
+category: hardware
+kind: technology
+summary: Google's custom ASIC for accelerating machine learning workloads — a matrix multiplication engine built as a systolic array, providing far higher throughput and power efficiency than GPUs for transformer and convolution operations.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["hardware", "machine-learning", "accelerators", "google"]
+prerequisites: ["gpu", "systolic-array", "machine-learning"]
+related: ["asic", "linear-algebra"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Google built the TPU because they needed a machine learning accelerator that was faster and more power-efficient than GPUs for their specific workloads (TensorFlow operations, primarily matrix multiplication). A TPU is a custom chip (ASIC) whose core is a massive 256×256 systolic array of multiply-accumulate units — designed to do one thing incredibly fast: multiply matrices. TPUs trained Google's Gemini, PaLM, and Bard models and run inference for Google Search, Translate, and Photos.
+
+## More detail
+
+**Motivation:** in 2013, Google projected that if every user used voice search for 3 minutes per day, Google would need to double its data centre capacity — all for the speech DNN (deep neural network) inference. GPUs were too expensive in $ and Watts per inference. Google started designing TPU in 2013 and deployed TPUv1 in 2015.
+
+**TPU generations:**
+
+**TPUv1 (2015):**
+- Purpose: inference only.
+- Architecture: 256×256 systolic array, 8-bit integer (INT8) arithmetic.
+- Performance: 92 TOPS (tera operations per second).
+- Interface: PCIe card connected to a host CPU.
+- Impact: reduced inference latency for Google Translate by 7×.
+
+**TPUv2/v3 (2017–2018):**
+- Added: bfloat16 training support (Google invented bfloat16 for ML — same exponent as FP32, fewer mantissa bits — so pre-trained FP32 models transfer accurately).
+- TPU pods: 64 chips connected via a 2D torus high-bandwidth interconnect.
+- Performance: 45/420 TFLOPS per chip (v2/v3).
+
+**TPUv4 (2021):**
+- 128×128 MXU (matrix multiplication unit), 2 per chip.
+- 275 TFLOPS per chip in BF16.
+- Optical interconnects in TPUv4 pods (4096 chips in a 3D torus).
+- Used to train PaLM-2 and initial Gemini models.
+
+**TPUv5 (2023–2024):**
+- 460 TFLOPS per chip.
+- 4096-chip pods with ~100 PetaFLOPS of training capacity.
+- Available in Google Cloud (v5p for training, v5e for inference).
+
+**Comparison with NVIDIA H100:**
+
+| | Google TPU v5p | NVIDIA H100 SXM |
+|---|---|---|
+| FP8 TFLOPS | ~600 | 3958 |
+| BF16 TFLOPS | 460 | 989 |
+| Memory | 95 GB HBM | 80 GB HBM3 |
+| Power | ~450W | 700W |
+| Interconnect | ICI (3D torus) | NVLink 4.0 |
+
+Note: raw TFLOPS comparisons are misleading — utilisation, memory bandwidth, and software ecosystem matter significantly.
+
+**What makes TPUs efficient:**
+- **Fixed-function systolic array:** all silicon dedicated to MAC operations — no cache hierarchy, no branch prediction, no instruction decoder for general code. The same area on a GPU is shared with shader cores, texture units, and graphics pipelines.
+- **On-chip large memory (HBM):** high-bandwidth memory directly on the package; avoids the DRAM bandwidth bottleneck that limits GPUs on large matrix operations.
+- **Deterministic execution:** no caches means no cache-miss latency jitter. Execution time is predictable — critical for tight pipeline scheduling.
+- **Custom interconnect (ICI):** 3D torus interconnect optimised for model-parallel training across thousands of chips.
+
+**Software:** TPUs are programmed via XLA (Accelerated Linear Algebra), a compiler that optimises TensorFlow/JAX/PyTorch operations for TPU. JAX with XLA is the primary framework for training on TPUs (Google uses JAX internally).
+
+## Why it matters
+
+TPUs are the clearest example of domain-specific hardware investment paying off: by building a chip optimised for one operation (matrix multiply), Google achieved 7–10× better performance per watt than GPUs for their training and inference workloads. This is why every hyperscaler (AWS Trainium, Amazon Inferentia, Microsoft Maia, Meta MTIA, Apple Neural Engine) now designs custom ML accelerators. Understanding TPUs explains the industry shift from general-purpose to specialised hardware and why the hardware landscape for ML is rapidly fragmenting.
+
+## Real-world examples
+
+- Google Gemini Ultra, Gemini 1.5, and Gemini 2.0 were trained on TPU pods.
+- Google Search uses TPUs for real-time neural ranking of search results.
+- Google Photos' object recognition and album organisation runs on TPUs.
+- Google Translate's NMT (neural machine translation) was the first production workload that triggered TPU development in 2013.
+
+## Common misconceptions
+
+- **"TPUs can only run TensorFlow."** TPUs run any computation expressible in XLA — including PyTorch (via PyTorch/XLA) and JAX. The framework must emit XLA HLO; any framework with an XLA backend works.
+- **"TPUs always outperform GPUs."** TPUs excel at large dense matrix operations with predictable shapes. For irregular computation, sparse models, or small batch sizes, GPUs often perform better. NVIDIA's H100 has higher peak FLOPS and a more mature software ecosystem.
+
+## Learn next
+
+TPUs are an [ASIC](/t/asic) implementation of the [systolic array](/t/systolic-array) architecture — custom silicon built for dense matrix multiplication, the core of [machine learning](/t/machine-learning) and [linear algebra](/t/linear-algebra). They complement [GPUs](/t/gpu) in the accelerator ecosystem.

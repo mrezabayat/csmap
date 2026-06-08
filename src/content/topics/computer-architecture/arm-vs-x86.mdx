@@ -1,0 +1,70 @@
+---
+title: ARM vs x86
+aliases: ["RISC vs CISC", "instruction set architecture comparison", "ARM architecture", "x86-64", "Apple Silicon"]
+category: computer-architecture
+kind: concept
+summary: The two dominant CPU instruction set architectures — x86 (complex, high-performance, dominant in PCs and servers) and ARM (power-efficient, dominant in mobile and increasingly in servers and laptops) — with fundamentally different design philosophies converging in practice.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["cpu", "architecture", "arm", "x86", "isa"]
+prerequisites: ["cpu", "instruction-set"]
+related: ["superscalar", "speculative-execution", "systolic-array"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+x86 is the instruction set your laptop or server likely runs — descended from the Intel 8086 of 1978 and dominant in PCs, servers, and data centres for 40 years. ARM is the instruction set in every smartphone and increasingly in laptops (Apple M-series, Snapdragon X Elite) and servers (AWS Graviton, Ampere Altra). x86 historically prioritised performance; ARM prioritised power efficiency. Today, Apple's ARM chips outperform Intel's x86 in single-core benchmarks while using half the power, and 60% of new cloud CPU capacity is ARM.
+
+## More detail
+
+**RISC vs. CISC origins:**
+x86 is CISC (Complex Instruction Set Computing): instructions are variable-length (1–15 bytes), high semantic density, many addressing modes. `SCASB` scans a string for a byte; `ENTER`/`LEAVE` manage stack frames. The design philosophy: let hardware do more work per instruction.
+
+ARM is RISC (Reduced Instruction Set Computing): fixed-length 32-bit instructions (Thumb-2 adds 16-bit compressed mode), load-store architecture (only load/store accesses memory; arithmetic operates on registers), orthogonal register set. Philosophy: simpler hardware, more instructions, compiler handles complexity.
+
+**In practice, the distinction has blurred:**
+Modern x86 CPUs decode complex instructions into micro-ops (μops) internally — the execution backend is effectively RISC. Modern ARM chips have complex out-of-order engines as wide as any x86 (Apple M4: 8-wide decode). Performance is determined by microarchitecture, not ISA philosophy.
+
+**x86 (AMD64 / x86-64):**
+- 16 general-purpose 64-bit registers (GPRs), 16 SSE/AVX registers.
+- Dominant in: desktop PCs, notebooks (Intel, AMD), servers, high-performance computing.
+- Intel (Core, Xeon) and AMD (Ryzen, EPYC) are the only licensees.
+- AVX-512 (Intel): 512-bit SIMD, powerful for HPC and ML inference.
+- Total addressable market: ~300 million PCs + 15 million servers/year.
+
+**ARM (AArch64 / ARMv8-9+):**
+- 31 general-purpose 64-bit registers, 32 NEON/SVE2 vector registers.
+- Licensed ISA: dozens of companies design ARM chips (Apple, Qualcomm, Amazon, NVIDIA, MediaTek).
+- Dominant in: smartphones (>99% market), tablets, IoT, embedded.
+- Growing in: laptops (Apple M-series, Snapdragon X Elite), cloud servers (AWS Graviton3, Ampere Altra, Google Axion).
+- SVE2: scalable vector extension; vector width is implementation-defined (128–2048 bits) — one binary works on all widths.
+
+**Performance comparison (2024):**
+- Apple M4 (ARM) beats Intel Core i9 in single-core benchmarks (SPEC CPU 2017) while drawing significantly less power.
+- AWS Graviton3 (ARM) provides ~40% better price-performance than equivalent x86 EC2 instances for many workloads.
+- x86 still leads in absolute peak performance (Intel Xeon Max + AVX-512 for HPC, AMD EPYC for server density) in some workloads.
+
+**Binary compatibility:** x86 and ARM binaries are not compatible. macOS on Apple Silicon uses Rosetta 2 to translate x86 binaries dynamically. Cloud providers maintain separate ARM builds. Most open-source software compiles for both; enterprise software is increasingly building ARM variants.
+
+## Why it matters
+
+The shift from x86 to ARM in laptops and cloud servers is one of the largest architectural transitions since x86 beat RISC in the 1990s. Engineers choosing cloud instance types, building cross-platform software, optimising SIMD code, or working on embedded systems need to understand the ISA differences, the binary compatibility implications, and the power/performance trade-offs that made ARM competitive with x86 even in server workloads.
+
+## Real-world examples
+
+- Apple Silicon (M1–M4) runs macOS; all Mac hardware has been ARM since 2020. iOS has been ARM since the original iPhone (2007).
+- AWS Graviton3: Amazon's own ARM server chips; used for EC2 M7g, C7g, R7g instances. Amazon says 40% better price-performance.
+- Qualcomm Snapdragon X Elite: ARM laptop SoC competing with Intel Core for Windows laptops.
+- Android runs on ARM. Virtually all 1.5 billion Android devices are ARM-based.
+
+## Common misconceptions
+
+- **"RISC is always more efficient than CISC."** This was true in the 1980s when hardware complexity dominated. Today's x86 chips achieve RISC-like efficiency internally. The key differentiator is microarchitecture investment and process node, not ISA.
+- **"ARM can't match x86 performance."** Apple M4 disproves this for client workloads; AWS Graviton for server workloads. The historical performance gap has closed.
+
+## Learn next
+
+ARM and x86 are both [instruction set architectures](/t/instruction-set-architecture) implemented with advanced [superscalar](/t/superscalar) microarchitectures. [Systolic arrays](/t/systolic-array) are a specialised accelerator architecture used in ML chips (Google TPU), distinct from both.

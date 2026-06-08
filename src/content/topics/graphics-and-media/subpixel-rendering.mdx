@@ -1,0 +1,66 @@
+---
+title: Subpixel Rendering
+aliases: ["ClearType", "subpixel antialiasing", "LCD rendering", "FreeType", "font rendering"]
+category: graphics-and-media
+kind: concept
+summary: A text rendering technique that exploits the individual RGB subpixels of an LCD display to increase apparent horizontal resolution — making text appear crisper and more readable at small font sizes.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["graphics", "display", "fonts", "text"]
+prerequisites: ["binary-numbers", "gpu"]
+related: ["anti-aliasing", "color-management", "hdr"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+An LCD pixel is actually three separate coloured subpixels: red, green, and blue, arranged in a horizontal strip. At typical reading distances, the eye cannot resolve these subpixels individually — it merges them into a single colour. Subpixel rendering exploits this: by independently controlling R, G, and B subpixels, text rendering can achieve three times the horizontal resolution of the physical pixel grid. A font designed for 14px can be rendered as if the display had 42 subpixels of horizontal resolution. The result is dramatically crisper text — especially at small sizes.
+
+## More detail
+
+**How it works:**
+
+A standard LCD pixel is three subpixels: R, G, B (or B, G, R on some panels) arranged left-to-right. An "RGB stripe" layout (the most common) has each row of subpixels in that order. When the OS renders a text glyph, it:
+1. Renders the glyph at 3× horizontal resolution onto a grayscale image.
+2. Maps the three "logical pixels" of each physical pixel position to the R, G, and B channels of the pixel.
+3. The hardware then displays R, G, B as physical subpixels — the eye merges them as the glyph edge with correct apparent horizontal positioning.
+
+The result: text edges have subpixel positioning. A vertical stroke at x=4.33 is rendered slightly into the green and blue subpixels of pixel x=4, shifting the apparent edge by 0.33px rather than forcing it to the nearest whole pixel.
+
+**ClearType (Microsoft, 2000):** Microsoft's implementation, enabled by default in Windows XP. Made Windows text dramatically clearer on LCD monitors. ClearType is based on Bi-Scott spatial filtering. Extended in DirectWrite (Windows Vista+) with RGB and BGR subpixel rendering, grayscale fallback, and Y-direction anti-aliasing.
+
+**FreeType:** the open-source font rasterisation library used by Linux, Android (historically), and many embedded systems. Supports subpixel rendering with configurable filtering. Linux distributions enable subpixel rendering via the `rgba` (horizontal RGB) setting in FreeType config; some (Fedora) disabled it by default due to Microsoft patents until 2019.
+
+**macOS:** Apple uses a different rendering philosophy — grayscale anti-aliasing with heavy hinting at small sizes, no subpixel rendering by default. The reasoning: Apple's displays have historically had higher DPI (Retina), so the benefit of subpixel rendering is smaller and the colour fringing on non-RGB subpixel layouts is avoided. macOS 10.14 Mojave removed subpixel anti-aliasing entirely for most use cases.
+
+**When subpixel rendering fails:**
+- **Retina / HiDPI displays:** at 2× pixel density, each "logical pixel" is already 2×2 physical pixels. The benefit of subpixel rendering is much smaller, and grayscale AA looks equally crisp. Apple Retina displays render with pure grayscale AA.
+- **Non-stripe subpixel layouts:** some displays use triangular or RGBW layouts. The standard RGB subpixel renderer produces colour fringing on these.
+- **OLED displays:** OLEDs often use a pentile layout (alternating RGRB or RGBG pattern rather than regular RGB stripes). RGB subpixel rendering doesn't match the actual subpixel geometry — Samsung uses its own subpixel rendering calibrated to each panel's layout.
+- **Non-horizontal text:** subpixel rendering only works for horizontal subpixel layouts. Vertical text, rotated UI elements, or text at arbitrary angles cannot exploit horizontal subpixel sampling.
+
+**The colour fringe problem:** subpixel rendering introduces colour fringing — a red/blue tinge on text edges, visible when the display is viewed at an angle or if the ambient lighting is coloured. Microsoft's ClearType tuner allows calibrating the level of subpixel rendering vs. grayscale blending.
+
+**Modern status:** with HiDPI displays ubiquitous (Retina Mac, 4K Windows, QHD phones), subpixel rendering is less critical than in the 1990s–2000s. 4K at typical reading distances is close to retinal resolution; grayscale AA looks fine. But on 1080p or 1440p monitors at 100% scaling (the dominant developer configuration), subpixel rendering is still the most legible option for small text.
+
+## Why it matters
+
+Subpixel rendering was responsible for the dramatic text quality improvement on LCD monitors in the 2000s. For anyone building text-rendering systems (web browsers, terminal emulators, PDF viewers, e-book readers), understanding it clarifies: why font hinting matters, why LCD and OLED text look different, why grayscale vs. RGB anti-aliasing choices affect text quality, and why HiDPI display support is primarily a font and rendering system concern.
+
+## Real-world examples
+
+- Windows Terminal: uses DirectWrite with ClearType for subpixel text rendering; the choice of RGB vs. BGR subpixel order matters for text clarity on different monitors.
+- VS Code (Electron): renders text with Chromium's text rendering stack; on Windows, uses DirectWrite (subpixel); on macOS, Core Text (grayscale).
+- iOS vs. Android text rendering: iOS uses Core Text; Android historically used FreeType with no subpixel rendering; both are now primarily grayscale on HiDPI panels.
+- PDFs: PDF viewers use the OS text rendering stack; a PDF on Windows has ClearType; on macOS it has Core Text grayscale — the same file looks different.
+
+## Common misconceptions
+
+- **"Subpixel rendering always looks better."** On HiDPI (Retina, 4K) displays, grayscale AA is equally crisp with no colour fringing. Subpixel rendering is primarily beneficial at 1080p/1440p at normal DPI.
+- **"Turning off ClearType makes text blurry."** On 1080p displays, disabling subpixel rendering reverts to grayscale AA, which can look slightly blurrier for some fonts at small sizes. On 4K displays, the difference is negligible.
+
+## Learn next
+
+Subpixel rendering is a form of [anti-aliasing](/t/anti-aliasing) applied to text specifically. [Colour management](/t/color-management) determines how those subpixel-rendered colours map to actual display output. [HDR](/t/hdr) rendering changes the baseline colour space and tone curve for all rendering.

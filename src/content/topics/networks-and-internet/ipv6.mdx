@@ -1,0 +1,61 @@
+---
+title: IPv6
+aliases: ["Internet Protocol version 6", "IPv6 addressing"]
+category: networks-and-internet
+kind: protocol
+summary: The successor to IPv4 that expands the address space from 4 billion to 340 undecillion addresses — ending address exhaustion, simplifying routing, and building security and auto-configuration into the protocol.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["networking", "ip", "protocols", "addressing"]
+prerequisites: ["ip-address", "packet"]
+related: ["dns", "nat", "router"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+IPv4 addresses are 32-bit numbers (`192.168.1.1`) — enough for about 4 billion addresses. The internet ran out of them. IPv6 expands to 128 bits (`2001:db8::1`), giving enough addresses that every grain of sand on Earth could have billions. Beyond sheer space, IPv6 eliminates [NAT](/t/nat), simplifies the packet header, and bakes in features that IPv4 retrofitted awkwardly — like stateless address configuration and mandatory IPsec support.
+
+## More detail
+
+An **IPv6 address** is 128 bits written as eight groups of four hex digits separated by colons: `2001:0db8:85a3:0000:0000:8a2e:0370:7334`. Leading zeros in a group can be omitted, and one contiguous run of all-zero groups can be replaced with `::`, so the above becomes `2001:db8:85a3::8a2e:370:7334`.
+
+**Address types:**
+- **Global unicast** (`2000::/3`) — routable on the public internet, the equivalent of public IPv4.
+- **Link-local** (`fe80::/10`) — auto-assigned on every interface, usable only on the local link; replaces IPv4 APIPA.
+- **Loopback** (`::1`) — equivalent of `127.0.0.1`.
+- **Multicast** (`ff00::/8`) — one-to-many; replaces broadcast. Router solicitation uses multicast.
+- **Unique local** (`fc00::/7`) — private addressing, similar to IPv4 RFC 1918 (`192.168.x.x`).
+
+**Key improvements over IPv4:**
+
+- **No NAT required** — every device gets a globally routable address. End-to-end connectivity is restored.
+- **Stateless Address Auto-Configuration (SLAAC)** — a device generates its own address from the network prefix (advertised by the router) and its MAC address or a random value. No DHCP server needed for basic connectivity.
+- **Simpler header** — fixed 40-byte header (vs. variable 20–60 byte IPv4 header). Extension headers replace IPv4 options; routers skip unrecognised extensions.
+- **Mandatory ICMPv6** — neighbour discovery (replacing ARP), router advertisement, and path MTU discovery are all part of the protocol, not bolted on.
+- **Flow label** — a 20-bit field for QoS labelling flows without inspecting upper layers.
+- **No fragmentation at routers** — only the source can fragment; routers drop oversized packets and send ICMPv6 "Packet Too Big" back. Reduces router work.
+
+**Dual-stack deployment:** most networks today run both IPv4 and IPv6 simultaneously. Hosts negotiate which to use; DNS returns both `A` (IPv4) and `AAAA` (IPv6) records. Browsers use "Happy Eyeballs" — race a connection attempt on each, use whichever connects first.
+
+## Why it matters
+
+IPv4 exhaustion is complete — IANA ran out in 2011, regional registries ran out through 2019. NAT has patched the shortage, but at the cost of breaking peer-to-peer connectivity, complicating server configurations, and adding complexity to mobile networks. IPv6 removes all of that. Mobile networks (6G, 5G SA) and IoT deployments are increasingly IPv6-only. As of 2024, ~45% of Google users reach it over IPv6. Knowing IPv6 addressing and dual-stack operation is essential for modern network configuration.
+
+## Real-world examples
+
+- Google, Facebook, Cloudflare, and major CDNs are fully dual-stack; their primary address family is IPv6 on mobile networks.
+- AWS, Azure, and GCP support IPv6 on all new services; many are dual-stack by default.
+- ISPs like T-Mobile US run their mobile network as IPv6-only with IPv4-as-a-service (464XLAT translation).
+- IoT devices in smart-home and industrial deployments use IPv6 mesh networks (Thread protocol) where every sensor has a global address.
+
+## Common misconceptions
+
+- **"IPv6 is not deployed."** As of 2024, IPv6 carries ~45% of Google's traffic and is the majority of mobile traffic in many markets. Adoption is real and growing.
+- **"AAAA records are slow."** Browsers use Happy Eyeballs: IPv4 and IPv6 race. If IPv6 is slower, IPv4 wins. The record lookup itself is parallel.
+
+## Learn next
+
+IPv6 is [IP addressing](/t/ip-address) without the shortage. [NAT](/t/nat) exists because IPv4 ran out — understanding that makes IPv6's direct-connect model more motivating. [DNS](/t/dns) AAAA records are the other half of IPv6 connectivity for names.

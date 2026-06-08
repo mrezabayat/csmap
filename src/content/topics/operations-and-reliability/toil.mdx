@@ -1,0 +1,76 @@
+---
+title: Toil
+aliases: ["operational toil", "toil reduction", "automation", "SRE toil"]
+category: operations-and-reliability
+kind: concept
+summary: Manual, repetitive, automatable operational work that grows with service scale — Google's SRE model defines toil as the enemy of engineering productivity and mandates that SREs spend no more than 50% of their time on it.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["sre", "operations", "automation", "reliability"]
+prerequisites: ["deployment", "observability", "incident-response"]
+related: ["chaos-engineering", "error-budget", "dora-metrics"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Toil is the grunt work of operations: manually restarting a crashed service, provisioning a server by clicking through a console, responding to the same alert for the third time this week by running the same script. Toil is not inherently bad — some of it is unavoidable — but it is not engineering: it doesn't leave a lasting improvement. Google's SRE (Site Reliability Engineering) model says: if SREs spend more than 50% of their time on toil, they're not doing SRE — they're doing Ops, and the system will never get better. Toil is a debt that compounds.
+
+## More detail
+
+**Google's definition of toil** (from "Site Reliability Engineering," Betsy Beyer et al.):
+Toil is work that is:
+1. **Manual** — requires human execution, not automated.
+2. **Repetitive** — the same task done multiple times.
+3. **Automatable** — could in principle be automated.
+4. **Tactical** — interrupt-driven, reactive.
+5. **Devoid of enduring value** — completing the task doesn't improve the system.
+6. **Scales with service growth** — more traffic → more instances to manage → more toil.
+
+*Not toil:* novel problem-solving, improving monitoring, writing automation, capacity planning, code review. These are engineering; they leave lasting improvements.
+
+**Why toil is harmful:**
+- It crowns out engineering work (automation, reliability improvements).
+- It doesn't compound — the same work is done again next time.
+- It causes burnout. On-call engineers drowning in alert toil are exhausted and make errors.
+- It obscures real problems — if every alert requires a manual response, you stop improving the system that produces alerts.
+
+**Sources of toil:**
+- **Alerts that require manual intervention** — every page that resolves with "run this script" or "restart this service" is a toil generator. The correct response: automate the remediation.
+- **Manual deploys** — any deployment requiring a human to run commands step-by-step.
+- **Manual capacity provisioning** — adding servers, increasing quotas manually.
+- **Data migrations run by hand** — copying data, updating schemas manually.
+- **Oncall tickets requiring rote action** — "customer reported X; manually do Y."
+
+**The 50% rule:** Google's SRE model requires SREs to track their toil and engineering time split. If toil exceeds 50%, the SRE team's manager must act: either reduce toil (automation sprint) or add SRE capacity. This prevents SRE teams from drifting into pure operations roles.
+
+**Toil reduction strategies:**
+- **Automate the runbook:** if an alert has a documented runbook ("restart service X when Y happens"), automate it. Event-driven remediation: alert → Lambda → restart.
+- **Eliminate noisy alerts:** alerts that don't require human action should be silenced or converted to metrics. Alert fatigue erodes on-call quality.
+- **Self-healing systems:** health checks + restart policies (Kubernetes liveness probes) eliminate a class of manual restarts.
+- **Infrastructure as code:** Terraform, Pulumi — eliminate manual cloud console clicks.
+- **Provisioning APIs:** self-service developer platforms (Backstage, internal PaaS) reduce requests for manual infrastructure work.
+
+**Toil vs. overhead:** toil is automatable work that grows with scale. Overhead is unavoidable non-engineering work (meetings, performance reviews, training) — still a cost but not toil. SRE focuses on reducing toil specifically because it is automatable.
+
+## Why it matters
+
+Toil is one of the most practical frameworks for improving engineering organisations. Without explicit tracking, operational work expands to fill all available time — engineers spend their days fighting fires without ever building the fire suppression systems. Google's 50% rule created a forcing function for automation investment. Teams that apply the toil framework consistently reduce operational burden, improve on-call quality, and have more capacity for reliability engineering. Understanding toil is essential for anyone working in SRE, DevOps, or platform engineering.
+
+## Real-world examples
+
+- Google SRE: every SRE tracks time spent on toil (manual ops) vs. engineering (projects). Quarterly reports aggregate by team; toil above 50% triggers escalation.
+- Dropbox SRE: used toil tracking to identify that 40% of on-call time was alert toil from one specific service; automated the remediation, reducing on-call burden by 30%.
+- Kubernetes: automated restart via liveness probes eliminates the toil of manual service restarts — the dominant source of ops toil in the pre-K8s era.
+- Incident.io and PagerDuty: track which alerts page the most; the list of "most-paged alerts with non-automated response" is a toil list.
+
+## Common misconceptions
+
+- **"All operational work is toil."** Toil is specifically automatable, repetitive, non-engineering work. Attending an incident retrospective and writing action items is overhead, not toil. Novel debugging is engineering.
+- **"Reducing toil means eliminating all ops work."** Some tasks are not worth automating (too rare, too complex). The goal is to keep toil below 50% and automate the highest-volume repetitive work.
+
+## Learn next
+
+Toil is operationalised within [SRE practice](/) alongside [error budgets](/t/error-budget) (what reliability you're targeting) and [chaos engineering](/t/chaos-engineering) (proactively finding what needs automation). [DORA metrics](/t/dora-metrics) improve when toil is reduced — lower MTTR comes from automated remediation.

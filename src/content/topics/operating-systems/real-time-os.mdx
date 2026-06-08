@@ -1,0 +1,62 @@
+---
+title: Real-Time Operating System
+aliases: ["RTOS", "hard real-time", "soft real-time", "FreeRTOS", "VxWorks"]
+category: operating-systems
+kind: concept
+summary: An operating system that guarantees tasks complete within specified time bounds — critical for embedded systems, robotics, and safety-critical applications where missing a deadline is as bad as an incorrect result.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operating-systems", "embedded", "real-time", "scheduling"]
+prerequisites: ["operating-system", "process", "scheduler"]
+related: ["thread", "interrupt", "semaphore", "real-time-systems"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A general-purpose OS (Linux, Windows) optimises for *average* throughput — it might delay your task for 10 milliseconds if something else is running. A real-time OS guarantees *worst-case* latency: "this task will start within 500 microseconds of its trigger, every time, no exceptions." For an airbag controller that must fire in 1 ms after a crash, "usually fast enough" means people die. RTOSes are designed so the worst case is bounded and guaranteed.
+
+## More detail
+
+**Hard vs. soft real-time:**
+- **Hard real-time** — missing a deadline is a system failure. Airbag controllers, fly-by-wire, pacemakers. The system must guarantee every deadline, not just most.
+- **Soft real-time** — missing occasional deadlines degrades quality but is not catastrophic. Video streaming (dropped frame = glitch), VoIP, financial trading (late order = profit loss, not crash).
+- **Firm real-time** — missing a deadline is worthless but not catastrophic (a late sensor reading is discarded rather than used incorrectly).
+
+**Scheduling:** RTOSes use priority-based preemptive scheduling. Higher-priority tasks preempt lower ones immediately. Key algorithms:
+- **Rate-Monotonic Scheduling (RMS)** — assign priorities by period (shorter period → higher priority). Provably optimal for periodic tasks; schedulable if CPU utilisation ≤ 69%.
+- **Earliest Deadline First (EDF)** — always run the task with the earliest deadline. Optimal for dynamic priority assignment; CPU utilisation up to 100%.
+- **Fixed priority with priority inheritance** — handles priority inversion (low-priority task holding a resource needed by a high-priority task).
+
+**Jitter and latency:** the worst-case interrupt latency and context-switch time must be bounded. General Linux has unbounded latency spikes from page faults, garbage collection (in GC languages), and network stack processing. PREEMPT_RT (now mainlined in Linux) patches the kernel to make most kernel code preemptible, bringing Linux worst-case latency from milliseconds to tens of microseconds.
+
+**Common RTOSes:**
+- **FreeRTOS** — open-source, widely used in IoT and microcontrollers (ESP32, ARM Cortex-M).
+- **VxWorks** — commercial, used in aerospace (Mars rovers, F-35).
+- **QNX** — commercial, POSIX-compliant, used in automotive (BlackBerry QNX).
+- **Zephyr** — Linux Foundation RTOS, growing in IoT.
+- **ThreadX (Azure RTOS)** — Microsoft, widely certified (DO-178C, IEC 61508).
+
+**Memory management:** RTOSes typically avoid dynamic memory allocation (no `malloc`) because allocation latency is unpredictable. Pre-allocate all memory at startup, or use memory pools with fixed-size blocks.
+
+## Why it matters
+
+RTOSes power the systems humans trust with their lives — medical devices, aircraft, cars, industrial robots. Understanding hard real-time guarantees is essential for embedded software engineers. Even in non-embedded contexts, RTOS concepts (bounded latency, priority inversion, rate monotonic analysis) apply whenever you need predictable response times — trading systems, real-time audio, autonomous vehicles.
+
+## Real-world examples
+
+- NASA's Mars rovers run VxWorks; the Mars Ingenuity helicopter runs Linux (soft real-time for non-critical subsystems) alongside an RTOS for flight control.
+- Modern cars have 50–100 ECUs (Electronic Control Units), each running an RTOS (often AUTOSAR on QNX or FreeRTOS).
+- Implantable cardiac devices (pacemakers, defibrillators) run RTOSes with formal timing verification.
+- Industrial robots (KUKA, Fanuc) use hard real-time loops at 1–4 kHz for motor control.
+
+## Common misconceptions
+
+- **"Linux is real-time with the right patches."** PREEMPT_RT Linux improves worst-case latency but cannot provide hard real-time guarantees — page faults and hardware unpredictability remain. For hard real-time, use a dedicated RTOS.
+- **"Faster hardware solves real-time requirements."** Speed helps average latency but not worst-case bounds. A 1 GHz RTOS with 10 µs guaranteed latency beats a 10 GHz Linux system with 50 ms occasional spikes for a pacemaker.
+
+## Learn next
+
+RTOSes are specialised [operating systems](/t/operating-system) with specific [scheduling](/t/scheduling) algorithms. They make heavy use of [semaphores](/t/semaphore) for synchronisation. [Interrupt](/t/interrupt) handling is critical to achieving bounded latency.

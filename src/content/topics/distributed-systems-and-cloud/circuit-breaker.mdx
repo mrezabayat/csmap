@@ -1,0 +1,55 @@
+---
+title: Circuit Breaker
+aliases: ["circuit breaker pattern"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A fault-tolerance pattern that stops calling a failing dependency and returns a fast error instead — giving the dependency time to recover and preventing cascading failures across services.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "reliability", "patterns", "fault-tolerance"]
+prerequisites: ["distributed-system", "microservices"]
+related: ["rate-limiting", "idempotency", "load-balancer"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+If a service you call is failing, calling it again is usually pointless — you'll just accumulate slow timeouts while your own service degrades. A circuit breaker watches the call success rate; when it drops below a threshold, the breaker **opens**: subsequent calls immediately return an error without touching the network, sparing your threads and your dependency's overloaded servers. After a cooldown, it tries one call (half-open); if that succeeds, the breaker closes and normal operation resumes.
+
+## More detail
+
+A circuit breaker has three states:
+
+- **Closed (normal):** calls pass through. The breaker monitors the last N calls (or a time window); if the failure rate exceeds the threshold (e.g. 50% in the last 20 calls), it opens.
+- **Open (failing):** all calls fail immediately with a known error (fallback value, cached result, or exception). No network contact. After a configurable sleep window (e.g. 30 seconds), it moves to half-open.
+- **Half-open (testing):** allows one request through. If it succeeds, close the breaker; if it fails, open again.
+
+**Failure criteria:** typically network errors and timeouts. Optionally: slow calls (response time > threshold), HTTP 5xx, or custom predicates.
+
+**Fallback strategy:** an open circuit should return something useful if possible — a cached value, a default response, a degraded feature ("sorry, recommendations unavailable"). Failing loudly vs. failing gracefully is a product decision.
+
+**Implementations:** Netflix Hystrix (deprecated, now in maintenance); Resilience4j (Java); Polly (.NET); `pybreaker` (Python); Envoy service mesh supports circuit breaking at the proxy layer, requiring no application code changes.
+
+**Interaction with retries:** a circuit breaker wraps the call; a retry policy wraps the circuit breaker. When the circuit is open, the retry policy should not retry (it would just fail fast repeatedly). Most retry libraries integrate with circuit breakers to distinguish "open circuit" errors from transient errors.
+
+## Why it matters
+
+Without circuit breakers, a failing downstream service causes request threads to pile up waiting for timeouts, exhausting the connection pool and crashing the caller — a **cascading failure**. Circuit breakers contain the blast radius: the caller degrades gracefully, and the downstream gets breathing room to recover. The pattern is one of the three pillars of microservice resilience (alongside [rate limiting](/t/rate-limiting) and [retries with idempotency](/t/idempotency)).
+
+## Real-world examples
+
+- Netflix Hystrix wraps every downstream call in a circuit breaker; when a recommendation service fails, the homepage shows a generic list instead of a 503.
+- AWS SDK and most cloud client libraries include circuit-breaker logic built into their retry policies.
+- Envoy proxy applies circuit breaking at the sidecar level for all inter-service calls in a service mesh.
+- Stripe's internal services use circuit breakers so a failing fraud detection service doesn't block all payment processing.
+
+## Common misconceptions
+
+- **"Circuit breakers replace retries."** No — they complement each other. Retries handle transient glitches; circuit breakers handle sustained failures. Use both, with the circuit breaker on the outside.
+- **"Opening the circuit harms the dependency."** It helps it: stopping call load during recovery is exactly what a struggling service needs to avoid being overwhelmed while it heals.
+
+## Learn next
+
+Circuit breakers pair with [rate limiting](/t/rate-limiting) (prevent overload before failure) and [idempotency](/t/idempotency) (make retries safe when the circuit closes again). Together they are the resilience pattern vocabulary for [microservices](/t/microservices).

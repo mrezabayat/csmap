@@ -1,0 +1,79 @@
+---
+title: Chaos Engineering
+aliases: ["chaos monkey", "fault injection", "resilience testing", "chaos testing"]
+category: operations-and-reliability
+kind: concept
+summary: The practice of deliberately injecting failures into production systems to discover weaknesses before they cause unexpected outages — building confidence in a system's resilience by verifying it can withstand turbulent conditions.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operations", "reliability", "sre", "testing"]
+prerequisites: ["distributed-system", "observability", "incident-response"]
+related: ["error-budget", "toil", "circuit-breaker", "dora-metrics", "feature-flag-rollout"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+You can't know if your system is resilient just by looking at it or running unit tests — distributed systems fail in unexpected ways when parts of them break. Chaos Engineering is the practice of deliberately breaking things in production (in a controlled way) to discover how your system actually behaves under failure, before an unplanned outage does it for you. Netflix's "Chaos Monkey" randomly kills virtual machines in production; if your system can't survive the Chaos Monkey, it can't survive a real outage. The goal is to convert unknown-unknowns (surprising failures) into known-knowns (failures you've already handled).
+
+## More detail
+
+**The Chaos Engineering process:**
+
+1. **Define steady state:** measure normal system behaviour — error rate, latency, throughput. Establish the hypothesis: "the system maintains steady state under this failure condition."
+2. **Hypothesize:** "If we kill one EC2 instance in the API tier, latency stays below 200ms."
+3. **Introduce the failure variable:** kill the instance, inject network latency, corrupt a percentage of responses, exhaust disk space, disconnect a database replica.
+4. **Observe:** does the system maintain steady state? What actually happened?
+5. **Fix or accept:** if the system behaved poorly, fix the weakness. If it behaved well, you have higher confidence and documented evidence.
+6. **Gradually increase scope:** start in staging → move to off-peak production → run during peak traffic.
+
+**Types of experiments:**
+- **Instance/pod failure:** kill a random EC2 instance, ECS task, or Kubernetes pod.
+- **Network partitions:** simulate network loss between services; inject latency (100ms+); drop packets.
+- **Dependency failure:** make an upstream service return errors (500s) or time out.
+- **Resource exhaustion:** fill disk, exhaust file descriptors, spike CPU.
+- **Region failure:** simulate an AWS availability zone or region going down.
+- **Dependency latency:** inject slow responses from a database or external API.
+
+**Netflix's Chaos Monkey (2011):** the original chaos engineering tool. Randomly terminates EC2 instances in Netflix's production environment during business hours. Forces engineers to design for instance failure: services must tolerate losing any single instance without impacting customers. Netflix later expanded to Chaos Kong (kills an entire AWS region) and Failure Injection Testing (FIT — injects errors in service responses).
+
+**Principles of Chaos Engineering (chaos-based manifesto):**
+1. Build a hypothesis around steady-state behaviour.
+2. Vary real-world events (not hypothetical ones).
+3. Run experiments in production.
+4. Automate experiments to run continuously.
+5. Minimise blast radius (scope failures carefully; have a kill switch).
+
+**Tools:**
+- **Chaos Monkey / Simian Army (Netflix, open-source):** instance termination, latency injection.
+- **Gremlin (commercial):** managed chaos platform; CPU, memory, disk, network, process attacks.
+- **Chaos Toolkit (open-source):** Python-based; integrates with Kubernetes, AWS, GCP.
+- **Litmus (CNCF):** Kubernetes-native chaos engineering.
+- **AWS Fault Injection Simulator (FIS):** managed service for AWS-specific failures.
+- **Pumba:** Docker/Kubernetes container killing and network impairment.
+
+**Blast radius control:** chaos experiments must have a kill switch (immediately stop the experiment), a fixed scope (only affect 1% of pods, only in one AZ), and a clear abort criterion (if error rate exceeds X%, stop). Chaos Engineering is not randomly breaking things; it's controlled science.
+
+**Gameday:** a planned "gameday" is a scheduled chaos exercise where the team deliberately breaks something and practices incident response. Teams become faster at detecting and recovering from failures.
+
+## Why it matters
+
+Distributed systems fail in complex, emergent ways that no static analysis can predict. Chaos Engineering is the only way to know how your system behaves under realistic failure conditions — before your customers find out. Netflix's chaos programme is credited with enabling their migration from a monolith to microservices while maintaining reliability. Amazon runs large-scale gamedays before major traffic events (Prime Day). Understanding chaos engineering is essential for SRE and platform engineering roles, and for teams that operate critical distributed systems.
+
+## Real-world examples
+
+- Netflix: Chaos Monkey runs continuously in production; every Netflix engineer knows their service must tolerate instance loss.
+- Amazon: runs gamedays before Prime Day (July) — chaos experiments to ensure the system handles scale under failure conditions.
+- LinkedIn: chaos experiments on Kafka clusters and ZooKeeper to verify fault tolerance.
+- Slack: chaos experiments on their message persistence layer to verify data durability.
+
+## Common misconceptions
+
+- **"Chaos Engineering means randomly breaking production."** It means *controlled* experiments with a clear hypothesis, minimal blast radius, and a kill switch. Ad-hoc breaking is just breaking.
+- **"Chaos Engineering is only for mature, large companies."** Any distributed system that needs to be reliable benefits from chaos experiments. The earlier you start, the cheaper the fixes.
+
+## Learn next
+
+Chaos Engineering is motivated by [error budgets](/t/error-budget) (measuring reliability) and generates [toil](/t/toil) if reliability issues are not addressed. [Circuit breakers](/t/circuit-breaker) and timeout patterns are often the fixes discovered through chaos experiments. [DORA metrics](/t/dora-metrics) — specifically MTTR — improve when chaos engineering is practised.

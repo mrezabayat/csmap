@@ -1,0 +1,85 @@
+---
+title: Wasm Runtime
+aliases: ["WebAssembly runtime", "Wasmtime", "Wasmer", "WasmEdge", "WAMR", "Fermyon Spin"]
+category: applications
+kind: technology
+summary: A server-side WebAssembly execution environment that runs Wasm binaries outside the browser — enabling sandboxed, portable, polyglot compute for serverless functions, plugins, and edge workloads.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["webassembly", "runtime", "serverless", "edge"]
+prerequisites: ["webassembly", "sandbox", "serverless"]
+related: ["edge-computing", "container"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+WebAssembly was designed for the browser, but its properties — sandboxed execution, near-native speed, portability across languages, and tiny startup time — make it equally valuable on the server. A Wasm runtime runs `.wasm` binaries on a server or edge node, providing a lighter and faster alternative to containers for certain workloads. Cloudflare Workers runs 45 million requests/second using V8's Wasm engine; Fermyon Spin runs microservices as Wasm components. The startup time advantage over containers is extreme: ~1ms vs. ~100ms.
+
+## More detail
+
+**Why server-side Wasm:**
+- **Startup time:** a Wasm module loads in 1–10ms vs. 100ms–1s for a Node.js function or container. Critical for serverless with cold starts.
+- **Memory footprint:** a Wasm runtime with a function uses ~1 MB vs. tens of MB for a container with a runtime.
+- **Sandboxing:** the Wasm sandbox is enforced at the language runtime level — stricter than container namespaces (which share the host kernel). A compromised Wasm module cannot access the host OS unless explicitly granted capabilities via WASI.
+- **Polyglot:** C, C++, Rust, Go, Python (via Pyodide or Extism), and JavaScript can all compile to Wasm and run in the same runtime.
+
+**Major Wasm runtimes:**
+
+**Wasmtime (Bytecode Alliance):**
+- Production-grade, built on the Cranelift JIT compiler.
+- Implements WASI preview 1 and preview 2 (Component Model).
+- Used as the runtime in Fastly Compute@Edge.
+- `wasmtime run my-module.wasm` — runs a Wasm+WASI binary.
+- Embeddable: `cargo add wasmtime` — embed Wasm execution in a Rust application.
+
+**Wasmer:**
+- Multi-backend: Cranelift, LLVM, or Singlepass (for fast compilation).
+- Supports WASIX (a POSIX-compatible superset of WASI — runs musl-based Linux binaries as Wasm).
+- Registry: Wasmer Registry for sharing Wasm packages.
+- Edge: Wasmer Edge (Cloudflare-compatible edge hosting).
+
+**WasmEdge:**
+- Optimised for cloud-native and edge environments.
+- Supports WASI Socket for network programming.
+- Used in CNCF's WasmEdge project for Kubernetes sidecar containers.
+- dapr and containerd plugins use WasmEdge.
+
+**WAMR (WebAssembly Micro Runtime):**
+- Tiny footprint (100 KB – 1 MB).
+- Designed for microcontrollers and IoT (ESP32, Arduino-class devices).
+- Supports AOT compilation for resource-constrained environments.
+
+**Platforms built on Wasm runtimes:**
+
+**Cloudflare Workers:** V8's Wasm engine; runs JavaScript and Wasm; 300+ global PoPs; 1ms startup; ~128MB memory limit per worker.
+
+**Fastly Compute@Edge:** Wasmtime; Rust, Go, C/C++, AssemblyScript support; dedicated Wasm execution.
+
+**Fermyon Spin:** open-source microservices framework on Wasmtime; HTTP triggers, key-value, SQLite, Redis bindings; Wasm Component Model native.
+
+**Containerd Wasm shims (runwasi):** run Wasm workloads in Kubernetes pods as alternatives to containers. `kubectl apply -f wasm-pod.yaml` — the pod's image is a `.wasm` file rather than a container image.
+
+**Component Model and composition:** the Wasm Component Model (WIT — Wasm Interface Types) allows composing Wasm modules with typed interfaces — a Python component calling a Rust component with no FFI overhead. This enables polyglot microservice composition without a common language.
+
+## Why it matters
+
+Server-side Wasm runtimes are emerging as a lighter alternative to containers for certain workloads — particularly serverless functions and plugins. The key advantages: ~100× faster cold start, smaller footprint, and a stronger security boundary than containers. For plugin systems (Envoy Wasm filters, Open Policy Agent Wasm, VS Code extensions), Wasm provides sandboxed extensibility without trusting plugin code. Engineers building serverless platforms, plugin systems, or edge compute should understand Wasm runtimes as an option.
+
+## Real-world examples
+
+- Fastly: all Compute@Edge functions are Wasmtime-based; the platform serves ~15% of Fortune 500 companies.
+- Cloudflare: Workers processes 45 million requests/second at 300+ locations; underlying runtime is V8 with Wasm JIT.
+- Envoy proxy: Wasm filter API allows custom C++/Rust/AssemblyScript filters compiled to Wasm, sandboxed within the Envoy process.
+- Open Policy Agent (OPA): policies compiled to Wasm, evaluated in any host language using a Wasm runtime.
+
+## Common misconceptions
+
+- **"Wasm runtimes are only for Rust programs."** Any language with a Wasm target compiles to Wasm: C, C++, Go, Python, Ruby (via JRuby/Pyodide), Swift. Language support is broader than the browser ecosystem.
+- **"Wasm runtimes replace containers."** They complement containers for specific use cases (short-lived functions, plugins). Containers are still preferred for long-running services with complex OS dependencies.
+
+## Learn next
+
+Server-side Wasm runtimes build on the [WebAssembly](/t/webassembly) specification. They implement the [sandbox](/t/sandbox) model through capability-based WASI. They compete with and complement [containers](/t/container) for compute isolation. [Edge computing](/t/edge-computing) platforms use them for low-latency global compute.

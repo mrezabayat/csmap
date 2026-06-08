@@ -1,0 +1,57 @@
+---
+title: Prompt Engineering
+aliases: ["prompting", "chain-of-thought", "few-shot prompting"]
+category: artificial-intelligence
+kind: concept
+summary: The craft of designing inputs to a language model to reliably elicit the desired output — through clear instructions, examples, role-setting, and structured reasoning techniques.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["llm", "prompting", "ai-systems", "chain-of-thought"]
+prerequisites: ["large-language-model"]
+related: ["fine-tuning", "retrieval-augmented-generation", "transformer"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A language model generates the most likely continuation of whatever text you give it. Prompt engineering is the skill of writing that input text so the continuation is what you actually want. Because models are sensitive to phrasing, order, and framing, a well-crafted prompt can be the difference between a useful answer and a useless one — without changing the model at all.
+
+## More detail
+
+**Zero-shot prompting** — simply describe the task and expect the model to perform it with no examples. Works well for common tasks the model has seen many times during training.
+
+**Few-shot prompting** — prefix the request with 2–10 worked examples in the format `input → output`. Shows the model the desired format, reasoning style, or output structure. Very effective when zero-shot underperforms.
+
+**Chain-of-thought (CoT)** — instruct or demonstrate that the model should reason step by step before giving the final answer: "Let's think through this step by step." This dramatically improves accuracy on arithmetic, logic, and multi-step reasoning tasks — the intermediate reasoning tokens serve as a "scratch pad" that reduces the effective complexity per step. Adding "think step by step" to a prompt can close much of the gap between a smaller and a larger model on reasoning tasks.
+
+**System prompts / role-setting** — in chat-format models, the system message establishes context: persona, constraints, output format, tone. "You are a concise technical writer. Answer only from the provided document." System prompts are the primary control surface in deployed applications.
+
+**Structured output** — ask for JSON, XML, or a specific template, often with a schema in the prompt. Models comply reliably; some APIs (OpenAI, Anthropic) support grammar-constrained decoding to guarantee valid structured output.
+
+**Self-consistency / best-of-n** — sample the same prompt multiple times, then majority-vote or select the best answer. Expensive but effective for tasks with a verifiable correct answer.
+
+**Retrieval augmentation as a prompt technique** — inject retrieved documents into the prompt as context before the question (see [RAG](/t/retrieval-augmented-generation)).
+
+Limitations: prompt engineering is empirical, brittle, model-specific, and not a substitute for [fine-tuning](/t/fine-tuning) when the task is consistently different from the model's training distribution.
+
+## Why it matters
+
+A large fraction of AI product work is prompt engineering — it is the main API between a developer and a language model. Even with the same underlying model, a well-engineered prompt can make the difference between a product that works and one that doesn't. Understanding why techniques like CoT work (they guide the model's computation) and why few-shot examples help (they establish the output distribution in-context) prevents cargo-culting and lets you adapt when a technique fails.
+
+## Real-world examples
+
+- Customer-support chatbots are controlled almost entirely through system prompts that establish persona, knowledge, and escalation rules.
+- Code generation tools use few-shot examples of code style and documentation to match a codebase's conventions.
+- Chain-of-thought is used in math-tutoring systems so students can see the model's reasoning, not just the answer.
+- Multi-agent frameworks (AutoGPT, LangChain) orchestrate LLMs with carefully structured prompts that describe available tools and expected output format.
+
+## Common misconceptions
+
+- **"A better prompt always makes a better model."** Prompt engineering works within the model's capabilities — you cannot reliably elicit knowledge the model doesn't have, or reasoning beyond its capacity.
+- **"Chain-of-thought always helps."** For simple lookup tasks, extra reasoning tokens add latency and little else. CoT shines on multi-step reasoning; zero-shot suffices for pattern matching.
+
+## Learn next
+
+Prompt engineering is the surface-level control; [fine-tuning](/t/fine-tuning) adjusts the model itself; [RAG](/t/retrieval-augmented-generation) grounds answers in external knowledge. The [large language model](/t/large-language-model) and [transformer](/t/transformer) topics explain what the model is actually doing when it follows a prompt.

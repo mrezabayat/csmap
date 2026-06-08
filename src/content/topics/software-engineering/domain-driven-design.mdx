@@ -1,0 +1,64 @@
+---
+title: Domain-Driven Design
+aliases: ["DDD", "bounded context", "aggregate", "ubiquitous language", "domain model"]
+category: software-engineering
+kind: concept
+summary: A software design approach centred on modelling the business domain — using a shared language between engineers and domain experts, bounded contexts to isolate models, and aggregates to enforce invariants.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["software-engineering", "design", "architecture", "modeling"]
+prerequisites: ["microservices", "rest-api"]
+related: ["test-driven-development", "message-queue"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Most software failures are not technology problems; they are miscommunication between developers and the people who understand the business. Domain-Driven Design (DDD) addresses this: developers and domain experts work together to build a shared vocabulary (the *ubiquitous language*) and encode it directly in the code. Rather than having a generic `Order` model that means different things to sales, billing, and shipping, DDD partitions the system into *bounded contexts*, each with its own model of `Order` that precisely reflects that context's needs.
+
+## More detail
+
+**Core DDD concepts:**
+
+**Ubiquitous language:** the same terms used by domain experts in conversation are used verbatim in code — class names, method names, database columns. If a trader says "the desk books a trade," the code has `Desk.bookTrade(Trade)`. This eliminates the translation layer where meaning is lost.
+
+**Bounded context:** an explicit boundary within which a domain model is consistent and has a single meaning. `Customer` in a CRM context (contact info, relationship history) differs from `Customer` in a billing context (payment methods, invoices). Each bounded context has its own model, code, and data store. Bounded contexts map naturally to microservices or teams.
+
+**Aggregate:** a cluster of domain objects treated as a unit for data changes. Each aggregate has a **root** (the only externally-referenceable object) that enforces invariants. Example: an `Order` aggregate with root `Order`, containing `OrderLine` objects. Business rules like "an order cannot exceed 100 items" are enforced in the `Order.addLine()` method — the aggregate root is the only way to modify its children.
+
+**Domain events:** something significant that happened in the domain, expressed as an immutable fact: `OrderPlaced`, `PaymentFailed`, `ItemShipped`. Domain events drive integration between bounded contexts — one context publishes events; others react. This is the foundation of event-driven architecture in DDD.
+
+**Value objects:** immutable objects defined by their attributes, not identity. `Money(amount=100, currency=USD)` is a value object — two instances with the same amount and currency are equal. Using value objects instead of primitives prevents "stringly typed" code and encapsulates validation.
+
+**Repository:** provides a collection-like interface for accessing aggregates from the database, hiding persistence details. `orderRepository.findById(id)` returns a fully reconstituted `Order` aggregate.
+
+**Strategic vs. tactical DDD:**
+- **Strategic** — bounded contexts, context mapping (Shared Kernel, Customer-Supplier, Anti-Corruption Layer), ubiquitous language. High-level design.
+- **Tactical** — entities, value objects, aggregates, repositories, domain services, domain events. Low-level implementation patterns.
+
+**Context map patterns:**
+- **Anti-Corruption Layer (ACL):** a translation layer that prevents a legacy or external model from "corrupting" your domain model.
+- **Shared Kernel:** two contexts share a subset of the domain model (risky — coupling).
+- **Published Language:** a well-documented integration format (like an industry standard API).
+
+## Why it matters
+
+DDD addresses the hardest part of software engineering: understanding and modelling complex business domains correctly. Poorly modelled domains lead to anemic domain models (all logic in service classes, entities as dumb data containers), spaghetti integration, and endless misunderstandings between teams. DDD is especially valuable at scale: microservice boundaries that follow bounded contexts reduce inter-team coupling, and a ubiquitous language reduces the translation overhead of working across teams. Eric Evans' "Domain-Driven Design" (2003) and Vaughn Vernon's "Implementing Domain-Driven Design" are foundational references.
+
+## Real-world examples
+
+- Shopify's platform is modelled around DDD bounded contexts: Catalogue, Orders, Fulfilment, Payments each have their own `Product` or `Order` model.
+- Netflix uses event-driven DDD: bounded contexts publish domain events to Kafka; other contexts react.
+- Zalando's open-source microservice platform was designed explicitly around DDD bounded contexts.
+- The seL4 verified microkernel used a formal domain model as the foundation for its verification.
+
+## Common misconceptions
+
+- **"DDD requires microservices."** DDD started in the monolith era. A well-structured monolith with clear module boundaries respecting bounded contexts is better than microservices with a big ball of mud inside each.
+- **"DDD means using all the patterns."** Strategic patterns (bounded context, ubiquitous language) are universally valuable. Tactical patterns (aggregates, repositories) have costs — use them where they justify their complexity.
+
+## Learn next
+
+DDD integrates naturally with [microservices](/t/microservices) (bounded contexts → services) and [event-driven architecture](/t/event-driven-architecture) (domain events → event bus). [Test-driven development](/t/test-driven-development) is a complementary practice for verifying domain model behaviour.

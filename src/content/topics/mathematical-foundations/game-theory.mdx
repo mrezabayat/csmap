@@ -1,0 +1,84 @@
+---
+title: Game Theory
+aliases: ["Nash equilibrium", "game theory", "prisoner's dilemma", "mechanism design", "cooperative games"]
+category: mathematical-foundations
+kind: concept
+summary: The mathematical study of strategic interaction — how rational agents make decisions when the outcome for each depends on the choices of others — foundational to economics, auction design, network protocols, and AI multi-agent systems.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["mathematics", "economics", "strategy", "multi-agent"]
+prerequisites: ["probability-statistics", "optimization-theory"]
+related: ["markov-chains", "machine-learning"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In most optimization problems, you control all the variables. In a game, other rational agents also make decisions, and your best choice depends on what they choose — and their best choice depends on yours. Game theory formalises this: given a set of players, their available actions, and payoffs for each combination, what is the rational outcome? The most famous concept — Nash equilibrium — identifies action combinations where no player can unilaterally improve their payoff. Games underpin economics, traffic networks, auctions, protocol design, and increasingly AI.
+
+## More detail
+
+**Key definitions:**
+
+*Players:* the decision-makers (two or more).
+*Actions / strategies:* the choices available to each player.
+*Payoff function:* the reward each player receives as a function of all players' actions.
+*Strategy:* pure (deterministic choice) or mixed (probability distribution over actions).
+
+**Nash equilibrium:** a strategy profile `(s_1*, s_2*, ..., s_n*)` is a Nash equilibrium if no player can increase their payoff by unilaterally changing their strategy, given all others' strategies. `s_i* = argmax_{s_i} u_i(s_i, s_{-i}*)`.
+
+*Existence theorem (Nash 1950):* every finite game has at least one Nash equilibrium (possibly in mixed strategies). This earned John Nash the 1994 Nobel Prize in Economics.
+
+**Classic games:**
+
+*Prisoner's Dilemma:*
+```
+         Cooperate  Defect
+Cooperate  (3, 3)   (0, 5)
+Defect     (5, 0)   (1, 1)
+```
+Each player's dominant strategy is Defect (Defect pays more regardless of what the opponent does), so the Nash equilibrium is (Defect, Defect) with payoff (1,1) — inferior to mutual cooperation (3,3). The dilemma: individual rationality leads to collective irrationality. Models: arms races, environmental agreements, price wars.
+
+*Coordination game:* two players must choose the same option (e.g., driving on the left vs. right); any consistent choice is a Nash equilibrium. Explains why standards (USB, QWERTY, metric system) are stable once established.
+
+*Battle of the Sexes:* two Nash equilibria in pure strategies; one in mixed. Coordination problem with conflicting preferences.
+
+*Zero-sum games:* one player's gain exactly equals the other's loss. Chess, poker (simplified). Every finite two-player zero-sum game has a Nash equilibrium solvable by linear programming (minimax theorem, von Neumann 1928).
+
+**Dominant strategies:** a strategy that is strictly better than all others, regardless of opponents' choices. If dominant strategies exist for all players, the game's outcome is determined — the Prisoner's Dilemma has Defect as a dominant strategy for both.
+
+**Mechanism design (reverse game theory):** instead of analysing a given game, design the rules (mechanism) to achieve a desired outcome. Examples:
+- **Vickrey auction (second-price auction):** bidders submit sealed bids; winner pays the second-highest bid. Truthful revelation is a dominant strategy — you cannot benefit from lying about your value. Used in Google Ad Auctions, eBay.
+- **Matching markets:** the Gale-Shapley algorithm (deferred acceptance) produces a stable matching (residency assignment, college admissions). Alvin Roth won the 2012 Nobel Prize for designing kidney exchange markets.
+
+**Extensive form games:** games with sequential moves and information sets — modelled as a game tree. Subgame perfect Nash equilibrium (backwards induction) selects equilibria that are Nash equilibria at every subgame. Chess, negotiation, reputation games.
+
+**Repeated games:** if a game is played repeatedly, cooperation can be sustained even when single-play equilibrium is defection (the "folk theorem"). Tit-for-tat strategies in repeated Prisoner's Dilemma outperform always-defect in tournaments.
+
+**Game theory in computer science:**
+- **Network routing (Braess's paradox):** adding a road can make everyone worse off in Nash equilibrium. Traffic flows find Nash equilibria, not social optima.
+- **Multi-agent RL:** agents learning in games — GAN training is a two-player zero-sum game (generator vs. discriminator); AlphaGo is a minimax-style player.
+- **Internet auctions:** Google AdWords and real-time bidding (RTB) in ad tech are designed using mechanism design theory.
+- **BGP routing:** strategic interaction between autonomous systems — studied through game-theoretic lens.
+
+## Why it matters
+
+Game theory is the mathematical foundation of markets, auctions, negotiations, and multi-agent systems. Mechanism design is how Google's ad auction generates $170B/year in a incentive-compatible way. Multi-agent AI (AlphaGo, GANs, multi-agent reinforcement learning) uses game-theoretic concepts. Network security (attacker-defender games), protocol design (Byzantine fault tolerance), and distributed systems (consensus with strategic nodes) all use game theory. For AI safety, game theory models multi-agent alignment and cooperative AI.
+
+## Real-world examples
+
+- Google AdWords / real-time bidding: generalised second-price auction; Vickrey mechanism design applied at billions of transactions per day.
+- Gale-Shapley algorithm: used for NRMP (medical residency matching in the US) and school choice in New York City and Boston.
+- GAN training (Ian Goodfellow, 2014): generator and discriminator play a minimax zero-sum game; convergence is a Nash equilibrium.
+- AlphaGo / AlphaZero: Monte Carlo Tree Search with minimax — backward induction in extensive-form games.
+
+## Common misconceptions
+
+- **"Nash equilibrium is the best outcome."** As the Prisoner's Dilemma shows, Nash equilibria can be collectively suboptimal. The equilibrium is stable (no one wants to deviate unilaterally), not optimal.
+- **"Game theory assumes purely rational agents."** Classical game theory does. Behavioural game theory (Kahneman, Thaler) models bounded rationality — how real humans deviate from Nash equilibrium predictions.
+
+## Learn next
+
+Game theory builds on [probability and statistics](/t/probability-statistics) (mixed strategies) and [optimization theory](/t/optimization-theory) (finding equilibria via LP for zero-sum games). [Markov chains](/t/markov-chains) model repeated game dynamics. Multi-agent [machine learning](/t/machine-learning) applies game-theoretic concepts in AI.

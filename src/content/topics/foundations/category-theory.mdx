@@ -1,0 +1,74 @@
+---
+title: Category Theory
+aliases: ["functor", "monad", "morphism", "composition", "natural transformation"]
+category: foundations
+kind: concept
+summary: An abstract mathematical framework studying structures and the structure-preserving maps between them — the algebraic language behind Haskell's monads, functional programming abstractions, and the compositional design of software.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["foundations", "mathematics", "functional-programming", "theory"]
+prerequisites: ["set-theory", "haskell", "type-theory"]
+related: ["lambda-calculus"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Category theory asks: "what do all these different mathematical structures have in common?" Sets, groups, vector spaces, and types all have objects and maps between them. Category theory abstracts over all of these, studying only the composition laws — how maps chain together. The payoff for programmers: the concepts of functor, monad, and natural transformation — ubiquitous in functional programming — are directly category-theoretic concepts. Understanding the math explains *why* monads compose the way they do, not just the pattern.
+
+## More detail
+
+**A category** consists of:
+- **Objects** (which can be types, sets, spaces — anything).
+- **Morphisms** (arrows between objects, such as functions between types).
+- **Composition:** for any morphisms `f: A→B` and `g: B→C`, there's a composite `g∘f: A→C`.
+- **Identity:** every object has an identity morphism `id_A: A→A`.
+- Laws: composition is associative; identity morphisms are the unit of composition.
+
+The simplest category for programmers: **Hask** (or **Types**) — objects are types, morphisms are functions. Composition is function composition: `(g∘f)(x) = g(f(x))`.
+
+**Functor:** a mapping between categories that preserves structure. A functor `F` maps objects to objects and morphisms to morphisms: if `f: A→B` then `F(f): F(A)→F(B)`. Laws: `F(id_A) = id_{F(A)}`, `F(g∘f) = F(g)∘F(f)`.
+
+In Haskell: a `Functor` is a type constructor `F` with `fmap :: (a -> b) -> F a -> F b`. `Maybe`, `List`, `IO`, `Either e` are all functors. `fmap` applies a function "inside" the container without changing the structure.
+
+**Natural transformation:** a mapping between functors. If `F` and `G` are functors, a natural transformation `η: F⇒G` associates to every object `A` a morphism `η_A: F(A)→G(A)`, consistently. In Haskell: polymorphic functions like `Maybe a -> [a]` (listify) or `[a] -> Maybe a` (safeHead) are natural transformations.
+
+**Monad:** a functor `M` with two natural transformations:
+- `return (η): A → M A` — lift a value into the monad.
+- `join (μ): M(M A) → M A` — flatten nested monads.
+
+Or equivalently, via the Kleisli triple: `return` and `bind (>>=) :: M a -> (a -> M b) -> M b`.
+
+Monad laws (left/right identity, associativity) come from the category-theoretic definition. The laws aren't arbitrary rules — they express that the monad's composition is coherent.
+
+**Adjunctions and free constructions:** many common structures (free monoids/monads, forgetful functors) are adjunctions — pairs of functors that are "mutually inverse" in a weak sense. Lists are the free monoid; the state monad is an adjunction. These connections explain *why* certain patterns arise naturally.
+
+**Category theory in programming:**
+- **Monads** (`IO`, `Maybe`, `State`, `Parser`) — all instances of the category-theoretic monad.
+- **Functors** — `fmap`/`map` on collections, `Promise.then` (functorial over resolved values).
+- **Applicatives** — between functors and monads; `Promise.all` is applicative.
+- **Optics (lenses)** — represented as profunctor optics in a category of profunctors.
+- **Free monads** — programs as data structures (used in Haskell, PureScript for effects).
+- **Yoneda lemma** — explains why polymorphic functions are data; used in library design.
+
+## Why it matters
+
+Category theory provides the unifying language behind Haskell's type class hierarchy (Functor → Applicative → Monad), Scala's Cats library, Arrow in Kotlin, and the design of compositional APIs. Understanding it demystifies why monads satisfy their laws, why certain abstractions compose cleanly and others don't, and how to design APIs that are provably correct by construction. For programming language researchers and advanced functional programmers, category theory is the common language.
+
+## Real-world examples
+
+- Haskell's `Functor`, `Applicative`, `Monad` hierarchy is directly a hierarchy of categories.
+- Scala's Cats library implements category-theoretic type classes for production functional Scala.
+- React's design principle of "UI as a function of state" echoes categorical composition.
+- Elm's architecture (Model-Update-View) has a monadic structure.
+
+## Common misconceptions
+
+- **"Category theory is too abstract to be useful."** Functors, monads, and applicatives are used in everyday Haskell, Scala, and Rust code. The abstraction earns its cost: code written against these interfaces is automatically correct for all instances.
+- **"You need category theory to use monads."** Monads in Haskell can be understood and used without category theory. But category theory explains *why* the laws must hold and why the abstraction is the right one.
+
+## Learn next
+
+Category theory provides the foundations for [type theory](/t/type-theory) and [lambda calculus](/t/lambda-calculus). It directly motivates the design of [Haskell](/t/haskell)'s type class hierarchy. Understanding category theory helps with [formal verification](/t/formal-verification) (categorical semantics of type theory).

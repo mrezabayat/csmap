@@ -1,0 +1,58 @@
+---
+title: Actor Model
+aliases: ["actors", "actor concurrency", "Erlang actors", "Akka"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A concurrency model where independent actors communicate only through message passing — no shared memory, no locks — making it natural for fault-tolerant, distributed, and highly-concurrent systems.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["concurrency", "distributed-systems", "erlang", "fault-tolerance"]
+prerequisites: ["distributed-system", "message-queue"]
+related: ["gossip-protocol", "consensus"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+The actor model says: instead of threads sharing memory (and fighting over locks), make each concurrent unit an **actor** — an isolated entity with its own state that communicates only by sending messages. When an actor receives a message, it can send messages to other actors, create new actors, or update its own state. It cannot touch another actor's state directly. This eliminates the entire category of race conditions caused by shared memory.
+
+## More detail
+
+An actor has three things: a **mailbox** (queue of incoming messages), **behaviour** (what to do for each message type), and **address** (where others send messages to reach it). Actors are:
+
+- **Asynchronous** — sending a message does not block the sender. Fire and forget.
+- **Location-transparent** — an actor's address works the same whether the actor is local or on a different machine. Distribution is not a special case.
+- **Isolated** — actors share no heap. Two actors running on the same CPU still have completely separate state.
+
+In response to a message, an actor may:
+1. Send messages (to any actor whose address it knows).
+2. Create child actors.
+3. Change its own behaviour for the next message (become a different "state").
+
+**Supervision trees** (Erlang OTP, Akka): actors are organised in a hierarchy. When an actor crashes (throws an exception), its **supervisor** decides: restart it, restart its siblings, or escalate to its own supervisor. This "let it crash" philosophy decouples error handling from business logic — actors are cheap, restarting is the primary error recovery mechanism.
+
+**Erlang/Elixir** built the entire runtime around actors (called "processes"). An Erlang node can run millions of lightweight processes; this is how WhatsApp handled 2 million concurrent connections per server. **Akka** (Scala/Java), **Pony**, **Orleans** (.NET), and the Actix framework (Rust) implement actor models in other languages.
+
+The actor model's distribution story: when actors are location-transparent, a cluster of machines becomes one logical pool of actors. Network partitions are handled by the supervision tree — a remote actor that becomes unreachable is treated as a crashed actor.
+
+## Why it matters
+
+The actor model avoids the two hardest problems in concurrent programming: shared-memory race conditions and deadlock (there are no locks to hold). It makes distribution a first-class concept — the same code runs on one machine or across a cluster. For telecoms, chat servers, IoT platforms, and game servers that need millions of concurrent, stateful, fault-tolerant entities, actors are the natural model. Erlang's 99.9999999% uptime record (nine nines) comes largely from supervision trees and the ability to hot-patch running systems.
+
+## Real-world examples
+
+- WhatsApp's entire backend (handling billions of messages daily) is Erlang OTP — actor supervision trees on every server.
+- Riak (Erlang) uses actors for storage vnodes, allowing rolling upgrades and fault isolation.
+- Akka powers Lightbend products and is used at PayPal, LinkedIn, and financial trading systems.
+- Microsoft Orleans (C#) implements "virtual actors" (Grains) for stateful serverless computation.
+
+## Common misconceptions
+
+- **"Actors are just threads."** Actors are much lighter than OS threads (millions can run on one machine) and are strictly isolated — no shared memory. Threads require synchronisation; actors use message passing.
+- **"The actor model prevents all bugs."** It prevents data races. Logic bugs, message ordering assumptions, and mailbox overflows are still possible.
+
+## Learn next
+
+The actor model solves concurrency through message passing — similar in spirit to [message queues](/t/message-queue) at the system level. Erlang and the OTP platform take it furthest; understanding actors makes fault-tolerant system design in distributed systems much more concrete.

@@ -1,0 +1,96 @@
+---
+title: Feature Flag Rollout
+aliases: ["feature flags", "feature toggles", "feature switch", "dark launch", "canary release"]
+category: operations-and-reliability
+kind: concept
+summary: A technique for enabling or disabling features at runtime without deployment — decoupling feature release from code deployment and enabling gradual rollouts, A/B tests, and instant rollbacks without redeployment.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operations", "devops", "deployment", "reliability"]
+prerequisites: ["ci-cd", "deployment", "rest-api"]
+related: ["dora-metrics", "chaos-engineering", "error-budget"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally, deploying code = releasing a feature. Feature flags separate these two things: you deploy code with a new feature but behind a flag that is off by default. You can then turn the flag on for 1% of users, watch for errors, then 10%, then 50%, then 100% — without redeployment. If something goes wrong, flip the flag to off in seconds — no rollback, no hotfix, no deployment required. This makes deployment safer, enables A/B testing, and allows teams to merge code continuously without "releasing" half-finished features.
+
+## More detail
+
+**Core concept:** a feature flag is a conditional in code:
+```javascript
+if (featureFlags.isEnabled('new-checkout-flow', userId)) {
+  return renderNewCheckout();
+} else {
+  return renderOldCheckout();
+}
+```
+
+The flag's state is controlled externally — a flag management service, environment variable, or database — not by code changes.
+
+**Types of feature flags:**
+
+*Release flags (temporary):* enable/disable a feature for gradual rollout. Removed once the feature is fully launched. The most common type.
+
+*Experiment flags (A/B test):* route a percentage of users to variant A or B; measure metrics; pick the winner. Permanent until experiment is complete.
+
+*Ops flags (circuit breaker):* enable "degraded mode" by turning off expensive features during an incident or traffic spike. Permanent; operationally driven.
+
+*Permission flags:* enable features for specific user groups (beta users, internal staff, paid tier). Long-lived; access-control driven.
+
+**Rollout strategies:**
+
+*Percentage rollout:* expose the feature to X% of users, increasing over time. `if (hash(userId) % 100 < rolloutPercentage)`.
+
+*Targeting:* expose to specific users, organisations, or geographic regions. "Enable for `org_id = 12345`" or "enable for users in `country = CA`."
+
+*Gradual increments:* 1% → 5% → 25% → 50% → 100%, with monitoring at each step. If error rate spikes, pause or roll back.
+
+*Ring deployment:* internal employees → beta users → all users. Also called "canary release" when applied to infrastructure.
+
+**Dark launch:** deploy a feature (with traffic going to it) but discard the results — used to test the performance and correctness of a new implementation without exposing users to it. Common for database migrations, algorithm changes, or API rewrites.
+
+**The benefits:**
+
+- **Trunk-based development:** developers merge to `main` continuously; half-finished features are hidden behind flags. No long-lived feature branches; no merge hell.
+- **Instant rollback:** turn off a misbehaving feature without a deployment. MTTR goes from minutes (deploy a hotfix) to seconds (flip a flag).
+- **Safer deployments:** deploy code → validate in production with 0.1% traffic → gradually increase → fully release. Each step has an exit ramp.
+- **A/B testing:** measure the impact of a feature on business metrics (conversion, retention) before full launch.
+
+**Feature flag management:**
+
+Flag state must be stored externally (not in code). Options:
+- **SaaS platforms:** LaunchDarkly, Split.io, Flagsmith, Unleash. Provide targeting, rollout %, analytics, and SDKs.
+- **Internal tools:** many companies build simple flag management on Redis, DynamoDB, or a database.
+- **Environment variables:** the simplest form; per-environment on/off; no runtime control.
+
+**Risks:**
+
+*Flag debt:* flags accumulate if not removed after launch. Code becomes littered with `if (flag_enabled(...))` conditionals that make reasoning difficult. Define a flag lifecycle: create, rollout, launch, cleanup.
+
+*Testing complexity:* every flag doubles the number of code paths; 10 flags = 1024 combinations. Use flag coverage in tests.
+
+*Performance:* SDKs for feature flags must be low-latency (local cache of flag states, async sync from flag service). LaunchDarkly's SDK caches flag states locally — a flag evaluation costs nanoseconds.
+
+## Why it matters
+
+Feature flags are one of the highest-leverage DevOps practices. They enable trunk-based development (a key DORA predictor of performance), make deployments reversible, and decouple release from deployment. Facebook, Netflix, LinkedIn, and virtually every major tech company use feature flags as a standard part of their deployment process. The ability to roll back a feature in seconds rather than hours has a direct impact on MTTR and on-call stress. Engineers at any company deploying frequently should understand and use feature flags.
+
+## Real-world examples
+
+- Facebook: every feature is gated behind a feature flag; "Facebook for Everyone" launches often start as internal-only flags for months.
+- Netflix: A/B tests virtually every UI change; feature flags route users to different UI variants while metrics are collected.
+- GitHub: uses flags to release GitHub Copilot features to different user tiers and regions.
+- Spotify: "Green-Yellow" system — features deployed but disabled; QA verifies in production behind a flag before customer-facing release.
+
+## Common misconceptions
+
+- **"Feature flags require a paid service."** Simple boolean flags can be implemented with a database or Redis and a wrapper function. LaunchDarkly adds targeting, analytics, and SDKs, but the concept is implementable without it.
+- **"Feature flags are only for UI features."** Ops flags (circuit breakers), backend algorithm rollouts, database schema migrations, and infrastructure experiments all benefit from flags.
+
+## Learn next
+
+Feature flags are one mechanism for improving [DORA metrics](/t/dora-metrics) — specifically deployment frequency and MTTR. They work alongside [chaos engineering](/t/chaos-engineering) (test failure modes) and [error budgets](/t/error-budget) (decide when to pause rollouts).

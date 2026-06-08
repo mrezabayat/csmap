@@ -1,0 +1,80 @@
+---
+title: Error Budget
+aliases: ["error budget", "SLO budget", "burn rate", "reliability budget"]
+category: operations-and-reliability
+kind: concept
+summary: The acceptable amount of downtime or errors implied by a Service Level Objective — giving teams a concrete budget to spend on reliability risk versus feature velocity, and an objective trigger for halting deployments when reliability is at risk.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["sre", "reliability", "operations", "devops"]
+prerequisites: ["observability", "incident-response", "ci-cd"]
+related: ["chaos-engineering", "toil", "dora-metrics"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+If your service has a 99.9% uptime SLO, you're allowed 8.7 hours of downtime per year. That 8.7 hours is your error budget — you can "spend" it on planned maintenance, risky deployments, and experimental features. If you've used 8.5 hours in 11 months, you're nearly out of budget; stop making risky changes and focus on reliability. If you've used only 1 hour, your service is more reliable than required; feel free to move fast. Error budgets turn reliability from a moral argument ("we should be more careful") into a quantitative one ("we have 30 minutes of budget left this quarter").
+
+## More detail
+
+**From SLO to error budget:**
+
+**SLI (Service Level Indicator):** a measure of a service's performance — request latency, error rate, availability (% of successful requests), throughput.
+
+**SLO (Service Level Objective):** a target for the SLI: "99.9% of requests succeed," "99th-percentile latency < 200ms." An SLO is internal; it drives engineering decisions.
+
+**SLA (Service Level Agreement):** a contract with a customer defining consequences of SLO breach (refunds, credits). SLAs are typically less strict than SLOs.
+
+**Error budget:** `error budget = 100% - SLO%` of total requests or time.
+- 99.9% SLO → 0.1% error budget → 43.8 minutes/month of errors/downtime.
+- 99.99% SLO → 0.01% budget → 4.38 minutes/month.
+- 99.999% SLO → 0.001% budget → 26.3 seconds/month.
+
+**How error budgets are used:**
+
+*Burn rate:* the rate at which the budget is consumed. If an incident causes 1% of all requests to fail for 2 hours, and the monthly budget for a 99% SLO is 7.2 hours, that incident consumed 28% of the monthly budget.
+
+*Alert on burn rate:* SRE alerting should not alert on instantaneous error rate but on burn rate. A 1% error spike lasting 5 minutes is fine; a 0.5% error persisting for 3 hours consumes significant budget.
+
+*Development freeze:* when the error budget is exhausted, the engineering team freezes feature deployments until reliability is restored. This is the key negotiation: reliability team and product team agree upfront that budget exhaustion → freeze. This removes the subjective argument and creates a shared incentive.
+
+*Reliability investment:* if the error budget is consistently unconsumed, the team is being too conservative — they could ship more features or tolerate more risk. An SLO that is consistently exceeded by a large margin may be too conservative; loosen it.
+
+**Burn rate alerting (Google's approach):**
+Alert thresholds are defined in terms of burn rate multiplier:
+- 1× burn rate: consuming budget at the SLO target rate (sustainable).
+- 14.4× burn rate: consuming budget 14.4× faster than sustainable → 5% of budget in 1 hour → alert immediately (paging severity).
+- 6× burn rate over 6 hours → 15% of budget consumed → alert (ticket severity).
+
+This prevents alert fatigue from noisy instantaneous error spikes while catching sustained budget burn.
+
+**Multi-window burn rate:** use two windows simultaneously (e.g., 1 hour and 6 hours) to detect both fast burns (major incident) and slow burns (gradual degradation).
+
+**Organisation-wide error budget policy:**
+Google's SRE model requires that every service have:
+- A defined SLO with SLIs.
+- An error budget calculation.
+- A published policy for what happens when budget is exhausted (deployment freeze, reliability investment).
+
+## Why it matters
+
+Error budgets resolve the perennial tension between reliability and feature velocity without requiring ongoing negotiation. They make reliability a product decision (how reliable do you need to be?) rather than an engineering one (how reliable can you make it?). A team with a 99.9% SLO has a clear, objective answer to "can we deploy this risky change?" — check the budget. Google attributes much of its reliability culture to error budgets; many SaaS companies have adopted the model. SRE engineers and platform teams use error budgets daily.
+
+## Real-world examples
+
+- Google: every internal service has SLOs and error budgets; product teams negotiate their SLOs annually.
+- Datadog / PagerDuty / New Relic: SLO tracking and burn rate alerting built into monitoring platforms.
+- Spotify: uses error budgets to align product teams and SREs on reliability investment decisions.
+- Netflix: error budgets inform when chaos engineering experiments are safe to run (excess budget) vs. when to pause (depleted budget).
+
+## Common misconceptions
+
+- **"99.99% SLO means near-zero failures."** 99.99% allows 4.38 minutes/month of downtime — which sounds small but adds up if incidents aren't resolved quickly.
+- **"Exhausting the error budget means the team failed."** Budget exhaustion can be intentional (moving fast, taking risks) or accidental (incident). The budget tracks consumption; the policy determines consequences.
+
+## Learn next
+
+Error budgets are operationalised through SLO-based [observability](/t/observability). [Chaos engineering](/t/chaos-engineering) deliberately spends budget to discover weaknesses. [Toil](/t/toil) drains engineering time that could be spent improving reliability. [DORA metrics](/t/dora-metrics) (change failure rate, MTTR) track the inputs to error budget consumption.

@@ -1,0 +1,64 @@
+---
+title: Graph Database
+aliases: ["graph DB", "property graph", "Neo4j", "RDF store"]
+category: data-and-databases
+kind: technology
+summary: A database that stores data as nodes and edges, optimising for traversal queries that follow relationships — where a relational join chain would be slow, a graph traversal is fast.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "graph", "relationships", "nosql"]
+prerequisites: ["database", "nosql"]
+related: ["vector-database", "columnar-store", "graph-theory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Social networks, fraud detection, recommendation engines, and knowledge graphs all have one thing in common: the relationships between entities are as important as the entities themselves. A relational database models relationships as foreign-key joins — great for one hop, painful for five. A graph database stores entities as **nodes** and relationships as **edges** with their own properties, and can traverse multi-hop paths in milliseconds by following pointers rather than joining tables.
+
+## More detail
+
+**Data model:** a **property graph** (the dominant model, used by Neo4j, AWS Neptune, ArangoDB) consists of:
+- **Nodes** — entities with a label (`:Person`, `:Product`) and key-value properties (`{name: "Alice", age: 30}`).
+- **Edges** — directed, typed relationships between two nodes, also with properties (`[:BOUGHT {date: "2024-01-01"}]`).
+
+Each node stores direct pointers to its adjacent edges ("index-free adjacency") — traversal from node to neighbour is O(1) pointer follow, not a table scan. A 5-hop traversal touches only the relevant subgraph, not the entire dataset.
+
+**Query languages:**
+- **Cypher** (Neo4j, OpenCypher standard) — pattern-matching syntax: `MATCH (a:Person)-[:FRIEND]->(b:Person)-[:FRIEND]->(c) WHERE a.name='Alice' RETURN c`.
+- **Gremlin** (Apache TinkerPop standard) — imperative graph traversal API.
+- **SPARQL** — for RDF triple stores (knowledge graphs, linked data).
+
+**When graph databases excel:**
+- Recursive or multi-hop queries: "friends of friends", "shortest path", "all transactions involving this account within 3 hops".
+- Patterns not known at schema-design time — flexible relationships without schema migrations.
+- Knowledge graphs, recommendation graphs, access control graphs, network topology.
+
+**When they don't excel:**
+- Bulk analytics over all nodes/edges — graph DBs are traversal-optimised; a full scan is slower than a columnar store.
+- Simple key-value or tabular lookups.
+- Very high write throughput — maintaining index-free adjacency during bulk inserts is expensive.
+
+**RDF / triple stores** (Amazon Neptune, Stardog) represent data as subject-predicate-object triples and use SPARQL. Used in knowledge graphs (Wikidata, Google Knowledge Graph) and semantic web applications.
+
+## Why it matters
+
+Any domain where you care about how things are connected — not just what they are — benefits from a graph database. LinkedIn's connection graph, fraud detection networks (find circular money flows), and knowledge bases all outgrow relational models for multi-hop queries. Google's Knowledge Graph (what powers the info boxes in search results) is a graph database. Graph algorithms (PageRank, community detection, betweenness centrality) are increasingly applied as features in ML pipelines.
+
+## Real-world examples
+
+- **Neo4j** powers fraud detection at Mastercard — identify suspicious transaction rings in real time.
+- **Amazon Neptune** stores AWS resource relationships for access-control policy evaluation.
+- LinkedIn uses a graph database for the "People You May Know" feature — multi-hop friend recommendation.
+- Wikidata and DBpedia are RDF knowledge graphs accessible via SPARQL.
+
+## Common misconceptions
+
+- **"Graph databases are always faster than relational databases."** For multi-hop traversal, yes. For bulk aggregations or simple lookups, a relational or columnar database is often faster.
+- **"Graph databases have no schema."** Property graphs are schema-optional, not schema-free. Most production deployments have explicit node labels, required properties, and relationship-type constraints enforced at the application level.
+
+## Learn next
+
+Graph databases are one specialised [NoSQL](/t/nosql) alternative. [Vector databases](/t/vector-database) are another, optimised for similarity search. The mathematical foundation is [graph theory](/t/graph-theory). When the relationships are less complex, a relational database with the [relational model](/t/relational-model) often suffices.

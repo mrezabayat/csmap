@@ -1,0 +1,67 @@
+---
+title: Edge Computing
+aliases: ["edge", "CDN compute", "edge functions", "fog computing", "MEC"]
+category: applications
+kind: concept
+summary: Running computation at network edge nodes — close to where users or devices are — to reduce latency, save bandwidth, and comply with data residency requirements compared to centralised cloud data centres.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["cloud", "networking", "performance", "distributed"]
+prerequisites: ["cloud-provider", "cdn", "serverless"]
+related: ["webassembly", "wasm-runtime"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Your cloud data centre might be in Virginia, but your user is in Tokyo. Every network round trip adds 150ms of latency — unavoidable because the speed of light limits how fast data can travel across oceans. Edge computing moves processing to the edge of the network — servers located close to users, often in the same city or ISP network. Computation that used to require a round trip to Virginia happens in a data centre 5ms away in Tokyo. The result: faster responses, less bandwidth usage, and the ability to keep sensitive data in its country of origin.
+
+## More detail
+
+**The problem with centralised cloud:** for static content, CDNs have solved latency by caching files at edge nodes. But dynamic computation — authentication, personalisation, A/B testing, API calls — still required a round trip to the origin. Edge computing extends the CDN model to computation.
+
+**Levels of edge:**
+- **Cloud edge (CDN compute):** Cloudflare Workers, AWS Lambda@Edge, Fastly Compute@Edge — serverless functions running at CDN PoPs (Points of Presence). Global distribution with 50–300 PoPs worldwide; function executes in under 10ms for most users.
+- **Telecom edge (MEC — Mobile Edge Computing):** compute nodes co-located in 5G base stations or carrier data centres. Sub-millisecond latency for mobile applications; used for AR/VR, autonomous vehicles, industrial robotics.
+- **On-device edge (IoT edge):** inference and data processing on the device itself — a camera, a smart speaker, or an industrial sensor. No network required; maximum privacy.
+
+**What runs at the edge:**
+- **Authentication / rate limiting:** verify JWT tokens or apply rate limits at the edge, before the request reaches the origin — saves origin compute and reduces DDoS impact.
+- **A/B testing and personalisation:** modify responses based on geo, device, or cookie — without a round trip to origin.
+- **API aggregation and transformation:** transform requests/responses, combine multiple API calls, protocol translation.
+- **ML inference:** run lightweight models (image classification, spam detection, fraud detection) at edge; full model stays at origin for training.
+- **Data sovereignty:** keep personal data within its country of origin (GDPR compliance) by processing at edge nodes in that country.
+
+**Edge compute platforms:**
+- **Cloudflare Workers** — runs on V8 Wasm runtime at 300+ PoPs; free tier includes 100,000 requests/day. Bindings to KV, R2, D1 (SQLite at edge), Queues.
+- **AWS Lambda@Edge / CloudFront Functions** — Lambda@Edge runs full Lambda at ~30 regional PoPs; CloudFront Functions run lightweight JS at 450+ PoPs with sub-millisecond execution.
+- **Fastly Compute@Edge** — Wasm-native edge compute; faster cold start than Lambda@Edge (~1ms).
+- **Deno Deploy** — JavaScript/TypeScript runtime at edge nodes worldwide.
+- **Vercel Edge Runtime / Next.js Middleware** — edge functions for Next.js server components.
+
+**Trade-offs:**
+- Stateless by design: edge nodes don't have persistent local state. Shared state requires edge-local KV stores (Cloudflare KV, DynamoDB global tables) with eventual consistency.
+- Limited compute time: edge functions typically have 50–100ms CPU time limits.
+- Debugging complexity: distributed execution makes tracing harder.
+
+## Why it matters
+
+Edge computing is why Cloudflare's Workers platform processes 45 million requests per second globally and why Next.js middleware runs at the edge for sub-50ms response times. For applications with global user bases, edge compute eliminates the "last mile" latency problem. For IoT and autonomous systems, edge compute enables real-time decisions without dependence on remote servers. Engineers building performance-sensitive web apps, IoT systems, or globally distributed services need to understand when and how to move computation to the edge.
+
+## Real-world examples
+
+- Shopify uses Cloudflare Workers for storefront edge rendering — reducing time-to-first-byte from 400ms to 40ms for international users.
+- Tesla processes sensor data and runs inference on the car's edge compute (FSD computer) in real time — too much data and too little latency budget to send to the cloud.
+- Cloudflare Bot Management runs ML inference at the edge (on every HTTP request) to classify bots without origin round trips.
+- 5G MEC: cloud gaming companies (NVIDIA GeForce Now, Playkey) run game rendering at telecom edge nodes for sub-20ms latency.
+
+## Common misconceptions
+
+- **"Edge computing replaces the cloud."** Edge handles latency-sensitive, frequently-accessed computation; the cloud handles batch processing, training, and storage. They complement each other.
+- **"CDN and edge computing are the same."** CDNs cache static content. Edge computing adds programmable compute — you can run arbitrary logic, not just serve cached files.
+
+## Learn next
+
+Edge computing is built on [CDN](/t/cdn) infrastructure extended with compute capabilities. [WebAssembly](/t/webassembly) is the runtime model for many edge platforms (Cloudflare Workers uses V8 Wasm, Fastly uses Wasm natively). [Serverless](/t/serverless) is the programming model — functions triggered by events.

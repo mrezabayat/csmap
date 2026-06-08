@@ -1,0 +1,80 @@
+---
+title: Package Manager
+aliases: ["npm", "pip", "cargo", "apt", "homebrew", "dependency management"]
+category: software-engineering
+kind: concept
+summary: A tool that automates downloading, installing, updating, and resolving dependencies of software packages — making it practical to build on a foundation of third-party libraries without manually managing files and versions.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["tooling", "software-engineering", "dependencies", "build"]
+prerequisites: ["version-control", "compiler"]
+related: ["container", "vulnerability", "semantic-versioning"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Without a package manager, using a third-party library means downloading a zip file, figuring out its dependencies, downloading those, placing files in the right directories, and repeating for every transitive dependency. A package manager automates all of this: `npm install express` downloads Express and all its dependencies, places them in `node_modules`, and records the version in `package.json`. When your colleague clones the repo and runs `npm install`, they get exactly the same versions you have.
+
+## More detail
+
+**What a package manager does:**
+1. **Dependency resolution** — reads your `package.json` / `Cargo.toml` / `requirements.txt`, determines which versions of each package are mutually compatible, and produces a complete, consistent set of packages to install.
+2. **Downloading and caching** — fetches packages from a registry (npm, PyPI, crates.io, pub.dev), caches them locally, and verifies integrity via checksums.
+3. **Installation** — places packages in the appropriate directories, creates shims or PATH entries.
+4. **Version locking** — writes a lockfile (`package-lock.json`, `Cargo.lock`, `poetry.lock`) that pins exact versions of every dependency and transitive dependency, ensuring reproducible installs across machines and CI.
+5. **Lifecycle scripts** — runs pre/post-install hooks.
+6. **Publishing** — packages can be published to the registry for others to use.
+
+**Version specifications:** packages declare version requirements using semver-compatible syntax:
+- `^1.2.3` — compatible with 1.2.3 (same major version, minor ≥ 2).
+- `~1.2.3` — only patch updates (1.2.x).
+- `>=1.2.3 <2.0.0` — explicit range.
+- `1.2.3` — exact version.
+
+**Dependency resolution algorithms:**
+- **npm v3+:** flat `node_modules` — resolves a single version of each package where possible, deduplicates.
+- **Cargo:** enforces semver-compatible resolution; crates can have at most one version of a crate in the tree per major version.
+- **pip (Python):** historically had a backtracking resolver (slow for large dependency sets); pip 20.3+ uses a faster backtracking solver.
+- **Nix/Guix:** purely functional package managers — each package is installed in an immutable content-addressed store; multiple versions can coexist without conflict.
+
+**Lock files:** a lockfile pins every dependency's exact version and checksum. Committing lockfiles ensures reproducibility — all developers and CI use identical dependency trees. For applications, always commit the lockfile. For libraries, the convention varies (Cargo commits `Cargo.lock` for binaries, not for libraries).
+
+**Security concerns:**
+- **Supply chain attacks** — a malicious package maintainer can publish a backdoored version. `npm audit` scans installed packages for known vulnerabilities. Lockfiles prevent surprising version upgrades.
+- **Typosquatting** — a malicious package named `colosr` (misspelling of `colors`) is installed accidentally.
+- **Dependency confusion** — an attacker publishes a private-package name to a public registry; package managers may fetch the public one.
+
+**Workspaces / monorepo support:** npm workspaces, Cargo workspaces, pnpm workspaces — multiple packages in a single repository share a single dependency resolution and lockfile. Useful for monorepos.
+
+**Common package managers by ecosystem:**
+- JavaScript/Node: npm, yarn, pnpm
+- Python: pip, poetry, uv (Rust-based, 10–100× faster)
+- Rust: Cargo (official, excellent)
+- Java: Maven, Gradle
+- Go: go modules (built-in)
+- Ruby: Bundler + RubyGems
+- .NET: NuGet
+- Linux (system): apt (Debian), dnf (Fedora), pacman (Arch)
+- macOS: Homebrew, MacPorts
+
+## Why it matters
+
+Package managers are the foundation of modern software development. Without them, the ecosystem of reusable libraries would be impractical. npm has >2.5 million packages; PyPI >500,000; crates.io >130,000. Understanding how package managers work — version resolution, lock files, security — is essential for every developer. Supply chain attacks via package managers have compromised millions of systems (event-stream, xz-utils, node-ipc incidents).
+
+## Real-world examples
+
+- The `leftpad` npm incident (2016): a package with 11 lines of code, used transitively by thousands of projects, was unpublished — breaking builds worldwide. Demonstrated fragility of dependency ecosystems.
+- xz-utils backdoor (2024): a malicious contributor added a backdoor to a widely-used compression library distributed via package managers; discovered just before widespread exploitation.
+- Renovate / Dependabot: automated tools that open PRs to update package.json dependencies to newer versions with security patches.
+
+## Common misconceptions
+
+- **"Committing node_modules is better than package-lock.json."** `node_modules` is huge and contains binary builds for the current platform. The lockfile + `npm ci` is the correct approach for reproducibility.
+- **"Latest version is always safest."** Untested upgrades introduce bugs and sometimes security regressions. Use lockfiles, test upgrades, and use `npm audit` before updating.
+
+## Learn next
+
+Package managers are integral to software builds (see [CI/CD](/t/continuous-integration)). [Containers](/t/container) package entire applications with their dependencies, solving some of the same problems at a different level. Understanding [semantic versioning](/t/semantic-versioning) is prerequisite for understanding version range specifications.

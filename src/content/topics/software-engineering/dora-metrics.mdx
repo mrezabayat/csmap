@@ -1,0 +1,62 @@
+---
+title: DORA Metrics
+aliases: ["DevOps Research and Assessment", "deployment frequency", "lead time for changes", "change failure rate", "MTTR"]
+category: software-engineering
+kind: concept
+summary: Four research-backed metrics — deployment frequency, lead time for changes, change failure rate, and mean time to restore — that predict software delivery performance and organisational outcomes.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["devops", "software-engineering", "metrics", "performance"]
+prerequisites: ["deployment", "ci-cd"]
+related: ["chaos-engineering", "error-budget", "toil"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+How do you know if your engineering team is improving? DORA (DevOps Research and Assessment) identified four metrics through six years of research (the State of DevOps Reports) that distinguish elite software delivery teams from low performers: how often you deploy, how quickly changes go from commit to production, how often deployments fail, and how fast you recover from failures. Elite teams deploy multiple times per day with under 1% failure rate; low performers deploy once a month and take a week to recover from failures.
+
+## More detail
+
+**The four DORA metrics:**
+
+**1. Deployment Frequency (DF):** how often does your team deploy code to production? Elite: on-demand, multiple per day. High: once per week to once per month. Low: once per month to once per six months. Frequent deployments reduce batch size (smaller changes = less risk, easier rollback), force automation, and create a culture of continuous improvement.
+
+**2. Lead Time for Changes (LTFC):** elapsed time from code committed to running in production. Includes code review, CI pipeline, staging, deployment. Elite: under 1 hour. High: 1 day to 1 week. Low: 1 month to 6 months. Long lead times hide feedback; developers don't learn whether their change worked until days later.
+
+**3. Change Failure Rate (CFR):** percentage of deployments that cause a production incident requiring a hotfix, rollback, or patch. Elite: 0–15%. High: 16–30%. Low: 46–60%. High CFR indicates insufficient testing or review. Note: lower CFR is not achieved by deploying less — elite teams deploy more and have lower failure rates (because automation and testing are better).
+
+**4. Mean Time to Restore (MTTR):** how long to recover from a production incident (rollback, fix, or mitigation). Elite: under 1 hour. High: under 1 day. Low: 1 week to 1 month. MTTR is determined by observability, runbooks, on-call processes, and deployment automation.
+
+**The research finding:** DORA's research (2014–present, now part of Google Cloud) found that elite performance on all four metrics is strongly correlated with:
+- Organisational performance (profitability, market share, ROI on IT investment).
+- Employee wellbeing (burnout, satisfaction).
+- Lean practices (trunk-based development, continuous testing, loosely coupled architecture).
+
+**Fifth metric (2021 addition): Reliability (Operational Performance):** the original four focus on delivery; reliability covers the system's behaviour once deployed (SLO adherence). Elite teams measure and meet reliability SLOs.
+
+**What to optimise first:** LTFC and DF are capabilities; CFR and MTTR are outcomes. Improving deployment automation → reduces LTFC. Better testing and code review → reduces CFR. Better observability and on-call process → reduces MTTR.
+
+**Trunk-based development vs. long-lived branches:** one of the strongest predictors of elite performance is trunk-based development (TBD) — committing directly to main or using very short-lived branches (under 1 day). Long-lived feature branches inflate LTFC and cause integration pain.
+
+## Why it matters
+
+DORA metrics are the empirically validated framework for measuring software delivery effectiveness. Unlike vanity metrics (lines of code, story points, velocity), DORA metrics predict business outcomes. They provide a shared vocabulary for engineering leadership conversations about investment in CI/CD, testing, and on-call processes. Google, Spotify, and Netflix use DORA-aligned metrics to track platform improvements.
+
+## Real-world examples
+
+- Google's DORA team surveys 30,000+ practitioners annually; the State of DevOps Report is the primary industry benchmark.
+- Google Cloud's DevOps Research found that elite performers are 6× more likely to exceed their organisational performance goals.
+- Netflix publishes deployment frequency (thousands per day), MTTR (minutes), and chaos engineering results as cultural benchmarks.
+- GitHub's own engineering team tracks DORA metrics; they deploy 200+ times/day to github.com.
+
+## Common misconceptions
+
+- **"High deployment frequency means more outages."** The research shows the opposite: elite teams deploy more *and* have lower failure rates, because their automation and testing are better.
+- **"DORA metrics are only for large companies."** A two-person startup can track LTFC and CFR; the benefit of fast feedback and low failure rate applies at any scale.
+
+## Learn next
+
+DORA metrics are operationalised through [DevOps](/t/devops) practices and [continuous integration](/t/continuous-integration). [Error budgets](/t/error-budget) (from SRE) complement DORA by quantifying reliability. [Chaos engineering](/t/chaos-engineering) deliberately improves MTTR by surfacing failures before they happen unexpectedly.

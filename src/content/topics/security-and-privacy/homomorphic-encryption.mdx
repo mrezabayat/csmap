@@ -1,0 +1,60 @@
+---
+title: Homomorphic Encryption
+aliases: ["HE", "FHE", "fully homomorphic encryption", "computing on encrypted data"]
+category: security-and-privacy
+kind: concept
+summary: A form of encryption that allows computation on ciphertext without decrypting it — the result, when decrypted, matches what would have been obtained by computing on the plaintext.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cryptography", "privacy", "machine-learning", "research"]
+prerequisites: ["cryptography", "public-key-cryptography"]
+related: ["zero-trust", "post-quantum-cryptography"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normally, to compute on encrypted data you must decrypt it first — which means whoever runs the computation sees the plaintext. Homomorphic encryption (HE) makes the impossible possible: you can add or multiply numbers without ever seeing them. A cloud server can run a machine-learning model on your encrypted medical data and return an encrypted result; you decrypt the result and see the answer — but the cloud never saw your data. It is one of the most powerful privacy-preserving techniques in cryptography.
+
+## More detail
+
+**Homomorphism** (from Greek: "same shape"): an encryption scheme `E` is homomorphic if:
+- `E(a) ⊕ E(b) = E(a + b)` — additive homomorphism
+- `E(a) ⊗ E(b) = E(a × b)` — multiplicative homomorphism
+
+A scheme that supports only one operation (Paillier: addition; RSA unpadded: multiplication) is **partially homomorphic (PHE)**. Schemes supporting a limited number of both operations are **somewhat homomorphic (SHE)**. A scheme supporting unlimited operations of both types is **fully homomorphic (FHE)**.
+
+**FHE history:** Craig Gentry's 2009 construction was the first FHE scheme, based on ideal lattices. It was correct but too slow for practical use (days per operation). Modern schemes (CKKS, BFV, TFHE) are orders of magnitude faster.
+
+**Major schemes:**
+- **BFV/BGV** — integer arithmetic; suited for exact integer computations.
+- **CKKS** — approximate arithmetic on real/complex numbers; suited for ML inference (accepts small rounding errors in exchange for efficiency).
+- **TFHE/FHEW** — bootstrapped gate-by-gate computation on bits; fast per-gate, suited for arbitrary circuits.
+
+**Noise and bootstrapping:** HE ciphertexts accumulate noise with each operation; too much noise corrupts the result. **Bootstrapping** (Gentry's key insight) homomorphically evaluates the decryption circuit to reset noise — enabling unlimited operations, at high cost.
+
+**Performance in 2024:** CKKS can run a simple neural network inference in seconds to minutes (10²–10⁵× slower than plaintext). TFHE boolean circuits run at ~1000 gates/second on a modern CPU. Production HE is still primarily for scenarios where privacy value exceeds the performance cost.
+
+**Libraries:** Microsoft SEAL, OpenFHE, HElib, TFHE-rs (Zama).
+
+## Why it matters
+
+HE enables computation outsourcing with zero information leakage: medical record analysis, genome computation, financial risk models on private data, and ML inference on sensitive inputs — all without trusting the compute provider. Regulatory environments (HIPAA, GDPR) and sensitive industries (healthcare, finance, defence) are early adopters. While HE is not yet general-purpose (it's too slow for most workloads), it is the long-term vision for privacy-preserving cloud computing. Cryptographers and applied researchers working on privacy-preserving ML or cloud security need to understand HE's capabilities and limits.
+
+## Real-world examples
+
+- Microsoft Azure Confidential Computing uses SEAL for healthcare analytics (genomic data queries on encrypted patient records).
+- Google's private join-and-compute uses partially homomorphic encryption for privacy-preserving ad attribution.
+- Zama's Concrete ML library lets data scientists train and run ML models encrypted with TFHE, enabling encrypted-inference SaaS.
+- IBM HElib powers research in encrypted database queries.
+
+## Common misconceptions
+
+- **"Homomorphic encryption makes computation perfectly secure in any cloud."** It provides cryptographic confidentiality of data during computation, but doesn't protect against side-channel leakage from access patterns, or against a cloud that returns wrong answers.
+- **"FHE is ready for general use."** For most applications, FHE is still 10³–10⁶× too slow. It is practical for specific use cases with high privacy requirements and modest computation.
+
+## Learn next
+
+Homomorphic encryption is a specialised area of [cryptography](/t/cryptography) and [public-key cryptography](/t/public-key-cryptography). It is related to [post-quantum cryptography](/t/post-quantum-cryptography) as both rely on lattice hardness. [Differential privacy](/t/differential-privacy) is a complementary privacy technique — easier to use, different threat model.

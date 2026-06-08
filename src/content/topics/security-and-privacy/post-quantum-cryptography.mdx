@@ -1,0 +1,55 @@
+---
+title: Post-Quantum Cryptography
+aliases: ["PQC", "quantum-resistant cryptography", "lattice cryptography", "CRYSTALS-Kyber", "CRYSTALS-Dilithium"]
+category: security-and-privacy
+kind: concept
+summary: Cryptographic algorithms designed to remain secure against quantum computers — replacing RSA and ECC with lattice-based, hash-based, or other schemes that quantum algorithms cannot efficiently break.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cryptography", "quantum", "security", "future"]
+prerequisites: ["public-key-cryptography", "elliptic-curve-cryptography"]
+related: ["tls", "cryptography"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Shor's algorithm, running on a sufficiently large quantum computer, can break RSA and ECC in polynomial time — the same way a jet breaks the speed limit of a horse. Post-quantum cryptography (PQC) develops new algorithms based on mathematical problems that quantum computers cannot solve efficiently. NIST standardised four PQC algorithms in 2024, and TLS and SSH implementations are beginning to adopt them — even before quantum computers are large enough to be a threat.
+
+## More detail
+
+**Why RSA and ECC break:** Shor's algorithm factors integers and solves discrete logarithms (the hard problems behind RSA and ECC) in `O(n³)` on a quantum computer versus `O(e^(n^(1/3)))` classically — an exponential speedup. A 4096-bit RSA key, unbreakable classically, could be broken in hours on a cryptographically-relevant quantum computer (CRQC) with ~4000 logical qubits. Current quantum computers have hundreds of noisy physical qubits (not logical); a CRQC is estimated to be 10–20 years away, though estimates vary widely.
+
+**The harvest-now-decrypt-later threat:** adversaries can capture encrypted traffic today and decrypt it once a CRQC exists. For long-lived secrets (classified data, healthcare records, state secrets), the threat window is now — which is why governments and standards bodies are acting before quantum computers exist.
+
+**NIST PQC standards (2024):**
+- **ML-KEM (CRYSTALS-Kyber)** — key encapsulation mechanism for key exchange, replacing ECDH. Based on module lattice problems (Module Learning With Errors). Fast, compact keys.
+- **ML-DSA (CRYSTALS-Dilithium)** — digital signatures, replacing ECDSA. Also lattice-based.
+- **SLH-DSA (SPHINCS+)** — hash-based signatures. Slower and larger than Dilithium but based only on the security of hash functions — a very conservative choice.
+- **FN-DSA (FALCON)** — faster lattice-based signatures; more complex to implement correctly.
+
+**Lattice problems:** the hardness of ML-KEM and ML-DSA rests on the **Learning With Errors (LWE)** problem: given many equations `b = As + e (mod q)` where `e` is small random noise, recover `s`. No known quantum algorithm solves this faster than classical algorithms.
+
+**Hybrid mode:** TLS 1.3 + PQC initially runs both ECDH (X25519) and ML-KEM in parallel, combining their outputs — so security holds if either algorithm is unbroken. Chrome and Cloudflare already run hybrid X25519+ML-KEM in production TLS.
+
+## Why it matters
+
+Every RSA and ECC public key in use today is potentially vulnerable to future quantum decryption. Migration to PQC is a decade-long infrastructure project: certificates need re-issuing, TLS stacks updated, HSMs reprogrammed. Engineers and architects designing systems with long-lived secrets or long deployment cycles should understand the timeline and begin evaluating PQC. NIST's 2024 standards give the industry a concrete target.
+
+## Real-world examples
+
+- NIST released final PQC standards in August 2024 (FIPS 203/204/205).
+- Google Chrome and Cloudflare deployed hybrid X25519+ML-KEM TLS key exchange in 2023.
+- Signal added a post-quantum ratchet (PQXDH) using Kyber in 2023.
+- The US government (NSA) issued CNSA 2.0 mandating PQC for national security systems by 2030–2035.
+
+## Common misconceptions
+
+- **"Quantum computers can break any encryption."** Grover's algorithm gives a quadratic speedup against symmetric encryption (AES-256 needs 128-bit effective security against quantum — still secure). Shor's algorithm threatens asymmetric cryptography specifically.
+- **"We don't need to worry yet."** Harvest-now-decrypt-later attacks mean the risk starts now for long-lived secrets. NIST standards are final; migration planning should begin.
+
+## Learn next
+
+Post-quantum cryptography replaces [elliptic curve cryptography](/t/elliptic-curve-cryptography) and RSA in [public-key cryptography](/t/public-key-cryptography). The transition affects [TLS](/t/tls) — which uses both key exchange and digital signatures.

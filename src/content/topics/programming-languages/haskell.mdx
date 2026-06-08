@@ -1,0 +1,68 @@
+---
+title: Haskell
+aliases: ["Haskell programming language", "GHC", "lazy evaluation", "pure functional"]
+category: programming-languages
+kind: technology
+summary: A purely functional, lazily evaluated language with a powerful type system — notable for making side effects explicit in types, pioneering type classes, and influencing the design of Rust, Scala, Swift, and Kotlin.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "functional", "types", "haskell"]
+prerequisites: ["type-system", "lambda-calculus"]
+related: ["type-theory", "closure"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Haskell takes functional programming to its logical extreme: every function is pure (no side effects — no mutable state, no I/O), evaluation is lazy (values are computed only when needed), and the type system is so powerful that it can express invariants like "this function never throws an exception" or "this list has exactly n elements." Side effects (I/O, state) are permitted but must be declared in types using the `IO` monad — so the type signature tells you whether a function touches the outside world. Haskell is often described as a language that forces you to think carefully about programs in a way that makes you a better programmer in any language.
+
+## More detail
+
+**Key properties:**
+
+**Pure functions:** every Haskell function maps inputs to outputs with no observable side effects. The same input always produces the same output. This makes reasoning, testing, and parallel execution straightforward.
+
+**Lazy evaluation:** expressions are not evaluated until their result is needed. `ones = 1 : ones` defines an infinite list of 1s — but only the elements you actually consume are computed. Lazy evaluation enables elegant infinite data structures, modular program composition, and can improve efficiency by avoiding unnecessary computation.
+
+**Type system (Hindley-Milner + type classes + extensions):**
+- **Parametric polymorphism:** `id :: a -> a` works for any type `a`.
+- **Type classes:** ad hoc polymorphism — `Eq`, `Ord`, `Show`, `Functor`, `Monad`. A function `sort :: (Ord a) => [a] -> [a]` works for any type with an ordering.
+- **Algebraic data types:** `data Maybe a = Nothing | Just a`. Pattern matching on ADTs is exhaustive.
+- **Kind system:** types have kinds — `*` (a concrete type), `* -> *` (a type constructor). `Maybe :: * -> *`, `Maybe Int :: *`.
+- **GHC extensions:** higher-kinded types, type families, GADTs, rank-n polymorphism — extend the core system for domain-specific type-level programming.
+
+**Monads and IO:** side effects are performed via monads. `IO` is a monad that encapsulates actions with side effects. `getLine :: IO String`, `putStrLn :: String -> IO ()`. The do-notation is syntactic sugar for monad bind:
+```haskell
+main :: IO ()
+main = do
+  name <- getLine
+  putStrLn ("Hello, " ++ name)
+```
+
+The type `IO a` means "an action that, when performed, produces an `a`." Functions without `IO` in their type are guaranteed pure.
+
+**Type classes as interfaces:** `Functor`, `Applicative`, `Monad`, `Foldable`, `Traversable` define a hierarchy of algebraic structures. These abstractions (borrowed from category theory) appear in Scala (`Cats`), Kotlin (`Arrow`), and Rust (`Iterator`, `Future`).
+
+**GHC (Glasgow Haskell Compiler):** the primary Haskell compiler. Produces highly optimised native code via the STG (Spineless Tagless G-machine) intermediate representation. GHC is itself written in Haskell.
+
+## Why it matters
+
+Haskell has had outsized influence relative to its market share. Concepts pioneered or popularised in Haskell — monads, type classes, algebraic data types, pure functions, lazy evaluation, type inference — have appeared in Rust (traits ≈ type classes, ownership ≈ linear types), Scala (monads, type classes), Swift (protocols, optionals), Kotlin (coroutines, null safety), and TypeScript (discriminated unions). Understanding Haskell gives insight into the theoretical foundations of these mainstream features.
+
+## Real-world examples
+
+- Facebook's Sigma anti-abuse system is written in Haskell; handles millions of decisions per second.
+- Standard Chartered bank uses Haskell for financial modelling.
+- GitHub's Semantic (code analysis tool for pull requests) was written in Haskell.
+- The Cardano blockchain's core implementation is written in Haskell (emphasising formal methods and type safety for financial transactions).
+
+## Common misconceptions
+
+- **"Haskell is impractical."** Facebook, Standard Chartered, and GitHub have used it in production at scale. It's less common than Python, but it's production-capable.
+- **"Laziness means slow."** GHC is a highly optimising compiler that often produces code competitive with C for numeric computation. Lazy evaluation can introduce space leaks (unevaluated thunks accumulate), but GHC provides tools (`seq`, `BangPatterns`) to force strict evaluation where needed.
+
+## Learn next
+
+Haskell is the premier implementation of [lambda calculus](/t/lambda-calculus) and [type theory](/t/type-theory) in a practical language. Its type class system is grounded in [category theory](/t/category-theory) (functors, monads, natural transformations). Understanding [closures](/t/closure) and [continuation](/t/continuation)-passing style deepens understanding of Haskell's denotational semantics.

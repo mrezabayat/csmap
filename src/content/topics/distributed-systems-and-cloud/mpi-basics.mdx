@@ -1,0 +1,60 @@
+---
+title: MPI Basics
+aliases: ["Message Passing Interface", "MPI", "parallel computing MPI"]
+category: distributed-systems-and-cloud
+kind: technology
+summary: The standard API for parallel programs that run across many compute nodes, communicating by explicitly sending and receiving messages — the infrastructure behind most scientific supercomputing.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["parallel-computing", "distributed-systems", "hpc", "scientific-computing"]
+prerequisites: ["distributed-system", "process"]
+related: ["openmp", "actor-model"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When a simulation needs 10,000 CPU cores working together, something must coordinate them. MPI (Message Passing Interface) is the standard that all of high-performance computing agreed on: each process has its own memory (no shared state), and processes communicate by explicitly calling `MPI_Send` and `MPI_Recv`. Write one program, launch it on N nodes, and each instance receives a unique rank and knows how to talk to the others.
+
+## More detail
+
+MPI is a library specification (not an implementation) — implementations include OpenMPI, MPICH, and vendor-optimised variants for supercomputer interconnects (Cray, IBM Spectrum MPI, Intel MPI). The programming model:
+
+**Point-to-point communication:**
+- `MPI_Send(buf, count, type, dest, tag, comm)` — send to rank `dest`.
+- `MPI_Recv(buf, count, type, src, tag, comm, status)` — receive.
+- Non-blocking variants (`MPI_Isend`, `MPI_Irecv`) allow overlap of computation and communication.
+
+**Collective operations** (all processes participate simultaneously):
+- `MPI_Bcast` — root process broadcasts to all.
+- `MPI_Reduce / MPI_Allreduce` — combine values from all processes (sum, max, etc.) and deliver to root or all.
+- `MPI_Scatter / MPI_Gather` — distribute a dataset across processes or collect it back.
+- `MPI_Barrier` — synchronise all processes at a point.
+
+**Communicators and topologies:** `MPI_COMM_WORLD` contains all processes. Sub-communicators group related processes. Cartesian or graph topologies label processes with coordinates, enabling structured communication patterns (e.g. nearest-neighbour exchange in a 3D grid simulation).
+
+**One-sided communication (RMA):** `MPI_Put`, `MPI_Get`, `MPI_Accumulate` — write directly to a remote memory window without the remote process calling a receive. Used for fine-grained irregular communication.
+
+MPI is typically combined with [OpenMP](/t/openmp) in a **hybrid MPI+OpenMP** model: one MPI process per node, multiple OpenMP threads per process — MPI handles inter-node communication; OpenMP handles intra-node parallelism on shared-memory cores.
+
+## Why it matters
+
+MPI is the de facto standard for HPC and scientific computing. Weather forecasting, molecular dynamics (GROMACS, NAMD), quantum chemistry, fluid dynamics, seismic imaging, and climate modelling all use MPI. Modern ML training at scale (distributed training of large neural networks) uses collectives conceptually identical to `MPI_Allreduce` — NCCL (NVIDIA) and Gloo (Meta) are GPU-optimised equivalents. Understanding MPI explains how large parallel systems are structured and where communication costs dominate.
+
+## Real-world examples
+
+- **GROMACS** and **NAMD** simulate molecular dynamics on thousands of CPUs using MPI for domain decomposition.
+- **PyTorch distributed training** uses `dist.all_reduce` (backed by NCCL on GPUs or Gloo on CPUs) — the same collective concept as `MPI_Allreduce`.
+- The **TOP500** list of fastest supercomputers benchmarks systems with the HPL Linpack benchmark, which is a pure MPI workload.
+- **WRF** (Weather Research and Forecasting model) uses MPI to decompose the atmosphere across thousands of cores.
+
+## Common misconceptions
+
+- **"MPI is only for Fortran and C."** MPI has bindings for Python (mpi4py), Java, and R. Many scientific Python packages (petsc4py, h5py with parallel HDF5) use MPI under the hood.
+- **"Shared memory within a node makes MPI unnecessary."** For intra-node communication, shared memory is faster; that's why hybrid MPI+OpenMP is preferred. MPI is for inter-node — shared memory doesn't cross network cards.
+
+## Learn next
+
+MPI handles inter-node parallelism; [OpenMP](/t/openmp) handles intra-node shared-memory parallelism. The two are often combined. The [actor model](/t/actor-model) is an alternative communication-by-message-passing paradigm for distributed applications where latency requirements are different.

@@ -1,0 +1,61 @@
+---
+title: Multimodal AI
+aliases: ["multimodal model", "vision-language model", "VLM", "GPT-4V"]
+category: artificial-intelligence
+kind: concept
+summary: AI systems that process and generate across multiple modalities — text, images, audio, and video — in a single model, enabling tasks like image captioning, visual question answering, and audio transcription.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["deep-learning", "vision", "language", "multimodal"]
+prerequisites: ["large-language-model", "transformer"]
+related: ["diffusion-model", "computer-vision", "natural-language-processing"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Early AI models dealt with one thing at a time: a language model read text, an image classifier looked at images, a speech recogniser heard audio. Multimodal AI collapses those separate pipelines into one model that understands several modalities simultaneously — you can show it a photo and ask a question about it, or ask it to describe a chart, or have it transcribe and translate spoken audio. The modalities share a common representational space; the model reasons across them.
+
+## More detail
+
+**Architecture patterns for combining modalities:**
+
+- **Encoder-decoder fusion.** Encode each modality separately (image via a vision encoder like ViT; text via a language encoder), then combine the representations — by concatenation, cross-attention, or projection into a shared embedding space — before a language model decoder. This is the approach of CLIP + GPT-4V, LLaVA, and Flamingo.
+- **Unified tokenisation.** Discretise images into visual tokens (VQ-VAE codes) and treat them identically to text tokens. The same transformer processes interleaved text and image tokens. DALL-E 1 and Chameleon use this approach.
+- **Adapters / connectors.** A frozen, pre-trained vision encoder (e.g. CLIP ViT) is connected to a frozen language model via a small trainable "connector" (MLP or cross-attention). Only the connector is trained on multimodal data. This is the LLaVA architecture.
+
+**Key capabilities by task:**
+
+| Task | Input → Output |
+|---|---|
+| Image captioning | image → text |
+| Visual QA | image + text question → text |
+| Document understanding | document image → structured text |
+| Image generation | text → image (diffusion models) |
+| Speech recognition | audio → text |
+| Text-to-speech | text → audio |
+| Video understanding | video frames + text → text |
+
+**Training** typically involves two phases: pre-training each modality encoder on large unimodal datasets, then joint training on paired multimodal data (image-caption pairs, audio transcripts) with alignment objectives (e.g., CLIP's contrastive loss, which trains image and text encoders so matching pairs are close in embedding space).
+
+## Why it matters
+
+The real world is multimodal, and so are most productive AI applications. A customer submits a photo of a broken device; a doctor shows a scan; a user speaks rather than types. Multimodal systems close the gap between AI demonstrations in controlled text-only environments and useful deployed products. The shared embedding space also enables **cross-modal retrieval** (search images with text queries) and emergent reasoning across modalities that neither unimodal model could do alone.
+
+## Real-world examples
+
+- GPT-4V and Claude 3 accept images in their prompts; users describe code screenshots, diagrams, or invoices.
+- Google's Gemini was released as a natively multimodal model trained on text, image, audio, and video from the start.
+- Whisper (OpenAI) is an audio-to-text encoder-decoder used in voice interfaces everywhere.
+- CLIP embeddings are the backbone of most image-text retrieval systems and image generation guidance (Stable Diffusion uses a CLIP text encoder).
+
+## Common misconceptions
+
+- **"A multimodal model just runs two models and combines outputs."** Modern multimodal models share representations in a joint embedding space — the image and text influence each other's processing, not just the final answer.
+- **"Adding modalities always makes a model better."** Joint training on mismatched or lower-quality multimodal data can degrade the unimodal performance of a model that was strong on one modality alone.
+
+## Learn next
+
+Multimodal systems combine [large language models](/t/large-language-model) with [computer vision](/t/computer-vision) encoders. [Diffusion models](/t/diffusion-model) handle the image-generation direction. The common representational glue is the [embedding](/t/embedding) — the same vector space used across all modalities.

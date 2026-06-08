@@ -1,0 +1,56 @@
+---
+title: Write-Ahead Log
+aliases: ["WAL", "redo log", "transaction log", "commit log"]
+category: data-and-databases
+kind: concept
+summary: A durability mechanism where every change is written to an append-only log before it is applied to the main data files — if the system crashes, the log is replayed to recover to the last committed state.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "durability", "transactions", "recovery"]
+prerequisites: ["transaction-acid", "database"]
+related: ["mvcc", "replication", "indexing"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Databases keep data in files on disk, but writing to those files is complex and partial writes happen during a crash. The write-ahead log (WAL) is a simple append-only file: before changing any data file, write what you're about to do to the log. If the system crashes, replay the log from the last checkpoint — you'll arrive at a consistent, complete state. The log is the "D" in ACID durability.
+
+## More detail
+
+The rule is strict: a change is not considered committed until its log record has been flushed to disk (called **log flush** or `fsync`). Only then may the data pages in the buffer pool be modified. This ordering gives two guarantees:
+
+- **Crash recovery (redo):** on restart, apply all log records after the last checkpoint. Even if the corresponding data page wasn't flushed, the log provides the information to reconstruct it.
+- **Rollback (undo):** if a transaction aborts, apply undo records from the log in reverse order to revert changes that were already written to pages.
+
+**Log structure:** each record contains the transaction ID, log sequence number (LSN, monotonically increasing), the type of operation (INSERT/UPDATE/DELETE/COMMIT/ABORT), and the before-image and/or after-image of the changed data.
+
+**Checkpoints:** periodically, the database flushes all dirty pages to disk and writes a checkpoint record. On recovery, replay only starts from the last checkpoint — reducing recovery time. Without checkpoints, recovery requires replaying the entire log history.
+
+**WAL and replication:** WAL records are the primary mechanism for physical replication. PostgreSQL **streaming replication** ships WAL records to standbys in real time. Binlog in MySQL, oplog in MongoDB — all are WAL variants.
+
+**Write amplification:** every write generates a WAL record *and* eventually modifies the data page. SSDs amplify this further (erase before write). LSM trees (used in RocksDB, Cassandra) use a WAL + memtable + sorted on-disk tables to reduce write amplification compared to B-tree databases.
+
+**`fsync` skipping (dangerous):** running with `fsync=off` turns off the WAL flush guarantee. Writes appear faster but data loss is possible on crash. PostgreSQL with `fsync=off` and a power failure can produce a corrupted database. Only appropriate for test environments.
+
+## Why it matters
+
+WAL is the foundation of database durability and replication. Every relational database (PostgreSQL, MySQL, Oracle, SQL Server) uses a WAL variant. Understanding it explains: why `COMMIT` can be slow on high-latency disks (log flush costs a seek), why group commit batches multiple commits into one flush, why streaming replication lag is WAL delivery lag, and why MVCC old versions must persist until VACUUM (they may still be needed for undo). It also explains crash recovery time — WAL length between checkpoints.
+
+## Real-world examples
+
+- PostgreSQL WAL files are 16 MB segments; `pg_basebackup` and `pg_walreceiver` stream them to replica servers.
+- MySQL's **binlog** is a WAL at the statement or row level; replicas replay it to stay in sync.
+- Kafka's commit log is architecturally a WAL — an immutable append-only log that consumers replay from any offset.
+- RocksDB (underlying storage for many databases and Kafka's log compaction) uses a WAL + memtable + SST file architecture.
+
+## Common misconceptions
+
+- **"WAL only matters for crash recovery."** WAL is also the primary replication mechanism in most databases and the basis for point-in-time recovery (restore from backup then replay WAL).
+- **"Write-ahead means writes are slow."** Modern databases batch WAL flushes (group commit) and use high-throughput NVMe storage. Tuning `wal_level` and `synchronous_commit` allows fine-grained latency/durability tradeoffs.
+
+## Learn next
+
+WAL provides durability for [transactions](/t/transaction-acid) and is the data source for [replication](/t/replication). [MVCC](/t/mvcc) uses WAL records to durably log the new versions it creates. Understanding both together gives a complete picture of how a database survives crashes and scales read load.

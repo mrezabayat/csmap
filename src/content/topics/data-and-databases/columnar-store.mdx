@@ -1,0 +1,60 @@
+---
+title: Columnar Store
+aliases: ["column-oriented database", "column store", "columnar database", "analytical database"]
+category: data-and-databases
+kind: concept
+summary: A database that stores each column's values contiguously rather than each row — enabling far faster analytical queries that aggregate millions of rows but touch only a few columns.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "olap", "analytics", "data-warehouse"]
+prerequisites: ["database", "indexing"]
+related: ["data-warehouse", "vector-database", "mvcc"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A regular row-oriented database stores each row together: all columns of row 1, then all columns of row 2. This is great for fetching a complete record by primary key. An analytical query like "what is the average salary across 50 million employees?" only needs the salary column — but a row store fetches *all* columns of every row. A columnar store flips the layout: it stores all salaries together, then all departments, then all hire dates. The salary query reads only the salary column — which fits in far fewer cache lines and disk pages.
+
+## More detail
+
+**Layout difference:**
+
+| Row store | Columnar store |
+|-----------|---------------|
+| `[id=1, name='Alice', salary=90000]` | salary column: `[90000, 75000, 120000, ...]` |
+| `[id=2, name='Bob', salary=75000]` | name column: `['Alice', 'Bob', 'Carol', ...]` |
+
+For OLAP workloads (aggregations, scans, GROUP BY, window functions) that read many rows but few columns, columnar stores are 10–100× faster because:
+1. **Column projection** — only the needed columns are read from disk.
+2. **Compression** — values in a column are similar type and often similar values; run-length encoding, dictionary encoding, and bitpacking achieve 5–20× compression, reducing I/O.
+3. **Vectorised execution** — SIMD operates on arrays of same-type values; columnar data maps directly to vector register operations.
+4. **Late materialisation** — filter operations work on column arrays and produce position bitmaps; the actual values are only fetched for rows that pass the filter.
+
+**OLTP vs OLAP:** Row stores (PostgreSQL, MySQL) excel at OLTP (frequent small point reads and writes — "get order #12345"). Columnar stores excel at OLAP (large analytical scans — "revenue by region last quarter"). Hybrid HTAP systems (TiDB, SingleStore) try to serve both.
+
+**Products:** DuckDB (in-process analytical engine), ClickHouse (high-throughput analytics), Redshift (AWS cloud DW), BigQuery (Google), Snowflake, Parquet (column-oriented file format used with Spark/Iceberg).
+
+**Parquet** is the column-oriented file format used in data lakes. Apache Spark, Iceberg, Delta Lake, and Hudi all use Parquet as their default storage format; the query engine reads only the needed columns from each file and uses statistics to skip entire files.
+
+## Why it matters
+
+The rise of big data analytics, BI tooling, and ML feature engineering made columnar stores essential. A data scientist running a `GROUP BY` on a 10-billion-row table in a row store would wait hours; DuckDB or ClickHouse completes it in seconds. Understanding the layout explains when to use a data warehouse vs. a transactional database, why Parquet matters in data pipelines, and why columnar databases can compress data so aggressively.
+
+## Real-world examples
+
+- Airbnb, Uber, and Netflix run petabytes of query traffic through Presto/Trino on Parquet files in S3 — pure columnar access.
+- ClickHouse ingests billions of events per day and serves sub-second queries on them; used by Cloudflare for analytics.
+- DuckDB is used in data notebooks for fast local analytics without spinning up a cluster.
+- Redshift, BigQuery, and Snowflake are the major cloud data warehouses; all use columnar storage with vectorised execution.
+
+## Common misconceptions
+
+- **"Columnar means no transactions."** Columnar stores can support ACID; ClickHouse supports deduplication and atomic inserts. But their optimisation target is read throughput, not transactional write latency.
+- **"Parquet is a database."** Parquet is a storage format — it defines how data is laid out in a file. Query engines (Spark, DuckDB, Trino) interpret it; there's no Parquet server.
+
+## Learn next
+
+Columnar stores are the storage layer of [data warehouses](/t/data-warehouse) and analytical platforms. [Vector databases](/t/vector-database) are a related specialised store for similarity search. [B-tree indexing](/t/b-tree) is the comparison case — why B-trees work for OLTP but not OLAP.

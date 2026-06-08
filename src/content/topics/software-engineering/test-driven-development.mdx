@@ -1,0 +1,65 @@
+---
+title: Test-Driven Development
+aliases: ["TDD", "red-green-refactor", "test first development"]
+category: software-engineering
+kind: concept
+summary: A development practice where you write a failing test before writing any production code — driving design through tests and ensuring every feature is covered, with the red-green-refactor cycle as the rhythm of work.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["testing", "software-engineering", "practice", "quality"]
+prerequisites: ["testing", "refactoring"]
+related: ["domain-driven-design", "debugging", "formal-methods"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normal development: write code, then write tests (if you have time). TDD reverses this: write a test that fails (red), write the minimum code to make it pass (green), then refactor the code to be clean while keeping tests green. Repeat. The discipline forces you to think about the interface and behaviour *before* the implementation, resulting in naturally testable code and a complete test suite — because every feature was written to satisfy a test.
+
+## More detail
+
+**The TDD cycle:**
+1. **Red** — write a small test for the next unit of behaviour. Run it; it fails (possibly doesn't even compile). This confirms the test is actually testing something new.
+2. **Green** — write the *minimum* code to make the test pass. Don't worry about cleanliness. Resist the urge to generalise prematurely.
+3. **Refactor** — clean up the code: extract duplication, rename things, improve structure. Run tests after each change to ensure nothing broke. The test suite is your safety net.
+
+**What TDD produces:**
+- **Test coverage** — by definition, every behaviour was written to satisfy a test. Coverage is near-complete without any separate effort.
+- **Testable design** — code written test-first tends to have small functions, clear interfaces, and minimal hidden dependencies (because hidden dependencies make testing hard).
+- **Regression safety** — the accumulated test suite catches regressions immediately.
+- **Working documentation** — tests describe the expected behaviour of every unit.
+
+**Unit TDD vs. Acceptance TDD (ATDD / BDD):**
+- **Unit TDD** — tests operate at function/class level; fast, isolated.
+- **ATDD / BDD (Behaviour-Driven Development)** — tests are written from the user's perspective, often in a domain language (Gherkin: `Given / When / Then`). Frameworks: Cucumber, RSpec, Jest with custom matchers. Encourages collaboration between developers and product owners.
+
+**TDD with mocks:** test-first often requires stubbing dependencies (database, external APIs) so the unit under test can be exercised in isolation. Overuse of mocks creates tests that verify implementation details rather than behaviour — they break when you refactor without changing behaviour. Prefer testing through real objects where feasible.
+
+**Limits of TDD:**
+- Exploratory code (spikes) — writing tests first is unproductive when you don't know the design.
+- UI testing — difficult to test-drive visual rendering.
+- Integration and performance — TDD works best for unit-level behaviour; integration tests have a different workflow.
+
+**TDD ≠ 100% coverage:** TDD tends to produce high coverage naturally, but the goal is behaviour coverage, not line coverage. Testing every trivial getter/setter adds noise without value.
+
+## Why it matters
+
+TDD was popularised by Kent Beck as part of Extreme Programming (XP) and remains one of the most impactful engineering practices for software quality. Studies consistently find TDD reduces defect rates by 40–80% compared to test-after development. More importantly, it changes the *design* of code: test-first code tends to be more modular, have fewer dependencies, and be easier to change. Teams that practise TDD spend less time debugging. It is the primary practice that ensures test suites exist and are maintained.
+
+## Real-world examples
+
+- Google's "Testing on the Toilet" programme advocates for TDD across engineering teams; Google's engineering guide mandates high test coverage.
+- The Django web framework was developed largely with TDD; its own test suite is extensive.
+- Kent Beck built JUnit (the original xUnit test framework) to support TDD in Java; the xUnit pattern is now in every language.
+- Open-source projects using TDD: Ruby on Rails, most popular Python libraries, Linux kernel's KUnit (C unit tests).
+
+## Common misconceptions
+
+- **"TDD means writing tests for everything."** TDD is about writing tests *before* code, for behaviour that matters. Trivial getters don't need tests; business logic does.
+- **"TDD slows you down."** TDD adds ~15–30% time upfront and saves it later in debugging and regression fixes. For complex, long-lived codebases, it is net-positive.
+
+## Learn next
+
+TDD is one technique in a broader [software testing](/t/software-testing) approach. [Refactoring](/t/refactoring) is the "refactor" step of TDD — done safely under the test suite. [Domain-driven design](/t/domain-driven-design) complements TDD by providing a vocabulary and structure for what to test.

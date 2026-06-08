@@ -1,0 +1,103 @@
+---
+title: Progressive Web App
+aliases: ["PWA", "service worker", "web manifest", "installable web app", "offline web app"]
+category: applications
+kind: concept
+summary: A web application enhanced with service workers and a web manifest to provide app-like capabilities — installability, offline access, push notifications, and near-native performance — without requiring an app store.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["web", "mobile", "applications", "performance"]
+prerequisites: ["web-browser", "javascript-language", "http"]
+related: ["electron", "webassembly", "edge-computing"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A website becomes a Progressive Web App when it adds two things: a **service worker** (a JavaScript background process that can intercept network requests and cache responses, enabling offline access) and a **web manifest** (a JSON file describing the app's name, icon, and how to display it when installed). Users can install the PWA to their home screen — it gets its own icon, launches without browser chrome, and works offline. No App Store required; the install prompt comes from the browser itself.
+
+## More detail
+
+**Service worker:** a JavaScript file that runs in the background as a separate thread from the web page. Key capabilities:
+- **Intercept network requests:** the service worker acts as a proxy — it can serve cached responses, fetch from network, or combine both.
+- **Caching strategies:** cache-first (offline-first), network-first, stale-while-revalidate, network-only.
+- **Background sync:** defer actions (form submissions, analytics) until the network is available.
+- **Push notifications:** receive push messages from a server even when the app is not open.
+- **Periodic background sync:** check for content updates periodically.
+
+```javascript
+// sw.js — service worker
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open('v1').then(cache => cache.addAll([
+      '/', '/app.css', '/app.js', '/offline.html'
+    ]))
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then(response =>
+      response || fetch(event.request)
+    )
+  );
+});
+```
+
+**Web App Manifest:** a JSON file (`manifest.json`) describing the app:
+```json
+{
+  "name": "My App",
+  "short_name": "App",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#2196F3",
+  "icons": [{"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"}]
+}
+```
+With `display: standalone`, the app launches full-screen without browser UI.
+
+**PWA installation:**
+- **Android (Chrome):** after visiting multiple times, Chrome shows an "Install App" banner. Installed PWA appears in the app drawer.
+- **iOS (Safari):** "Add to Home Screen" from the share sheet. iOS PWAs have limited service worker capabilities (no push notifications before iOS 16.4, limited background sync).
+- **Desktop (Chrome/Edge):** PWAs can be installed on Windows and macOS; they appear in the taskbar/dock.
+
+**Capabilities (Project Fugu):** Google's Project Fugu effort adds native-like APIs to the web:
+- File System Access API — read/write local files.
+- Web NFC, Bluetooth, USB, Serial APIs.
+- Contact picker, Shape Detection, WebCodecs.
+- Web Share API — native share sheet.
+
+**PWA vs. native app:**
+| | PWA | Native App |
+|---|---|---|
+| Distribution | URL, browser install prompt | App store |
+| Update | Instant (no app store review) | App store review (days) |
+| Offline | Service worker caching | Native caching |
+| Performance | Near-native for most tasks | Full native |
+| Access to native APIs | Limited (growing via Fugu) | Full |
+| Platform integration | Limited | Full |
+
+**PWA vs. Electron:** PWAs run in the browser (installable); Electron bundles its own browser. PWAs are lighter but have less OS integration.
+
+## Why it matters
+
+PWAs remove the App Store as a gatekeeper and distribution bottleneck. A developer can ship an "app" instantly, without Apple's 30% cut, review process, or account requirements. For developing-world markets with limited storage and expensive data, PWAs are transformative — Twitter Lite and Pinterest PWA saw 65% and 60% increases in engagement respectively after switching. Understanding PWAs is essential for web developers targeting mobile users.
+
+## Real-world examples
+
+- Twitter Lite PWA: 30% faster, 65% more pages per session, 20% fewer bounces vs. the native app on slow connections.
+- Starbucks PWA: 99.84% smaller than the iOS app (233 KB vs. 148 MB); orders on web grew 2×.
+- Google Maps Lite: a PWA for markets where the full app is too heavy.
+- Pinterest PWA: 44% lower data usage, 40% faster interactive time than native mobile site.
+
+## Common misconceptions
+
+- **"PWAs are only for mobile."** Desktop PWAs work on Windows, macOS, and ChromeOS. VS Code for the web, Google Docs, and Microsoft 365 are PWAs.
+- **"PWAs can't do everything native apps can."** For most app use cases (social, news, productivity), PWAs are sufficient. Heavy gaming, AR/VR, and hardware access remain better on native.
+
+## Learn next
+
+PWAs use [service workers](/t/javascript) (a web API) for offline support. [WebAssembly](/t/webassembly) runs high-performance code inside PWAs. [Electron](/t/electron) is an alternative for desktop-first apps that need deeper OS integration.

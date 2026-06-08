@@ -1,0 +1,76 @@
+---
+title: Pointer and Reference
+aliases: ["pointer", "reference", "dereference", "null pointer", "memory address"]
+category: programming-languages
+kind: concept
+summary: A value that stores the memory address of another value — the fundamental mechanism for indirection, dynamic memory, linked data structures, and passing large objects efficiently.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "memory", "c", "systems"]
+prerequisites: ["memory", "programming-language"]
+related: ["memory-pool", "garbage-collection", "virtual-memory"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Most values are stored somewhere in memory, and each location has an address — a number identifying it. A pointer is a variable that holds an address rather than a direct value. Following the pointer to read the value at that address is called **dereferencing**. Pointers enable dynamic memory allocation (you don't need to know the size at compile time), linked data structures (nodes pointing to each other), and efficient passing of large objects (pass the address, not a copy). They are the foundation of C and C++ programming — and the source of most memory safety bugs.
+
+## More detail
+
+**Pointer in C:**
+```c
+int x = 42;
+int *p = &x;     // p holds the address of x
+printf("%d\n", *p); // dereference p → prints 42
+*p = 99;         // modify x via p
+printf("%d\n", x);  // 99
+```
+
+**Pointer arithmetic:** `p + 1` advances the pointer by `sizeof(*p)` bytes — to the next element in an array. `p[i]` is sugar for `*(p + i)`. This enables array traversal but also buffer overflows (writing past the array end).
+
+**NULL pointer:** a pointer with value 0, indicating "points to nothing." Dereferencing NULL is undefined behaviour in C/C++ and typically causes a segmentation fault. NULL checks are the bane of C code: forgetting one causes crashes.
+
+**Dangling pointer:** a pointer to memory that has been freed. Reading/writing through a dangling pointer is undefined behaviour and a common security vulnerability (use-after-free).
+
+**Double free:** freeing the same memory twice — undefined behaviour, often exploitable for heap corruption.
+
+**Why C pointers are dangerous:** C gives you raw memory access with no bounds checking and no lifetime tracking. The programmer is responsible for ensuring pointers are valid — the language enforces nothing. Buffer overflows, use-after-free, and null dereferences are the most common C/C++ bugs and a primary source of security vulnerabilities (CVEs).
+
+**References in C++:** a reference is an alias for an existing variable — it cannot be reseated (pointed to a different object) and cannot be null. Safer than pointers for most uses.
+
+```cpp
+int x = 42;
+int& ref = x;  // ref is an alias for x
+ref = 99;      // modifies x
+```
+
+**Smart pointers (C++):** `std::unique_ptr`, `std::shared_ptr`, `std::weak_ptr` automate memory management:
+- `unique_ptr` — sole owner; memory freed when the `unique_ptr` goes out of scope. Zero overhead vs. raw pointer.
+- `shared_ptr` — reference-counted shared ownership; memory freed when last owner is gone.
+- `weak_ptr` — non-owning reference; must be promoted to `shared_ptr` before use.
+
+**Rust's ownership model:** Rust replaces raw pointers with a compile-time ownership and borrowing system. References in Rust are checked at compile time — they cannot outlive the data they point to, and you cannot have both a mutable reference and any other reference to the same data simultaneously. This eliminates use-after-free, data races, and null dereference without runtime overhead.
+
+**References in managed languages:** Java, Python, and Go have references (sometimes called pointers informally), but they're automatically managed — the GC tracks what's reachable, and you can't do pointer arithmetic. Null references still exist in Java (causing `NullPointerException`); Kotlin, Swift, and Rust use Option/Maybe types to make null-ability explicit.
+
+## Why it matters
+
+Pointers are the foundational mechanism of systems programming. Understanding them is essential for: writing C or C++ code, understanding memory layouts and performance, understanding what garbage collectors do, and reading assembly output. Even in managed languages, understanding "pass by value vs. pass by reference" (passing a pointer-sized value vs. copying) affects performance. Memory safety vulnerabilities (buffer overflow, use-after-free) — accounting for 70% of Microsoft and Chrome security bugs by their own reports — are all rooted in incorrect pointer usage.
+
+## Real-world examples
+
+- The Linux kernel is written in C; every data structure uses raw pointers. Kernel developers must manually track ownership — no GC, no Rust (historically; there is now limited Rust in the kernel).
+- Chrome's switch to Rust and MiraclePtr: Google's effort to replace C++ raw pointers with checked smart pointers in Chrome to eliminate use-after-free bugs (the #1 Chrome vulnerability class).
+- Android: Google announced that switching new Android code from C++ to Rust reduced memory safety bugs from 76% of all vulnerabilities to ~35% in two years.
+
+## Common misconceptions
+
+- **"Pointers are only in C."** C, C++, Rust, Go (unsafe blocks), Pascal, Ada, and assembly all have explicit pointers. Java and Python have references (which are pointers under the hood) but hidden behind managed interfaces.
+- **"Smart pointers have no overhead."** `unique_ptr` has zero overhead. `shared_ptr` has overhead: the reference count is on the heap, and incrementing/decrementing the count is an atomic operation (expensive in highly concurrent code).
+
+## Learn next
+
+Pointers are the mechanism behind [memory pools](/t/memory-pool) and [garbage collection](/t/garbage-collection). [Virtual memory](/t/virtual-memory) explains what the address in a pointer actually refers to. Understanding pointers is fundamental to systems programming in C, C++, and [Rust](/t/rust).

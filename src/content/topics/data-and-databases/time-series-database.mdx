@@ -1,0 +1,56 @@
+---
+title: Time-Series Database
+aliases: ["TSDB", "time series database", "InfluxDB", "Prometheus"]
+category: data-and-databases
+kind: technology
+summary: A database optimised for storing and querying sequences of timestamped values — metrics, sensor readings, financial ticks — with compression and downsampling built in for the patterns time-series data exhibits.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["databases", "monitoring", "metrics", "analytics"]
+prerequisites: ["database", "indexing"]
+related: ["columnar-store", "observability"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Server metrics, stock prices, IoT sensor readings, and application telemetry are all time-series: measurements stamped with a timestamp and a set of labels. General-purpose databases can store this, but they aren't optimised for it. Time-series databases assume data arrives in timestamp order, compress repetitive numeric sequences aggressively, and answer "what was the average CPU usage per 5-minute interval over the last 30 days?" in milliseconds rather than minutes.
+
+## More detail
+
+**Data model:** a **time series** is identified by a **metric name** and a set of **labels** (key-value tags), and stores `(timestamp, value)` pairs. Example: `{__name__="http_requests_total", method="GET", status="200"}` → `[(1717000000, 42), (1717000060, 47), ...]`.
+
+**Storage optimisations:**
+
+- **Timestamp compression** — timestamps usually arrive in monotonically increasing order with regular intervals. Delta encoding (store only the difference from the previous timestamp) then variable-length encoding reduces 8-byte timestamps to 1–2 bytes in many cases.
+- **Value compression** — floating-point metrics often change slowly (XOR encoding between successive floats exploits shared exponent bits). Prometheus uses Gorilla compression; InfluxDB uses similar approaches.
+- **Inverted index on labels** — queries like `{job="api-server", instance=~".*:8080"}` require fast label matching across millions of series. TSDBs maintain inverted indexes from label values to series IDs.
+- **Downsampling / retention** — raw 1-second metrics for 30 days are kept at full resolution; older data is rolled up to 1-minute averages, then 1-hour. Reduces storage by 60× while preserving trends.
+
+**Query languages:** PromQL (Prometheus), Flux (InfluxDB), SQL extensions (TimescaleDB on PostgreSQL).
+
+**Range queries:** TSDBs are optimised for range scans with aggregation — `rate(http_requests_total[5m])`, `avg_over_time(cpu_usage[1h])`. A relational database with a time index can do this but lacks the specialized compression and downsampling.
+
+**Products:** Prometheus (pull-based, PromQL, Kubernetes-native), InfluxDB (push-based, line protocol), TimescaleDB (PostgreSQL extension), VictoriaMetrics (Prometheus-compatible, higher compression), ClickHouse (columnar, increasingly used for long-term metric storage), OpenTSDB (HBase-backed, older).
+
+## Why it matters
+
+Every infrastructure monitoring stack, IoT platform, and financial data system generates time-series data at scale. Without specialised storage, naive relational databases run out of space or become slow under the write throughput of millions of metrics per second. Prometheus + Grafana is the de facto monitoring stack for Kubernetes and cloud infrastructure; understanding how it stores and queries data is essential for operations and SRE work.
+
+## Real-world examples
+
+- Prometheus scrapes Kubernetes pod metrics every 15 seconds; PromQL queries power Grafana dashboards.
+- InfluxDB ingests IoT sensor readings from industrial equipment — temperature, pressure, vibration — and alerts on anomalies.
+- Financial exchanges store tick data (every trade) in TSDBs for backtesting and real-time analytics.
+- Datadog, Dynatrace, and New Relic are SaaS monitoring platforms built on proprietary time-series databases.
+
+## Common misconceptions
+
+- **"PostgreSQL with a timestamp index is good enough."** For small scale, yes. At millions of writes per second and petabyte scale, the storage, compression, and query optimisations of a dedicated TSDB matter enormously.
+- **"Time-series databases are only for monitoring."** Financial tick data, genomic sequencing data, and climate observations are all time-series and use TSDBs for the same reasons.
+
+## Learn next
+
+Time-series databases are one specialised [database](/t/database) type. They are the storage layer for [observability](/t/observability) platforms. [Columnar stores](/t/columnar-store) overlap in some use cases — ClickHouse is increasingly used for both metric storage and general analytics.

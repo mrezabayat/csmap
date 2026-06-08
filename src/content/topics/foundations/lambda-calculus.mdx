@@ -1,0 +1,77 @@
+---
+title: Lambda Calculus
+aliases: ["λ-calculus", "lambda abstraction", "Church encoding", "beta reduction"]
+category: foundations
+kind: concept
+summary: A minimal formal system for expressing computation through function abstraction and application — the mathematical foundation of functional programming, type theory, and the theoretical basis for what is computable.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["foundations", "theory", "functional-programming", "computation"]
+prerequisites: ["programming-language", "type-system"]
+related: ["type-theory", "closure", "continuation", "homoiconicity"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Lambda calculus is the smallest possible programming language: just variables, function creation (λ), and function application. Despite having only three constructs, it is Turing-complete — anything computable can be expressed in lambda calculus. Alonzo Church invented it in the 1930s (the same decade Turing invented Turing machines), and the two are provably equivalent. Lambda calculus is the theoretical DNA of every functional programming language: Haskell, Lisp, ML, Erlang, and even JavaScript's functions are all implementations of lambda calculus concepts.
+
+## More detail
+
+**Syntax:** lambda calculus expressions are:
+- **Variable:** `x`, `y`, `z` — references to named values.
+- **Abstraction:** `λx.M` — a function with parameter `x` and body `M`. In JavaScript: `x => M`.
+- **Application:** `M N` — apply function `M` to argument `N`. In JavaScript: `M(N)`.
+
+That's it — the entire grammar is three rules.
+
+**Reduction rules:**
+- **β-reduction (beta):** apply a function: `(λx.M) N → M[x:=N]` — substitute N for all free occurrences of x in M.
+  - Example: `(λx. x + 1) 5 → 5 + 1 → 6`
+- **α-conversion (alpha):** rename bound variables to avoid capture: `λx.x ≡ λy.y`.
+- **η-reduction (eta):** `λx.(M x) ≡ M` when x is not free in M (a function that just applies M to its argument is M).
+
+**Church encodings:** numbers, booleans, and data structures can be encoded as lambda expressions:
+- **Booleans:** `TRUE = λa.λb.a` (selects first), `FALSE = λa.λb.b` (selects second).
+- **Church numerals:** `0 = λf.λx.x`, `1 = λf.λx.f x`, `2 = λf.λx.f(f x)` — n applies f to x n times.
+- **Pairs:** `PAIR = λx.λy.λf.f x y`, `FST = λp.p TRUE`, `SND = λp.p FALSE`.
+
+**Fixed-point combinator (Y combinator):** the Y combinator enables recursion in lambda calculus without named functions:
+`Y = λf.(λx.f(x x))(λx.f(x x))`
+`Y f → f (Y f)` — applying Y to f produces a fixed point: the value v such that `f v = v`. This is how recursive functions are defined without self-reference. YC Combinator's name references this.
+
+**Simply typed lambda calculus (STLC):** adding types to lambda calculus: each variable and expression has a type; functions have type `A → B`. β-reduction preserves types (subject reduction). STLC is the foundation of ML's type system.
+
+**Curry-Howard correspondence:** a profound connection between lambda calculus and logic:
+- Lambda terms ↔ proofs.
+- Types ↔ propositions.
+- A function of type `A → B` is simultaneously a proof that "A implies B."
+- β-reduction ↔ proof simplification.
+This connection underpins proof assistants (Coq, Lean) and dependently typed languages.
+
+**Relation to real languages:**
+- Scheme/Lisp — near-literal lambda calculus notation. `(lambda (x) (+ x 1))`.
+- Haskell — functions are lambda abstractions; currying, pattern matching, and type inference are extensions of STLC.
+- JavaScript — `x => x + 1` is a lambda abstraction.
+
+## Why it matters
+
+Lambda calculus is the theoretical foundation of programming language theory. Understanding it illuminates: why functions are values (λ-abstractions), why closures capture variables (free variables in λ-terms), what type inference does (solving typing constraints in STLC), and why continuations and monads work (denotational semantics in terms of lambda calculus). For anyone working in programming language design, type theory, formal verification, or advanced functional programming, lambda calculus is the common language.
+
+## Real-world examples
+
+- JavaScript's arrow functions are lambda abstractions; the `=>` syntax is deliberate.
+- Haskell is a direct implementation of a typed lambda calculus with monadic I/O and lazy evaluation.
+- The V8 engine's intermediate representation (Turbofan IR) is essentially a typed lambda calculus.
+- Coq proofs are lambda terms; the Curry-Howard correspondence means proof checking is type checking.
+
+## Common misconceptions
+
+- **"Lambda calculus is just λ syntax in programming."** Lambda calculus is a formal mathematical system. Using `lambda` or `=>` in Python/JavaScript doesn't mean you're writing lambda calculus — though those constructs implement the same idea.
+- **"Lambda calculus is impractical."** It is the theoretical underpinning of Haskell (one of the most correct languages ever designed) and is used practically in compiler IR, proof assistants, and type theory research.
+
+## Learn next
+
+Lambda calculus is the foundation of [type theory](/t/type-theory) (typed lambda calculi) and explains [closures](/t/closure) (capturing free variables), [continuations](/t/continuation) (CPS in lambda calculus), and [homoiconicity](/t/homoiconicity) (code-as-data in Lisp). [Formal verification](/t/formal-verification) tools like Coq are built on dependent type theory, an extension of typed lambda calculus.

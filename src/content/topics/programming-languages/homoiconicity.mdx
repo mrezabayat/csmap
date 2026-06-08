@@ -1,0 +1,79 @@
+---
+title: Homoiconicity
+aliases: ["code as data", "homoiconic", "lisp macros", "macro system"]
+category: programming-languages
+kind: concept
+summary: A language property where code and data share the same representation — allowing programs to treat code as data structures, manipulate it programmatically, and generate new code at compile time through macros.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "lisp", "macros", "metaprogramming"]
+prerequisites: ["programming-language", "closure"]
+related: ["lisp", "continuation", "lambda-calculus"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In most languages, code is text and data is structured values — completely different things. In a homoiconic language (primarily Lisps), code *is* data: a function call `(+ 1 2)` is literally a list `[+, 1, 2]` in memory. Because code is a data structure, programs can manipulate, construct, and generate code using the same operations they use for any data. This enables macros that run at compile time and transform code — implementing entirely new language constructs without any compiler changes.
+
+## More detail
+
+**The Lisp representation:** in Lisp, everything is an s-expression (symbolic expression) — either an atom (number, symbol, string) or a list of s-expressions. The program `(+ 1 (* 2 3))` is parsed into the list `[+, 1, [*, 2, 3]]` — a tree of atoms and lists. The Lisp `eval` function evaluates any such structure as code. Because code and data are both lists, code can be constructed, modified, and evaluated just like any list.
+
+**Macros in Lisp (Scheme, Common Lisp, Clojure, Racket):**
+Lisp macros are functions that run at compile time, receiving the unevaluated source code as data (a list) and returning transformed code (another list) that the compiler then evaluates.
+
+```lisp
+;; Define a macro that swaps two variables
+(defmacro swap! (a b)
+  `(let ((tmp ,a))      ; backtick = quasi-quote (template)
+     (setf ,a ,b)       ; comma = unquote (substitute value)
+     (setf ,b tmp)))
+
+(swap! x y)  ; expands to: (let ((tmp x)) (setf x y) (setf y tmp))
+```
+
+`swap!` doesn't exist as a function in the language — it's a macro that the compiler expands before evaluation. The programmer added a new syntactic form to the language.
+
+**What you can build with Lisp macros:**
+- **New control flow:** `(while condition body)` can be defined as a macro in terms of `loop` and `cond`.
+- **DSLs (Domain-Specific Languages):** Clojure's `core.async` implements CSP-style channels and `go` blocks as a macro. Clojure's `hiccup` DSL for HTML is a macro.
+- **Pattern matching:** Common Lisp's `match` library, Racket's `syntax-rules`.
+- **Test frameworks:** Clojure's `clojure.test` `deftest` and `is` are macros.
+
+**Macros vs. functions:** functions receive *evaluated* arguments; macros receive *unevaluated* code. A function `(if-then func a b)` evaluates both `a` and `b` before `func` can decide — preventing short-circuit. A macro `(if-then macro a b)` receives the code for `a` and `b` and can choose to evaluate only one.
+
+**Hygiene:** "unhygienic" macros can accidentally capture variable names from the macro expansion in the caller's scope (and vice versa). Scheme's `syntax-rules` provides **hygienic macros** that automatically rename variables to avoid capture. Common Lisp and Clojure have unhygienic (but more powerful) `defmacro`.
+
+**Other homoiconic languages:**
+- **Clojure** — Lisp on the JVM; extensive macro system. `->` (threading macro), `defmulti`, `core.async` are all macros.
+- **Julia** — macros are not purely homoiconic but expressions are first-class AST objects; `@macro` syntax runs at parse time.
+- **Elixir** — macros transform AST nodes; `use`, `import`, `defmacro`.
+
+**Contrast with non-homoiconic metaprogramming:**
+- C preprocessor `#define` — textual substitution, not AST-aware. Fragile (no hygiene).
+- Rust `macro_rules!` — pattern-matching on token trees; more structured than C but not full homoiconicity.
+- Template metaprogramming (C++) — Turing-complete but accidental, operating at the type level.
+- Python `ast` module — lets you programmatically manipulate Python ASTs, but is not idiomatic.
+
+## Why it matters
+
+Homoiconicity and Lisp macros are the most powerful metaprogramming mechanism in widespread use. They allow programmers to extend the language with new constructs that look native — creating DSLs, eliminating boilerplate, and expressing domain concepts directly. The distinction between language features and user-defined macros disappears. Understanding homoiconicity explains why Lisp programmers view their macro system as qualitatively different from C preprocessor macros or Python decorators, and why many language features in Clojure (channels, pattern matching, test frameworks) are libraries rather than compiler built-ins.
+
+## Real-world examples
+
+- Clojure's `core.async` `go` macro transforms sequential-looking channel code into a state machine at compile time — no runtime support needed.
+- Racket is used as a "language laboratory": entire new languages (Typed Racket, Pyret, PLAI) are implemented as Racket macros.
+- LFE (Lisp Flavoured Erlang) compiles Lisp macros to BEAM bytecode.
+- hy — a Lisp embedded in Python: hy code compiles to Python ASTs.
+
+## Common misconceptions
+
+- **"Macros are the same as functions."** Macros run at compile time on unevaluated code; functions run at runtime on evaluated values. Different phase, different power.
+- **"Lisp macros and C preprocessor macros are similar."** C `#define` is textual substitution — no knowledge of syntax, no hygiene, no AST access. Lisp macros operate on structured code and can perform arbitrary computation.
+
+## Learn next
+
+Homoiconicity is most important in [Lisp](/t/lisp) and its descendants. It is grounded in [lambda calculus](/t/lambda-calculus) (the s-expression is the lambda calculus notation made concrete). [Continuations](/t/continuation) and homoiconicity together explain why Scheme is the most studied language in programming language theory.

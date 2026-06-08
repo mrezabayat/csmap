@@ -1,0 +1,74 @@
+---
+title: Regular Expression
+aliases: ["regex", "regexp", "finite automaton", "pattern matching"]
+category: foundations
+kind: concept
+summary: A formal notation for describing patterns in text — based on the theory of finite automata and regular languages, implemented in every programming language for string matching, validation, and parsing.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["foundations", "text-processing", "theory", "programming"]
+prerequisites: ["set-theory", "boolean-logic"]
+related: ["type-theory", "lambda-calculus"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A regular expression is a concise pattern that describes a set of strings. `/^\d{3}-\d{4}$/` describes phone numbers like "555-1234." Every programming language has regex built in for searching, validating, and extracting text. Behind the notation lies a beautiful theory: every regex corresponds to a finite automaton (a state machine), and the two are provably equivalent — you can convert one to the other mechanically. This theory determines what regexes *can* and *cannot* do.
+
+## More detail
+
+**The formal language hierarchy (Chomsky hierarchy):**
+- **Regular languages** — recognised by finite automata, described by regular expressions. Examples: valid email format (simplified), phone numbers, identifiers, keywords.
+- **Context-free languages** — recognised by pushdown automata, described by context-free grammars. Examples: balanced parentheses, arithmetic expressions, most programming language syntax. Regular expressions *cannot* match balanced parentheses (they can't count).
+- **Context-sensitive and recursively enumerable** — more powerful; Turing machines.
+
+**Core regex operators:**
+- **Concatenation:** `ab` — `a` followed by `b`.
+- **Alternation:** `a|b` — `a` or `b`.
+- **Kleene star:** `a*` — zero or more `a`s.
+- **Plus:** `a+` — one or more (sugar for `aa*`).
+- **Optional:** `a?` — zero or one `a`.
+- **Character classes:** `[abc]`, `[a-z]`, `\d` (digit), `\w` (word char), `.` (any).
+- **Anchors:** `^` (start), `$` (end), `\b` (word boundary).
+- **Quantifiers:** `{n}`, `{n,}`, `{n,m}`.
+- **Groups:** `(abc)` — capture group; `(?:abc)` — non-capturing.
+
+**Finite automata:**
+- **NFA (Nondeterministic Finite Automaton):** each regex is converted to an NFA by Thompson's construction. NFAs can be in multiple states simultaneously; a string is accepted if any path through the NFA accepts it.
+- **DFA (Deterministic Finite Automaton):** each state has exactly one transition per input symbol. DFAs execute in O(n) time for strings of length n. Every NFA can be converted to a DFA (subset construction), though the DFA may have exponentially more states.
+- **RE → NFA → DFA** is the classic compilation pipeline for regex engines.
+
+**Regex engine strategies:**
+- **DFA-based (RE2, Rust regex, GNU grep):** convert regex to DFA at compile time; match in O(n) time regardless of regex complexity. Cannot support backreferences (which are not regular).
+- **Backtracking (PCRE, Python `re`, JavaScript):** NFAs with backtracking; can support backreferences and lookaheads; worst-case O(2^n) for pathological patterns (ReDoS attacks). `/^(a+)+$/` against "aaaaaab" causes exponential backtracking.
+
+**ReDoS (Regular Expression Denial of Service):** an evil input that causes a backtracking engine to explore exponentially many paths — crashing or hanging the server. Cloudflare was taken down for 27 minutes in 2019 by a ReDoS in a WAF regex. Use DFA-based engines (RE2) for untrusted inputs.
+
+**What regex cannot do:**
+- Matching balanced parentheses: `(((abc)))` with arbitrary nesting depth — requires a stack (pushdown automaton), not just states.
+- Parsing HTML, XML, or most programming languages — context-free, not regular. (The "don't parse HTML with regex" meme is grounded in this formal fact.)
+
+**POSIX vs. Perl-compatible regex (PCRE):** POSIX regexes are a standardised subset; PCRE adds lookahead/behind, backreferences, named groups, and more. Most modern languages implement PCRE-like semantics.
+
+## Why it matters
+
+Regular expressions are one of the most universally used programming tools — text search, input validation, log parsing, code generation, and protocol parsing all rely on them. Understanding the theory clarifies: why certain patterns are possible and others are not, why ReDoS is a real security risk, when to use a parser instead of a regex, and why some regex engines are safer than others. They also serve as a concrete entry point to formal language theory.
+
+## Real-world examples
+
+- grep, sed, awk: Unix text tools built around POSIX regular expressions — used in billions of shell scripts.
+- Nginx and Apache: routing rules use regex; ReDoS in routing has caused outages.
+- VS Code's find/replace: PCRE regex with capture groups for code refactoring.
+- Email validation regex: the "correct" RFC 5321-compliant email regex has thousands of characters; regex is technically correct for validation but impractical (use a library).
+
+## Common misconceptions
+
+- **"Regex can parse anything."** Regular expressions can only describe regular languages. HTML, XML, JSON, and most programming languages are context-free and require a proper parser.
+- **"Regex is always fast."** Backtracking engines have exponential worst-case complexity. DFA-based engines (RE2, Rust's regex crate) guarantee O(n) but don't support all PCRE features.
+
+## Learn next
+
+Regular expressions are the simplest level of the formal language hierarchy, above which lie context-free grammars and parsing. They connect to [set theory](/t/set-theory) (regular languages are closed under union, intersection, and complement) and [boolean logic](/t/boolean-logic) (automata transitions are boolean predicates). [Type theory](/t/type-theory) uses regular and context-free grammars in the design of type systems.

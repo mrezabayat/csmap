@@ -1,0 +1,53 @@
+---
+title: Perceptron
+aliases: ["single-layer perceptron", "linear classifier"]
+category: artificial-intelligence
+kind: concept
+summary: The original artificial neuron — a single unit that takes weighted inputs, applies a threshold, and outputs a binary decision. The simplest learnable classifier and the ancestor of modern neural networks.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["machine-learning", "neural-networks", "history", "classification"]
+prerequisites: ["machine-learning"]
+related: ["supervised-learning", "gradient-descent"]
+nextSteps: ["neural-network"]
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A perceptron is the simplest possible "neuron": it takes several numbers as inputs, multiplies each by a weight, adds them up, and if the sum exceeds a threshold it outputs 1 (yes), otherwise 0 (no). Given labelled examples it can adjust its own weights — that is, it can *learn*. It is the conceptual atom of every neural network, and understanding it makes the whole field legible.
+
+## More detail
+
+Formally, for inputs `x₁, …, xₙ` with weights `w₁, …, wₙ` and bias `b`:
+
+```
+output = 1  if  w₁x₁ + w₂x₂ + … + wₙxₙ + b > 0
+          0  otherwise
+```
+
+The **perceptron learning rule** adjusts weights after each misclassification: if the output should be 1 but was 0, increase the weights of active inputs; if it should be 0 but was 1, decrease them. Rosenblatt (1958) proved the **perceptron convergence theorem**: if the data is *linearly separable*, the algorithm is guaranteed to find a solution in finite steps.
+
+The critical limitation: a single perceptron can only learn a **linear decision boundary** — a straight line (in 2D), a plane (3D), or a hyperplane in higher dimensions. Problems like XOR — where no straight line separates the classes — cannot be solved. Minsky and Papert's 1969 analysis of this limitation caused the first "AI winter", until multi-layer networks and backpropagation revived the field.
+
+A modern neural network is a **multi-layer perceptron (MLP)**: many perceptrons stacked in layers, with non-linear activation functions replacing the hard threshold. Crucially, swapping the step function for sigmoid or ReLU makes the whole network differentiable, enabling [gradient descent](/t/gradient-descent) via [backpropagation](/t/backpropagation).
+
+## Why it matters
+
+The perceptron is the first model where a machine learned a rule from data rather than being given one explicitly. That idea — adjust weights to minimise error — is the core of all supervised learning. Understanding the perceptron clarifies why [neural networks](/t/neural-network) need multiple layers (to compose linear boundaries into curves), what activation functions are for (making the composition non-trivial), and what "learning" concretely means.
+
+## Real-world examples
+
+- Email spam filters have used perceptron-style linear classifiers over word-count features.
+- The AdaGrad and SGD optimisers that train deep models are generalisations of the perceptron update rule.
+- Support Vector Machines (SVMs) learn a different kind of linear boundary with a wider margin — a direct descendant of the perceptron idea.
+
+## Common misconceptions
+
+- **"The perceptron was proven useless."** Minsky and Papert showed a *single* perceptron is limited; they explicitly noted that multi-layer networks could overcome this. The proof was misread as a death sentence for the whole approach.
+- **"Modern neurons are perceptrons."** Modern neurons use smooth activations (ReLU, GELU) rather than a hard step function, and are trained with backpropagation rather than the perceptron rule — related but distinct.
+
+## Learn next
+
+Add layers and a smooth activation function and you get a full [neural network](/t/neural-network). Add [backpropagation](/t/backpropagation) and you can train it. That is the leap from the perceptron to modern deep learning.

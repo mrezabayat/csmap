@@ -1,0 +1,63 @@
+---
+title: CRDT
+aliases: ["conflict-free replicated data type", "convergent replicated data type"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: A data structure designed so that any two replicas can be merged in any order and still arrive at the same result — enabling eventual consistency without coordination.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "consistency", "replication", "data-structures"]
+prerequisites: ["eventual-consistency", "replication"]
+related: ["gossip-protocol", "cap-theorem"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When two servers concurrently update the same data and then sync, there's a conflict: whose value wins? CRDTs sidestep the conflict entirely by designing the data type so that **any two updates can always be merged**, commutatively and associatively, with the same result. No coordination needed; just apply all updates in any order and the replicas converge. A simple example: a grow-only counter where every increment is just added — you can merge two lists of increments in any order and always get the same total.
+
+## More detail
+
+A CRDT is formally a join-semilattice: there is a partial order on states, a merge operation (join, `⊔`) that is commutative, associative, and idempotent (`x ⊔ x = x`), and every sequence of merges monotonically advances up the lattice toward a unique maximum. Two categories:
+
+**State-based CRDTs (CvRDTs):** replicas exchange full or partial state; merge is defined as the join. The receiving replica applies `state = state ⊔ received_state`.
+
+**Operation-based CRDTs (CmRDTs):** replicas broadcast operations (rather than state); the operation must be designed to be commutative. Requires the communication layer to guarantee each operation is delivered at least once.
+
+Common CRDTs and what they enable:
+
+| CRDT | Operations | Use case |
+|------|-----------|----------|
+| G-Counter | increment | distributed counters (view counts) |
+| PN-Counter | increment, decrement | shopping-cart item quantities |
+| G-Set | add | tag sets |
+| 2P-Set | add, remove (no re-add) | simple tombstone sets |
+| LWW-Element-Set | add, remove with timestamps | last-write-wins element sets |
+| OR-Set (Observed-Remove) | add, remove freely | collaborative editing, shopping carts |
+| RGA / LSEQ | insert, delete (at position) | collaborative text editing |
+
+**Collaborative text editors** (Google Docs, Notion) use sequence CRDTs (RGA, LSEQ, Logoot) to let two users simultaneously insert text at different positions and converge to the same document without a server round-trip.
+
+**Tradeoffs:** CRDTs guarantee convergence but not immediate consistency. They can consume more memory (OR-Set tombstones, causal metadata) and are limited to a fixed set of supported operations — arbitrary business logic cannot be CRDT-ified.
+
+## Why it matters
+
+CRDTs make eventual consistency safe — not just "eventually the same" but mathematically guaranteed to be the same. They enable offline-first applications (sync when reconnected), collaborative editing without a central server, and leaderless replication without merge conflicts. Riak, Redis (some types), Apple Notes, Figma's multiplayer layer, and Yjs (the most popular collaborative-editing CRDT library) all use CRDTs.
+
+## Real-world examples
+
+- **Riak** database offers CRDT counters, sets, maps, and registers as first-class types.
+- **Redis** cluster counters and HyperLogLogs use CRDT-like merge semantics.
+- **Yjs** and **Automerge** are JavaScript CRDT libraries powering collaborative editing in web apps.
+- Apple's **CloudKit** uses CRDTs for conflict-free sync of Notes and Reminders across devices.
+
+## Common misconceptions
+
+- **"CRDTs solve all distributed consistency problems."** They solve merge conflicts for supported operations. Business logic that requires coordination (e.g. "don't allow negative inventory") cannot be CRDT-ified without additional mechanisms.
+- **"CRDTs are a new idea."** The formal theory was published in 2011 by Shapiro et al., but the ideas were implicit in Dynamo's vector clock designs and DNS's conflict resolution much earlier.
+
+## Learn next
+
+CRDTs are the data-type layer of [eventual consistency](/t/eventual-consistency). They spread via [gossip protocols](/t/gossip-protocol). They exist in contrast to strongly-consistent coordination via [Raft](/t/raft) or [Paxos](/t/paxos) — the [CAP theorem](/t/cap-theorem) frames why you'd choose one over the other.

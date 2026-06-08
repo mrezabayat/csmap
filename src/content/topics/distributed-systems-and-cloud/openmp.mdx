@@ -1,0 +1,68 @@
+---
+title: OpenMP
+aliases: ["Open Multi-Processing", "shared memory parallelism"]
+category: distributed-systems-and-cloud
+kind: technology
+summary: A set of compiler directives and library routines for shared-memory parallelism in C, C++, and Fortran — add a pragma above a loop and the compiler parallelises it across all cores on one machine.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["parallel-computing", "shared-memory", "hpc", "c-cpp"]
+prerequisites: ["thread", "process"]
+related: ["mpi-basics", "simd"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+OpenMP makes it almost trivial to parallelise a loop in C or Fortran: add `#pragma omp parallel for` above a for loop, compile with `-fopenmp`, and the compiler automatically spawns one thread per core and divides the loop iterations among them. No mutexes, no thread creation code, no work queue — just the pragma. For compute-bound loops over independent iterations, this can achieve near-linear speedup with two lines of change.
+
+## More detail
+
+OpenMP is a directive-based extension: the compiler sees the pragmas and generates the threading code; a non-OpenMP compiler sees them as comments and compiles serial code. This portability is intentional.
+
+**Core constructs:**
+
+```c
+#pragma omp parallel for reduction(+:sum)
+for (int i = 0; i < N; i++) {
+    sum += a[i] * b[i];   // dot product, parallelised
+}
+```
+
+- `parallel` — fork a team of threads; join at the end of the block.
+- `for` — distribute loop iterations across the team (requires no loop-carried dependencies).
+- `reduction(+:sum)` — each thread accumulates into a private copy of `sum`; copies are combined at the end.
+- `private(x)` — each thread gets its own copy of `x`.
+- `shared(y)` — all threads share `y` (the default); reads are fine, concurrent writes need synchronisation.
+- `critical` — a mutex-protected section; all threads may execute it, one at a time.
+- `atomic` — cheaper than `critical` for simple operations (`x++`, `x += v`).
+
+**Scheduling:** `schedule(static)` divides iterations evenly upfront; `schedule(dynamic)` steals chunks as threads finish — better for irregular-cost iterations.
+
+**Task parallelism:** `#pragma omp task` creates an explicit task (useful for recursive or graph-structured work like tree traversal that doesn't fit a parallel for loop).
+
+**SIMD integration:** `#pragma omp simd` hints that a loop should be vectorised with SIMD in addition to thread-level parallelism. Combined with `-march=avx2`, this can exploit both thread and data parallelism.
+
+OpenMP is typically combined with [MPI](/t/mpi-basics) in hybrid programs: OpenMP parallelises across cores on one node; MPI parallelises across nodes.
+
+## Why it matters
+
+OpenMP reduces the barrier to exploiting shared-memory parallelism from "implement a thread pool" to "add a pragma". For scientific computing, simulations, image processing, and data-parallel workloads on multi-core machines, it produces substantial speedup with minimal code change. It is the starting point for performance-critical C/C++/Fortran code on any multi-core system, and the shared-memory parallel programming model most scientists learn first.
+
+## Real-world examples
+
+- **GROMACS** molecular dynamics simulator uses OpenMP for within-node parallelism alongside MPI for between-node.
+- GCC and Clang both support OpenMP; `-fopenmp` is a one-flag change.
+- **FFTW** (the fast Fourier transform library used everywhere) supports OpenMP for threaded transforms.
+- NumPy's BLAS backend (OpenBLAS, MKL) uses OpenMP threads internally for matrix operations.
+
+## Common misconceptions
+
+- **"OpenMP scales to multiple machines."** OpenMP is **shared-memory only** — all threads share one address space. For multi-node scaling, use [MPI](/t/mpi-basics).
+- **"Just add the pragma and it gets faster."** Only if iterations are independent (no loop-carried dependencies) and work is compute-bound rather than memory-bound. Parallelising a memory-bandwidth-limited loop across 16 cores does nothing if RAM is the bottleneck.
+
+## Learn next
+
+OpenMP handles shared-memory parallelism within a node; [MPI](/t/mpi-basics) handles distributed-memory parallelism across nodes. For maximum performance on SIMD-capable hardware, combine OpenMP with explicit [SIMD intrinsics](/t/simd-intrinsics) to exploit both thread-level and data-level parallelism.

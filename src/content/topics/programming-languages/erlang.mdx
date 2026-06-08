@@ -1,0 +1,68 @@
+---
+title: Erlang
+aliases: ["Erlang/OTP", "BEAM", "actor model", "Elixir", "OTP"]
+category: programming-languages
+kind: technology
+summary: A functional language designed by Ericsson for fault-tolerant, distributed telephony systems — pioneering lightweight processes, message passing, and "let it crash" fault tolerance, now foundational to Elixir and modern distributed systems.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["programming-languages", "distributed-systems", "functional", "concurrency"]
+prerequisites: ["programming-language", "actor-model", "thread"]
+related: ["distributed-system"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Erlang was built by Ericsson in the 1980s to run telephone switches that must never go down — 99.9999999% uptime (nine nines). Its solution: millions of tiny, isolated processes that communicate only by message passing, each with a supervisor that restarts it on failure. A bug in one call's process crashes just that process; the supervisor restarts it; the caller gets an error response; the switch keeps running. This "let it crash" philosophy and its actor-based concurrency model became enormously influential in distributed systems design.
+
+## More detail
+
+**The BEAM virtual machine:** Erlang runs on BEAM (Bogdan's Erlang Abstract Machine), a virtual machine designed for massive concurrency. Key properties:
+- **Lightweight processes:** not OS threads — BEAM processes are ~300 bytes, and BEAM schedules millions of them across OS threads using a work-stealing scheduler. Each process has its own heap and stack.
+- **Preemptive scheduling:** BEAM processes are scheduled by "reduction count" (approximately one reduction per function call). No process can starve others; each gets a fair time slice.
+- **Soft real-time:** BEAM provides predictable latency by interrupting any process after its reduction quota regardless of what it's doing.
+
+**Message passing:** processes communicate only by sending immutable messages to each other's mailbox. There is no shared memory between BEAM processes — no locks, no data races. Sending a message is `Pid ! Message`. Receiving uses pattern matching:
+```erlang
+receive
+  {hello, Name} -> io:format("Hello, ~s~n", [Name]);
+  stop           -> exit(normal)
+end.
+```
+
+**OTP (Open Telecom Platform):** a framework of design patterns and behaviours for building robust Erlang systems. Key behaviours:
+- **`gen_server`** — a generic server (request-response process). Implements common patterns (state machine, message handling) with built-in tracing and monitoring.
+- **`supervisor`** — monitors child processes and restarts them when they crash. Supervision trees define restart strategies (one-for-one, rest-for-one, one-for-all).
+- **`gen_statem`** — a state machine behaviour.
+- **`application`** — a self-contained component with start/stop lifecycle.
+
+**"Let it crash":** rather than defensive programming (handling every possible error), Erlang encourages minimal error handling in the happy path and letting processes crash on unexpected input. Supervisors handle the restart. This results in simpler code and more reliable systems than trying to recover from every conceivable error in-place.
+
+**Hot code loading:** Erlang supports replacing running code without stopping the system — critical for telephony switches that cannot be rebooted. The BEAM VM manages two versions of a module simultaneously during upgrades.
+
+**Elixir:** a modern language built on BEAM, with Ruby-like syntax, Phoenix (web framework), LiveView (real-time server-rendered UI), and Ecto (database library). Elixir compiles to BEAM bytecode; all OTP patterns apply. Elixir has largely superseded Erlang for new projects.
+
+**WhatsApp:** at acquisition (2014), ran 450 million users on 52 engineers — the most extreme Erlang success story. Two million TCP connections per server, BEAM handling the concurrency.
+
+## Why it matters
+
+Erlang/OTP invented practical actor-model programming, pioneered "let it crash" fault tolerance, and demonstrated that millions of concurrent lightweight processes are achievable. Its influence is pervasive: Akka (Scala/Java) is inspired by OTP; Elixir brings these ideas to a mainstream syntax; Go's goroutines and channels are conceptually similar; Phoenix LiveView influenced React Server Components. Understanding Erlang/OTP explains why message-passing concurrency is preferred over shared-memory concurrency in distributed systems.
+
+## Real-world examples
+
+- WhatsApp used Erlang for messaging backend; 1 million connections per BEAM server.
+- Ericsson AXD 301 ATM switch: 99.9999999% uptime with Erlang/OTP.
+- Discord moved from Go to Elixir (BEAM) for its messaging infrastructure; handles 5+ million concurrent users.
+- RabbitMQ (message broker) is written in Erlang; used by Stripe, Reddit, and major cloud providers.
+
+## Common misconceptions
+
+- **"Erlang is only for telecom."** WhatsApp, Discord, Ericsson, Pinterest, and Bet365 (UK gambling platform) use Erlang/Elixir for anything requiring massive concurrency and high availability.
+- **"BEAM processes are like OS threads."** BEAM processes are ~1000× lighter than OS threads — you can run millions on a single machine where OS threads would exhaust memory.
+
+## Learn next
+
+Erlang's concurrency model is the [actor model](/t/actor-model). Elixir (not currently a topic) is its modern successor. [Distributed systems](/t/distributed-system) concepts (fault tolerance, consistency) are implemented in OTP patterns. [Continuation](/t/continuation)-based coroutines in other languages solve similar problems differently.

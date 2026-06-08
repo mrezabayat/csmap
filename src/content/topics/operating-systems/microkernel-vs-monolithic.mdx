@@ -1,0 +1,58 @@
+---
+title: Microkernel vs Monolithic Kernel
+aliases: ["microkernel", "monolithic kernel", "kernel architecture", "hybrid kernel"]
+category: operating-systems
+kind: concept
+summary: The central design trade-off in operating system kernels — whether OS services run in privileged kernel space (monolithic) or as isolated user-space servers (microkernel), with different reliability, performance, and security implications.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operating-systems", "kernel", "architecture", "design"]
+prerequisites: ["operating-system", "process", "virtual-memory"]
+related: ["sandbox", "real-time-os", "capability-based-security"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A monolithic kernel (Linux, traditional Unix) puts everything in one giant privileged program: file systems, device drivers, networking, memory management — all running in kernel space with direct access to hardware. Fast, but a bug in one driver can crash the whole system. A microkernel (seL4, Mach, QNX) keeps the kernel tiny — just scheduling, message passing, and memory management — and runs everything else as user-space servers. More robust: a crashing file system driver doesn't take down the OS. The trade-off: inter-process messages replace direct function calls, which historically made microkernels slower.
+
+## More detail
+
+**Monolithic kernel:**
+All OS services — VFS, device drivers, networking stack, IPC, scheduler — are compiled into one binary running in ring 0. Kernel code calls other kernel code directly (C function calls). Advantages: speed (no message-passing overhead), easy state sharing, decades of optimisation (Linux). Disadvantages: a bug anywhere crashes the kernel (kernel panic); device drivers are a leading source of crashes; the kernel attack surface is enormous (millions of lines of C).
+
+**Microkernel:**
+The kernel provides only four things: address spaces (virtual memory), threads, IPC (message passing), and basic scheduling. Everything else — file systems, network drivers, device drivers, POSIX layer — is a separate user-space process communicating via IPC. A crashing driver is just a process crash: the OS restarts it without affecting other services.
+
+*Why microkernels were once slow:* early systems (Mach) had message-passing overhead of ~hundreds of microseconds. L4 (Liedtke 1993) showed that a microkernel could be fast enough: by redesigning the IPC mechanism, L4 got message latency to ~1 µs — 50× better than Mach. Modern microkernels (seL4, Fiasco) achieve similar performance.
+
+**Hybrid kernels:**
+Windows NT and macOS (XNU) are "hybrid" — they have a microkernel-like structure (NT's executive components, XNU's Mach layer) but run many services in kernel space for performance. This is more monolithic than microkernel in practice.
+
+**seL4:** formally verified microkernel (proof in Isabelle) — correctness and security are mathematically proved. Used in drones, automotive systems, classified computing. The verification guarantees no buffer overflows, no privilege escalation bugs in the kernel itself.
+
+**Linux modules:** Linux is monolithic but supports loadable kernel modules (LKMs) for drivers. Modules run in kernel space; a bug crashes the kernel. Some distributions enable kernel live-patching (kpatch, livepatch) to update the kernel without rebooting.
+
+**QNX:** commercial microkernel used in cars (BlackBerry QNX in GM, Ford, BMW infotainment) and medical devices. POSIX-compatible. Its reliability properties make it popular where safety matters.
+
+## Why it matters
+
+The kernel architecture determines the OS's reliability, security posture, performance, and ability to be formally verified. Linux's monolithic design makes it fast and flexible; seL4's microkernel design makes it verifiable. For embedded, safety-critical, and security-sensitive systems, the choice matters enormously. Understanding the trade-offs informs decisions about which OS to use for which workload and why Linux dominates servers while RTOSes dominate embedded systems.
+
+## Real-world examples
+
+- Linux (monolithic) runs 97% of the world's top 500 supercomputers, all Android phones, and most cloud servers.
+- seL4 (microkernel) is used in the US Air Force's drone programme and certified automotive systems.
+- QNX (microkernel) runs in 195 million vehicles.
+- Windows NT's driver model allows user-mode drivers for some device classes (UMDF); most drivers still run in kernel mode.
+
+## Common misconceptions
+
+- **"Microkernels are always slower than monolithic kernels."** Modern L4-derived microkernels (seL4, Fiasco.OC) achieve IPC latency of ~1 µs and competitive overall performance. The gap has narrowed significantly since the Mach era.
+- **"Linux is modular because it has loadable modules."** Loadable modules run in kernel space — a buggy module crashes the kernel. This is convenience, not microkernel isolation.
+
+## Learn next
+
+Kernel design connects to [operating system](/t/operating-system) fundamentals and [process](/t/process) isolation. [Capability-based security](/t/capability-based-security) is the access control model used by the most secure microkernels. [Real-time operating systems](/t/real-time-os) are often microkernel-based (QNX, seL4).

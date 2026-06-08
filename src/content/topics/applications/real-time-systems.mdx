@@ -1,0 +1,69 @@
+---
+title: Real-Time Systems
+aliases: ["real-time computing", "hard real-time", "soft real-time", "embedded real-time", "CPS"]
+category: applications
+kind: concept
+summary: Systems where the correctness of a computation depends not only on its result but on the time at which it is produced — from spacecraft flight control to live video streaming, each with different deadline strictness requirements.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["applications", "embedded", "real-time", "systems"]
+prerequisites: ["operating-system", "process", "scheduler"]
+related: ["real-time-os", "edge-computing", "distributed-system"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+In a database, a slow query is annoying but not catastrophic. In a real-time system, a computation that arrives too late is as bad as a wrong answer — sometimes worse. A flight control system that decides "turn left" 100ms too late has crashed the plane; a pacemaker that misses a beat detection has killed the patient. Real-time systems are found everywhere: not just embedded systems, but also financial trading, robotics, live video, autonomous vehicles, and gaming. They differ in how strict the deadline is.
+
+## More detail
+
+**Hard real-time:** missing any deadline is a system failure. The system must provide a mathematical proof that all tasks will meet their deadlines under the worst-case execution time (WCET) and scheduling analysis. Used in: fly-by-wire aircraft, automotive safety functions (ABS, airbag), medical devices, spacecraft.
+
+**Soft real-time:** occasional deadline misses degrade quality but are not catastrophic. Used in: streaming media (a late frame is a glitch), VoIP (late packet is packet loss), online gaming (lag), financial trading (a late order misses an opportunity but doesn't crash).
+
+**Firm real-time:** a late result is worthless and discarded (not used), but the system survives. Example: a radar tracking system that discards a stale detection but keeps functioning.
+
+**Design concerns:**
+
+*Worst-case execution time (WCET):* for hard real-time, every task must have a provable upper bound on its execution time. This means: no dynamic memory allocation (malloc has unbounded latency), no garbage collection, no system calls with unbounded latency, predictable caches. WCET analysis tools (OTAWA, aiT) statically analyse the binary to compute WCET.
+
+*Scheduling analysis:* schedulability tests (Rate-Monotonic, EDF — see RTOS) prove that a task set can meet all deadlines.
+
+*Jitter:* variation in response time. Low jitter is critical for control systems. An audio system with 1ms average latency but occasional 20ms spikes sounds terrible.
+
+*Determinism:* real-time systems prefer deterministic (predictable) execution paths. Caches introduce non-determinism (cache miss = long delay). Some hard real-time systems disable caches or use scratchpad memory (software-managed, non-caching) for determinism.
+
+**Categories of real-time applications:**
+
+*Cyber-Physical Systems (CPS):* systems where software interacts with physical processes — autonomous vehicles, industrial robots, smart grid, medical devices. The physical world doesn't wait.
+
+*Control systems:* PID controllers, motor controllers, servo loops — need predictable sampling rates (1 kHz–100 kHz) and actuator updates. A motor controller that misses its update causes oscillation or instability.
+
+*Live media (soft real-time):* WebRTC video calls, live streaming (Twitch, YouTube Live), broadcast television. Buffers absorb some jitter; heavy jitter causes glitches. Target: under 100ms glass-to-glass latency for conversational video.
+
+*Algorithmic trading (firm real-time):* a trading decision must execute within microseconds. A 1µs latency advantage at a market maker is worth millions. FPGA-based trading systems bypass the OS entirely.
+
+**Real-time in distributed systems:** coordinating real-time deadlines across networked nodes is extremely hard — network latency adds jitter. IEEE 802.1 TSN (Time-Sensitive Networking) provides hardware-level time synchronisation and traffic shaping for industrial Ethernet. AUTOSAR and IEC 61850 standardise real-time communication in automotive and power grid systems.
+
+## Why it matters
+
+Real-time constraints appear in more software than engineers often realise — game engines targeting 60 fps have a 16.7ms budget per frame; mobile apps must respond to touch within 100ms for the UI to feel instant; payment systems must settle trades within exchange windows. Understanding real-time constraints helps explain why real-time OS is used in embedded systems, why garbage-collected languages are avoided in game engines, and why latency SLOs matter.
+
+## Real-world examples
+
+- Boeing 737 MAX: the MCAS flight control system — a hard real-time system — had a software fault that contributed to two fatal crashes.
+- Tesla Autopilot: runs on a hard real-time subsystem (CAN bus + STM32 microcontrollers) for braking and steering; the AI vision system runs on a separate non-real-time SoC.
+- Twitch: targets under 3s glass-to-glass latency for live streaming using LL-HLS (Low-Latency HLS); soft real-time.
+- New York Stock Exchange: trade execution must happen within exchange-defined windows (microseconds); FPGA-based matching engines provide sub-microsecond response.
+
+## Common misconceptions
+
+- **"Fast means real-time."** Real-time means *bounded* and *predictable*, not just fast. A system that usually responds in 1ms but occasionally takes 500ms is not real-time.
+- **"Real-time is only for embedded systems."** Financial trading, gaming, VoIP, and robotics in the cloud all have real-time requirements.
+
+## Learn next
+
+Real-time systems use [real-time operating systems](/t/real-time-os) as their platform. [Edge computing](/t/edge-computing) reduces network latency for real-time distributed systems. Understanding [scheduling](/t/scheduling) algorithms (RMS, EDF) is foundational to real-time task analysis.

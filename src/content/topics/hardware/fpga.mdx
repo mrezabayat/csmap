@@ -1,0 +1,74 @@
+---
+title: FPGA
+aliases: ["Field-Programmable Gate Array", "FPGA", "HDL", "VHDL", "Verilog", "reconfigurable hardware"]
+category: hardware
+kind: technology
+summary: An integrated circuit containing an array of programmable logic blocks connected by configurable interconnects — allowing hardware circuits to be defined in software, reprogrammed after fabrication, and used for custom acceleration.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["hardware", "fpga", "digital-design", "acceleration"]
+prerequisites: ["cpu", "binary-numbers", "bits"]
+related: ["asic", "gpu", "systolic-array"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+An FPGA is a "blank" chip that can be wired to implement any digital circuit you design. You describe the circuit in a hardware description language (Verilog or VHDL), and a tool synthesises it into a configuration bitstream that programs the FPGA's millions of tiny switches. The circuit runs at hardware speed — potentially billions of operations per cycle — but remains reprogrammable. FPGAs sit between general-purpose CPUs (flexible, slow per operation) and ASICs (inflexible, fastest) in the performance-flexibility spectrum.
+
+## More detail
+
+**Internal structure:**
+- **Look-Up Tables (LUTs):** 4–6 bit LUTs implement arbitrary logic functions. A 4-bit LUT has 16 entries, one output — it can implement any 4-input boolean function. Millions of LUTs form the programmable logic fabric.
+- **Flip-flops:** state elements (registers) to build sequential logic.
+- **Block RAM (BRAM):** on-chip memory blocks, 18–36 Kbit each, used for data buffering.
+- **DSP slices:** hardened multiply-accumulate (MAC) blocks for signal processing and ML operations.
+- **I/O blocks:** configurable interfaces for different protocols (PCIe, DDR memory, Ethernet).
+- **Interconnect:** a programmable routing network connecting all blocks. Routing is typically the bottleneck in timing closure.
+
+**Programming FPGAs:**
+- **RTL design:** write Verilog/VHDL describing hardware behaviour at the register-transfer level.
+- **HLS (High-Level Synthesis):** Xilinx Vitis HLS, Intel OpenCL, Bambu — compile C/C++ or OpenCL to RTL automatically. Lower productivity per clock cycle but dramatically faster development.
+- **Synthesis → place & route → bitstream:** tools convert RTL to a gate-level netlist, place components on the FPGA fabric, route interconnects, and generate the configuration bitstream.
+
+**FPGA vs. CPU vs. ASIC:**
+| | CPU | FPGA | ASIC |
+|---|---|---|---|
+| Flexibility | Fully programmable | Reprogrammable | Fixed |
+| Performance | Moderate | High (10–100× CPU) | Highest |
+| Development time | Hours | Weeks–months | Years |
+| NRE cost | None | None | $1M–$50M |
+| Power efficiency | Low | Medium | Highest |
+
+**Use cases:**
+- **Networking:** line-rate packet processing (100G+) — routers, firewalls, SmartNICs.
+- **Finance:** ultra-low-latency trading (< 1 µs order processing).
+- **ML inference:** Microsoft Brainwave / Project Catapult — FPGAs in Azure for BERT/GPT inference, achieving lower latency than GPU.
+- **Scientific computing:** genomics (Illumina uses FPGAs for base-calling), seismic processing.
+- **Prototyping:** verify ASIC designs on FPGAs before tape-out.
+
+**Major FPGA vendors:** Xilinx (AMD) — Versal, UltraScale+; Intel — Agilex, Cyclone V; Lattice — ECP5 (power-efficient, popular in open-source tools); Microchip — PolarFire (low power, space-grade).
+
+**Open-source FPGA toolchain:** Project IceStorm, nextpnr, Yosys — a fully open-source synthesis and place-and-route chain for Lattice ECP5 and iCE40 FPGAs. Enables open-source hardware development.
+
+## Why it matters
+
+FPGAs occupy a unique position in the computing ecosystem: they provide hardware-speed execution with post-fabrication programmability. Microsoft's Catapult project deployed FPGAs in every Azure server for network acceleration and ML inference. The rise of RISC-V (open-source CPU ISA) plus FPGAs has made custom CPU design accessible. Understanding FPGAs clarifies the spectrum from software (CPU) to custom hardware (ASIC) and explains why certain latency-critical applications (HFT, line-rate networking) use FPGAs rather than GPUs or CPUs.
+
+## Real-world examples
+
+- Microsoft Azure uses FPGAs (Project Catapult) for BING ranking acceleration and Azure Network (SDN dataplane at 40–100G line rate).
+- Xilinx FPGAs power 5G radio units in base stations (beamforming, channel coding at line rate).
+- Intel's SmartNIC (formerly Altera FPGA) offloads NVMe-oF, RDMA, and TLS from the host CPU in data centres.
+- Illumina's genomic sequencing machines use FPGAs for real-time base-calling — converting raw optical signals to ACGT.
+
+## Common misconceptions
+
+- **"FPGAs are hard to program."** HLS tools (Vitis, Intel OpenCL) let engineers write C/C++ and get hardware acceleration without RTL design skills. The learning curve for RTL design is high, but HLS is accessible.
+- **"FPGAs are always faster than GPUs."** FPGAs have lower power and better latency for certain tasks (streaming, small batch ML inference), but GPUs win for compute-intensive parallel workloads (training large models).
+
+## Learn next
+
+FPGAs are an intermediate step between CPUs and [ASICs](/t/asic) in the flexibility-performance spectrum. [Systolic arrays](/t/systolic-array) can be implemented on FPGAs or as fixed-function ASICs (Google TPU). Understanding [GPUs](/t/gpu) completes the picture of hardware acceleration options.

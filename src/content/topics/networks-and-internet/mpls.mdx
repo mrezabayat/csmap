@@ -1,0 +1,58 @@
+---
+title: MPLS
+aliases: ["Multiprotocol Label Switching", "label switching"]
+category: networks-and-internet
+kind: protocol
+summary: A routing technique that forwards packets by swapping short labels instead of looking up IP addresses — enabling traffic engineering, VPNs, and predictable paths across carrier networks.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["networking", "routing", "carrier", "traffic-engineering"]
+prerequisites: ["router", "packet", "ip-address"]
+related: ["bgp", "anycast"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Normal IP routing looks up the destination address in a routing table at every hop — expensive for carrier-scale routers handling millions of packets per second. MPLS attaches a short **label** (20 bits) to each packet at the network edge. Core routers swap labels based on a simple lookup table — no IP header parsing, just "label 100 in → label 200 out, exit via port 3." The edge removes the label at the destination. This is faster, more predictable, and enables traffic to follow explicit paths instead of whatever BGP happens to route.
+
+## More detail
+
+An MPLS **Label Switched Path (LSP)** is a predetermined path through the network. Labels are stacked (LIFO) — a packet can carry multiple labels for nested tunnelling (VPNs inside VPNs).
+
+**Components:**
+- **Label Edge Router (LER)** — the ingress router that classifies traffic and pushes a label (PUSH operation); the egress router that pops the label (POP) and delivers the IP packet.
+- **Label Switch Router (LSR)** — core router that swaps labels and forwards. Does not look at the IP header.
+- **Forwarding Equivalence Class (FEC)** — the classification rule that determines which label to assign (can be based on destination prefix, IP precedence, ingress interface, etc.).
+
+**Label Distribution Protocol (LDP)** or **RSVP-TE** distributes labels between routers. RSVP-TE also allows bandwidth reservation along a path.
+
+**Key applications:**
+
+- **Traffic engineering (TE):** force traffic to follow an explicit path (not just shortest BGP path) to utilise available bandwidth and avoid congested links. A router can send voice traffic on a low-latency path and bulk data on a longer but higher-bandwidth path.
+- **MPLS VPNs (L3VPN, L2VPN):** carriers sell private network services over a shared MPLS backbone. Customer traffic is isolated by VPN labels; the customer sees it as a private WAN.
+- **Pseudo-wires:** emulate Ethernet, ATM, or Frame Relay circuits over an MPLS backbone.
+- **Fast ReRoute (FRR):** pre-compute backup LSPs; on failure, switch to backup in ~50 ms rather than waiting for BGP convergence (minutes).
+
+MPLS is a carrier technology (ISPs, telcos), not typically visible at the application layer. As software-defined networking (SDN) and segment routing mature, some carriers are moving away from traditional MPLS toward SR-MPLS or SRv6.
+
+## Why it matters
+
+MPLS is the backbone of most ISP and enterprise WAN networks — SD-WAN, private leased lines, and MPLS VPNs are all built on it. Understanding MPLS explains carrier SLAs (guaranteed bandwidth, latency bounds), how VPNs work at the network layer (not just at the application layer), and why some paths over the internet are predictable while others are not. It also contextualises why data centres and cloud providers have been moving away from carrier MPLS toward cheaper internet + encryption overlays (WireGuard, QUIC).
+
+## Real-world examples
+
+- Enterprise "MPLS circuits" from AT&T, Verizon, or BT are leased paths through an MPLS backbone with guaranteed bandwidth and latency.
+- Mobile carriers use MPLS in their backhaul networks to carry signalling and data between cell towers and core networks.
+- The GÉANT research network uses MPLS TE for bandwidth management across European universities.
+
+## Common misconceptions
+
+- **"MPLS is just for telcos."** MPLS is the internal fabric of large data centre networks (Clos fabrics), not just carrier WANs — it just looks different (shortest-path MPLS vs. TE MPLS).
+- **"VPNs require MPLS."** Application-layer VPNs (WireGuard, OpenVPN) do not use MPLS at all. MPLS VPNs are a carrier service concept, not the same as a user-installed VPN.
+
+## Learn next
+
+MPLS sits inside a carrier network below [BGP](/t/bgp)'s inter-AS routing. Understanding both explains how traffic is engineered at internet scale. [QUIC](/t/quic) and encrypted overlays are the alternative for organisations that previously relied on MPLS private networks.

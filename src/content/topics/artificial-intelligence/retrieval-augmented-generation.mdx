@@ -1,0 +1,58 @@
+---
+title: Retrieval-Augmented Generation
+aliases: ["RAG", "retrieval augmented generation"]
+category: artificial-intelligence
+kind: concept
+summary: A technique that improves language model answers by first fetching relevant documents from a knowledge base, then generating a response conditioned on both the query and the retrieved content.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["llm", "retrieval", "rag", "ai-systems"]
+prerequisites: ["large-language-model", "embedding"]
+related: ["transformer", "vector-database"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A language model knows only what was in its training data — it cannot look things up, and its knowledge stops at the training cut-off. **RAG** adds a retrieval step before generation: the system searches a knowledge base for the most relevant documents, injects them into the prompt as context, and then asks the model to answer using that context. The model writes; the retrieval system knows. Together they are more accurate and up-to-date than either alone.
+
+## More detail
+
+A typical RAG pipeline has three stages:
+
+**1. Indexing (offline).** Split documents into chunks (~200–500 tokens). Encode each chunk into an [embedding](/t/embedding) vector using an embedding model. Store chunks and vectors in a [vector database](/t/vector-database).
+
+**2. Retrieval (at query time).** Encode the user's query into the same embedding space. Find the top-k chunks whose vectors are closest to the query (cosine similarity or dot product). Optionally re-rank results with a cross-encoder for precision.
+
+**3. Generation.** Assemble a prompt: system instructions + retrieved chunks (as "context") + user query. Send to the [language model](/t/large-language-model). The model generates a grounded answer that cites or is constrained by the retrieved text.
+
+Design choices that matter:
+
+- **Chunking strategy** — fixed size, sentence boundaries, or document structure. Overlap between chunks prevents context from being split at bad boundaries.
+- **Embedding model** — must be the same model at index and query time. Domain-specific fine-tuned embedders outperform generic ones for specialised corpora.
+- **Retrieval method** — dense (embedding similarity), sparse (BM25/TF-IDF), or hybrid. Sparse retrieval handles rare keywords better; dense handles semantic paraphrases better.
+- **Context window budget** — the number of retrieved chunks is limited by the language model's context window. Retrieval quality directly bounds generation quality.
+
+Advanced variants: **HyDE** (generate a hypothetical answer, embed it, then retrieve similar chunks), **multi-hop RAG** (iterative retrieval for complex questions), **graph RAG** (retrieve from a knowledge graph instead of flat chunks).
+
+## Why it matters
+
+RAG solves the two biggest limitations of closed-weight language models: stale knowledge and hallucination on specific facts. A customer-support chatbot grounded in a product documentation corpus cannot confabulate a feature that doesn't exist — if it's not in the retrieved context, it has no basis to claim it. RAG also allows knowledge updates without retraining: add new documents to the index, and the model immediately has access to them. It is the dominant architecture for enterprise LLM applications.
+
+## Real-world examples
+
+- Corporate knowledge-base assistants (legal research, customer support) use RAG over internal documents.
+- Perplexity AI and Bing Chat retrieve web search results and ground the language model's answer in them.
+- Medical LLM deployments retrieve from clinical guidelines and drug databases to stay accurate and auditable.
+- GitHub Copilot Workspace uses retrieval over the current repository to provide code-aware suggestions.
+
+## Common misconceptions
+
+- **"RAG removes hallucination."** Retrieval reduces hallucination on factual questions about the retrieved content, but the model can still hallucinate if the relevant chunk wasn't retrieved, or if it blends retrieved facts incorrectly.
+- **"Bigger context window makes RAG unnecessary."** Stuffing all documents into the context is slow and often performs worse than retrieving the most relevant subset — retrieval is a compression step, not a band-aid.
+
+## Learn next
+
+RAG pipelines depend on [embeddings](/t/embedding) for retrieval and [vector databases](/t/vector-database) for storage. The [large language model](/t/large-language-model) at the centre is unchanged — RAG is a deployment pattern, not a change to the model itself.

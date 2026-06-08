@@ -1,0 +1,57 @@
+---
+title: Virtualization
+aliases: ["hypervisor", "VM", "virtual machine", "Type-1 hypervisor", "KVM", "VMware"]
+category: operating-systems
+kind: concept
+summary: Running multiple isolated operating systems simultaneously on a single physical machine by intercepting privileged operations and presenting each OS with a virtual hardware interface.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["operating-systems", "cloud", "hypervisor", "infrastructure"]
+prerequisites: ["operating-system", "virtual-memory", "process"]
+related: ["container", "cloud-provider", "copy-on-write"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A hypervisor is software that tricks an operating system into thinking it has dedicated hardware, while actually sharing that hardware with other operating systems. Each "guest" OS runs in its own isolated virtual machine (VM), with its own virtual CPU, virtual memory, and virtual devices. The hypervisor mediates all hardware access and maintains isolation between VMs — a bug in one VM's guest OS cannot affect another VM's memory. This is how AWS, Google Cloud, and Azure run thousands of customer VMs on the same physical server.
+
+## More detail
+
+**Type 1 (Bare-metal) hypervisor:** runs directly on hardware, without a host OS. Guest VMs run as processes of the hypervisor. Examples: VMware ESXi, Microsoft Hyper-V, Xen, KVM (Linux kernel itself becomes the hypervisor). Type 1 hypervisors are used in data centres for performance and isolation.
+
+**Type 2 (Hosted) hypervisor:** runs on top of a host OS as a process. The host OS manages hardware; the hypervisor runs guest VMs inside it. Examples: VMware Workstation, VirtualBox, QEMU (without KVM). Higher overhead; used for development and testing on laptops.
+
+**Hardware-assisted virtualisation:** modern CPUs (Intel VT-x, AMD-V) provide a "VMX root/non-root" mode. Guest code runs in non-root mode at near-native speed; privileged instructions (those that must be intercepted) cause a VM exit to the hypervisor. This makes virtualisation fast — most guest code runs at native CPU speed; only a few hundred events per second cause VM exits in a typical workload.
+
+**Memory virtualisation:** the hypervisor must maintain the illusion that each VM has its own physical memory starting at address 0. Hardware Extended Page Tables (EPT on Intel, NPT on AMD) add a second layer of address translation (guest-physical → host-physical) handled in hardware — adding ~10% overhead vs. bare metal.
+
+**I/O virtualisation:** disk and network I/O is intercepted by the hypervisor. Slow path: full device emulation (QEMU emulates an IDE disk). Fast path: **virtio** — a standardised paravirtualised device interface where the guest knows it's virtualised and uses an efficient ring buffer protocol directly to the hypervisor. virtio-blk and virtio-net are universal in Linux guests.
+
+**KVM (Kernel-based Virtual Machine):** Linux kernel module turning Linux into a Type 1 hypervisor. Works with QEMU for device emulation. Used by Google, Amazon (EC2 Nitro), and most cloud providers. EC2 Nitro offloads virtio devices to dedicated hardware ASICs, achieving near-bare-metal I/O performance.
+
+**Containers vs. VMs:** containers share the host kernel; VMs have isolated kernels. VMs provide stronger isolation (separate kernel, separate firmware attack surface) at higher overhead (hundreds of MB image, seconds to boot). Containers start in milliseconds and use ~10 MB. The answer is often both: containers run inside VMs (as on every public cloud).
+
+**MicroVMs (Firecracker, gVisor):** AWS Firecracker is a KVM-based microVM with a minimal device model, booting in 125 ms, using under 5 MB memory overhead. Used for AWS Lambda — each function invocation gets a fresh microVM for security isolation.
+
+## Why it matters
+
+Virtualisation is the foundation of cloud computing — it enables multi-tenancy, on-demand provisioning, VM migration (live migration for maintenance), and resource overprovisioning. Understanding it explains how cloud VMs work, why "noisy neighbours" exist, what Spectre/Meltdown meant for cloud providers (same physical CPU, different VMs), and how serverless functions achieve isolation.
+
+## Real-world examples
+
+- AWS EC2: each instance is a KVM VM on Nitro hypervisor; Nitro offloads networking and storage to dedicated hardware.
+- Google Cloud VMware Engine and Azure VMware Solution run VMware ESXi on cloud hardware.
+- AWS Lambda runs each function invocation in a Firecracker microVM (125 ms cold start, isolated kernel).
+- Desktop virtualisation: macOS runs on Apple Silicon with Rosetta 2 via hardware virtualisation; VMware Fusion and Parallels run Windows in a Type 2 hypervisor.
+
+## Common misconceptions
+
+- **"VMs are always slow."** Hardware virtualisation (VT-x + EPT) adds ~2–10% overhead for CPU-intensive workloads. I/O-intensive workloads with full device emulation can be much slower, but virtio and hardware offload (Nitro, SR-IOV) bring it close to bare metal.
+- **"Containers replaced VMs."** Containers complement VMs. Most container workloads run inside VMs on cloud platforms for the security isolation that containers alone don't provide.
+
+## Learn next
+
+Virtualisation and [containers](/t/container) are the two isolation primitives of modern cloud infrastructure. [Copy-on-write](/t/copy-on-write) enables efficient VM snapshots and memory overcommit. [Cloud computing](/t/cloud-computing) depends entirely on virtualisation for multi-tenancy.

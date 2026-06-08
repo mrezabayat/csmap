@@ -1,0 +1,55 @@
+---
+title: Anti-Aliasing
+aliases: ["anti-aliasing", "MSAA", "FXAA", "DLSS", "TAA", "SSAA", "aliasing"]
+category: graphics-and-media
+kind: concept
+summary: A technique for reducing the "jaggies" (staircase effect) in digital images by smoothing the transition between foreground and background pixels — using spatial supersampling, temporal accumulation, or AI upscaling.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["graphics", "rendering", "display", "gpu"]
+prerequisites: ["gpu", "computer-vision"]
+related: ["subpixel-rendering", "hdr", "color-management"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A diagonal line on a digital display is made of square pixels that must approximate a continuous curve. The result is "jaggies" — a staircase-like edge that looks bad. Anti-aliasing smooths these edges by blending the edge pixel with a mix of foreground and background colour, making the transition look smooth even though the display is still pixel-based. Different techniques trade quality for performance: from simply rendering at 4× resolution (brute force) to clever post-processing filters to AI-based upscaling (DLSS).
+
+## More detail
+
+**The aliasing problem:** digital signals sampled below the Nyquist frequency exhibit aliasing — high-frequency detail folds back as low-frequency artefacts. For screen rendering: a 1-pixel diagonal edge must be represented by a discrete grid; the discrete approximation contains staircase artefacts (high-frequency components above the display's Nyquist limit).
+
+**Supersampling Anti-Aliasing (SSAA):** render at 2×, 4×, or 8× the output resolution and downscale. The highest quality method — each pixel represents an average of 4–64 subpixels — but GPU cost scales with the sample count. 4× SSAA is 4× the rendering cost. Used in offline rendering (CGI, architectural visualization); too expensive for real-time games.
+
+**Multisample Anti-Aliasing (MSAA):** the standard method for real-time rendering (DirectX, OpenGL). For each pixel, the geometry is tested at multiple sample points (2×, 4×, 8× — "2x MSAA", "4x MSAA"), but shading is only computed once per pixel (for opaque surfaces). Edge pixels blend between the foreground and background based on how many sample points are inside the geometry. 4× MSAA adds ~30–50% GPU cost vs. no AA. Works well for geometry edges; not for alpha-tested transparency or complex shader effects.
+
+**Post-process Anti-Aliasing (FXAA, SMAA):** analyse the final rendered image to find edges (high-contrast transitions) and blur them. FXAA (Fast Approximate Anti-Aliasing) — runs in ~1ms on modern GPUs, requires no multi-sampling. SMAA (Subpixel Morphological AA) — smarter edge detection, better quality than FXAA, ~2ms. Both are image-space operations — they can blur edges they shouldn't (text, thin geometry). Used in games for a cheap AA solution.
+
+**Temporal Anti-Aliasing (TAA):** accumulate samples across multiple frames, using motion vectors to align the current frame with previous ones. Each frame uses a jittered sample pattern; across 8 frames, the effect is 8× SSAA quality with near-zero per-frame cost. The industry standard for AAA games since ~2016. Trade-offs: ghosting (stale samples from fast-moving objects), blurring (from temporal accumulation), and complexity (requires accurate motion vectors).
+
+**DLSS / FSR / XeSS (AI upscaling):** render at a lower internal resolution (e.g., 1080p) and use AI (DLSS 3.5 — a convolutional neural network trained on 4K reference frames) or spatial algorithms (AMD FSR 3 — spatial upscaling) to reconstruct a 4K image. DLSS often looks better than native 4K with TAA while running 50–80% faster. DLSS is NVIDIA-specific (trained neural network, Tensor Cores); FSR is open-source and runs on any GPU; Intel's XeSS is similar to DLSS. These techniques are the dominant AA approach in modern AAA games.
+
+**Ray Tracing and path tracing:** Monte Carlo path tracing renders by casting many rays per pixel and averaging — high sample counts naturally anti-alias. Modern real-time ray tracing with DLSS (NVIDIA) effectively resolves the AA problem for raytraced content.
+
+## Why it matters
+
+Anti-aliasing is the single most visible image quality improvement in real-time graphics. Understanding the trade-offs between AA methods helps explain: why game performance drops when AA is enabled, why DLSS has become dominant (quality + performance), why TAA causes ghosting in fast-moving games, and why mobile games use simpler AA methods. For graphics programmers, choosing the right AA technique is a core rendering pipeline decision.
+
+## Real-world examples
+
+- Fortnite, Cyberpunk 2077, Hogwarts Legacy: all use DLSS 3 (Frame Generation) as the default AA method; 70–80% of DLSS-enabled users use Quality mode (rendering at 66% resolution then upscaling to 4K).
+- Halo: The Master Chief Collection uses MSAA + TAA for its older titles.
+- Minecraft (Java): FXAA is the primary AA option; Minecraft RTX uses path tracing which naturally anti-aliases.
+- Web browsers use sub-pixel rendering for text anti-aliasing — a different but related technique.
+
+## Common misconceptions
+
+- **"More AA = always better."** TAA can cause blurring and ghosting; FXAA blurs fine details. The "best" method depends on the content and performance budget.
+- **"DLSS is just upscaling."** DLSS uses a trained neural network that reconstructs detail missing from the lower-resolution input — often adding detail that wasn't in the original render, not just smoothly interpolating pixels.
+
+## Learn next
+
+Anti-aliasing addresses spatial frequency artefacts in rendering. [Subpixel rendering](/t/subpixel-rendering) applies a related but distinct technique for text clarity. [HDR](/t/hdr) and [colour management](/t/color-management) address other aspects of display quality.

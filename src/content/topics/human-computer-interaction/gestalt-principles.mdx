@@ -1,0 +1,79 @@
+---
+title: Gestalt Principles
+aliases: ["Gestalt psychology", "proximity", "similarity", "closure", "figure-ground", "continuity"]
+category: human-computer-interaction
+kind: concept
+summary: A set of perceptual principles from 1920s psychology describing how humans group visual elements — proximity, similarity, closure, continuity, and figure-ground — foundational to visual UI design.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["hci", "ui-design", "design", "psychology"]
+prerequisites: ["user-interface", "usability-test"]
+related: ["fitts-law", "dark-pattern"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Gestalt ("whole form" in German) psychology, developed in the 1920s, discovered that the human brain perceives organised wholes rather than collections of individual parts. You see a face before you see two eyes, a nose, and a mouth. Six principles describe how the brain groups visual elements automatically — without conscious thought. UI designers use these principles constantly: grouping related controls by proximity, using consistent colours to show similar functions, and creating clear figure-ground separation for important information.
+
+## More detail
+
+**The six core Gestalt principles:**
+
+**1. Proximity:** elements that are close together are perceived as a group. Form fields and their labels are placed close together; the gap between one form section and the next groups the fields.
+
+*Application:* use consistent spacing within a group and larger gaps between groups. Navigation links clustered together are perceived as a navigation system; the same links scattered across the page are perceived as unrelated.
+
+**2. Similarity:** elements that look alike (same shape, colour, size, or pattern) are perceived as a group. Blue text links are all perceived as clickable; grey text as disabled.
+
+*Application:* use the same visual treatment for elements with the same function. Inconsistent button styles (some blue, some grey, some outlined) break similarity and confuse users about what is actionable.
+
+**3. Closure:** the brain fills in missing information to perceive complete shapes. An arc of dots is seen as a circle even though the circle isn't drawn. A logo made of partial shapes reads as complete.
+
+*Application:* progress bars, pie charts, and icon designs exploit closure. Hamburger menu icons (three horizontal lines) are "read" as a complete menu concept because the brain closes the pattern.
+
+**4. Continuity (good continuation):** elements arranged on a line or curve are perceived as related and belonging together. The eye follows lines and curves.
+
+*Application:* breadcrumb navigation uses separators (`Home > Category > Item`) to create a visual path. Card layouts use column grids that create implicit vertical lines.
+
+**5. Figure-Ground:** the brain separates a visual field into a figure (foreground, the subject) and ground (background). Whatever is perceived as "figure" receives attention; "ground" recedes.
+
+*Application:* modal dialogs dim the background, making the modal the figure. High contrast text on background makes text the figure. Overlays and shadows create depth, establishing figure/ground hierarchy.
+
+**6. Common fate:** elements that move in the same direction are perceived as a group. Animated elements that move together are perceived as related.
+
+*Application:* in animations, elements belonging to the same component should animate together. Transition animations that move a card from a list to a detail view preserve the sense of "same object."
+
+**Additional principles:**
+- **Prägnanz (simplicity / good form):** the brain prefers the simplest interpretation of ambiguous stimuli.
+- **Symmetry:** symmetric figures are perceived as stable and cohesive.
+- **Connectedness:** elements connected by lines, borders, or shared backgrounds are perceived as related.
+
+**Gestalt in design systems:**
+Design systems (Material Design, HIG, Ant Design) systematically encode Gestalt principles:
+- Spacing scales define proximity groupings.
+- Typography and colour tokens define similarity.
+- Component hierarchy (card, modal, sheet) uses figure-ground.
+- Animation specifications define common fate.
+
+## Why it matters
+
+Gestalt principles explain *why* well-designed UIs look clear and poorly-designed ones look cluttered — at a perceptual level, not just aesthetic preference. Every designer and frontend engineer who arranges UI elements on a screen is implicitly applying (or violating) these principles. Understanding them gives vocabulary and reason for design decisions, enables principled critique of existing designs, and translates perception research into actionable layout guidelines.
+
+## Real-world examples
+
+- Google Search results page: query, blue links, and green URL use similarity and proximity to group each result.
+- Apple's HIG: the iOS design language uses figure-ground (dark overlay behind alerts), proximity (bottom sheet controls grouped), and similarity (consistent button styles).
+- Data tables: alternating row colours exploit similarity to group rows; column headers use contrast to create figure-ground.
+- Loading skeletons (Facebook, LinkedIn): use closure — the animated grey shapes imply the content structure that will fill them.
+
+## Common misconceptions
+
+- **"Gestalt is just common sense."** Many Gestalt insights are counterintuitive — the figure-ground principle explains why certain designs feel unstable even when developers think they look fine. Explicit knowledge makes implicit understanding more reliable.
+- **"These principles only apply to visual design."** They extend to typography (grouping, hierarchy), audio (patterns in music), and even code organisation (proximity = co-location of related code).
+
+## Learn next
+
+Gestalt principles describe perception; [Fitts's law](/t/fitts-law) describes interaction. Together they are the two most foundational frameworks for UI design. [Dark patterns](/t/dark-pattern) deliberately manipulate Gestalt perception (especially similarity and figure-ground) to mislead users.

@@ -1,0 +1,61 @@
+---
+title: Systolic Array
+aliases: ["systolic array", "TPU", "matrix multiplication accelerator", "Google TPU"]
+category: computer-architecture
+kind: concept
+summary: A grid of simple processing elements that pass data between neighbours in a rhythmic, pipelined fashion — used in neural network accelerators (Google TPU) to perform dense matrix multiplications with extreme efficiency.
+level: advanced
+status: reviewed
+importance: supplemental
+tags: ["cpu", "architecture", "machine-learning", "hardware", "accelerators"]
+prerequisites: ["cpu", "gpu", "linear-algebra"]
+related: ["simd", "arm-vs-x86"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+A systolic array is a grid of tiny processors that each do one simple operation (multiply-and-accumulate) and pass data to their neighbours — like blood flowing through a heart, rhythmically pumping data through a fixed network. The key insight: for matrix multiplication, the same data can be reused many times as it flows through the grid, so memory bandwidth requirements are dramatically reduced. Google's Tensor Processing Unit (TPU) is essentially a massive systolic array, purpose-built to multiply matrices — the core operation in neural network inference and training.
+
+## More detail
+
+**Matrix multiplication and the memory wall:** multiplying two N×N matrices requires O(N³) multiply-accumulate (MAC) operations but only O(N²) data. A general-purpose CPU or GPU fetches operands from memory for each operation, burning memory bandwidth. A systolic array arranges processing elements (PEs) so that data flows through the grid naturally, being reused at each PE without returning to memory between uses — amortising memory access across many operations.
+
+**How it works (2D systolic array for matrix multiply):**
+- Arrange PEs in a W×H grid.
+- Input matrix A flows horizontally (left to right); input matrix B flows vertically (top to bottom), skewed so that the right values meet at the right PE at the right clock cycle.
+- Each PE receives one element of A from the left and one element of B from above, computes A×B and accumulates, then passes A rightward and B downward.
+- After N cycles, output matrix C is accumulated in the PEs.
+- Data reuse: each element of A is used by H PEs; each element of B by W PEs. Memory bandwidth requirement: O(N²) for O(N³) operations.
+
+**Google TPU:**
+- **TPUv1 (2016):** 256×256 systolic array, INT8 arithmetic, 92 TOPS (tera operations per second). Designed for inference. Connected to a host CPU via PCIe.
+- **TPUv4 (2021):** 128×128 BF16 MAC array × 2 per chip, 275 TFLOPS per chip, connected in 4096-chip pods via custom 3D torus interconnect (ICI). Trained GPT-like models at scale.
+- **TPUv5 (2024):** 460 TFLOPS per chip; Google's primary training accelerator.
+
+**Contrast with GPU:** GPUs are SIMT (Single Instruction Multiple Threads) — thousands of simple cores executing the same instruction on different data, with HBM bandwidth for data movement. GPUs are flexible (any shader, any kernel); systolic arrays are rigid (matrix multiply only, with dedicated data paths). For matrix multiply specifically, systolic arrays are 3–10× more efficient than GPUs; for irregular computations, GPUs win.
+
+**Other systolic array products:** Apple Neural Engine (2019, A12 Bionic), Qualcomm NPU (Hexagon), AWS Trainium/Inferentia (custom systolic arrays), Cerebras Wafer Scale Engine (a wafer-scale mesh of PEs for model parallelism).
+
+**Dataflow architectures:** more general than systolic arrays; data flows through a graph of operators. Tenstorrent's chips, Graphcore IPU, and Sambanova SN40 use variants of dataflow architectures for ML.
+
+## Why it matters
+
+Systolic arrays are the dominant architecture for neural network accelerators — TPUs, NPUs in phones, custom ML chips. Understanding them explains: why matrix multiply throughput is the key figure of merit for ML chips, why TPUs outperform GPUs on transformer training, why "compute-bound" vs. "memory-bound" matters for ML, and why quantisation (using INT8 instead of FP32) matters — it doubles the throughput on fixed-width MAC arrays. ML engineers, hardware engineers, and anyone designing ML systems need to understand this architecture.
+
+## Real-world examples
+
+- Google's TPUv4 pods (4096 TPUs) trained Gemini Ultra and PaLM-2.
+- Apple Neural Engine (ARM-based systolic array) runs Core ML models on iPhones at 38 TOPS (A17 Pro) with 1/10th the power of the GPU.
+- AWS Trainium (used for Amazon Titan model training) is built around a systolic array accelerator.
+- Nvidia's Tensor Cores (in A100, H100) are a hybrid — SIMT cores with specialized matrix-multiply acceleration, achieving 2000+ TFLOPS of INT8.
+
+## Common misconceptions
+
+- **"Systolic arrays are just GPUs."** GPUs are programmable SIMT processors; systolic arrays are fixed-function, rigid pipelines optimised for matrix multiply. Different trade-off: flexibility vs. efficiency.
+- **"TPUs can only run TensorFlow."** Modern TPUs support JAX, PyTorch/XLA, and via XLA compilation — any framework that can emit XLA HLO can run on TPUs.
+
+## Learn next
+
+Systolic arrays accelerate the [linear algebra](/t/linear-algebra) operations (matrix multiply) that power [machine learning](/t/machine-learning). They complement [GPUs](/t/gpu) in the accelerator landscape. [SIMD](/t/simd) is a simpler form of data-parallel computation available in general-purpose CPUs.

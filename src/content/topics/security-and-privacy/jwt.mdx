@@ -1,0 +1,74 @@
+---
+title: JWT
+aliases: ["JSON Web Token", "bearer token", "access token"]
+category: security-and-privacy
+kind: concept
+summary: A compact, self-contained token that encodes claims about a user as signed JSON — allowing services to verify identity and permissions without querying a central session store.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["security", "authentication", "tokens", "api"]
+prerequisites: ["authentication", "public-key-cryptography"]
+related: ["oauth", "authorization", "tls"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Instead of a session ID that the server must look up in a database, a JWT is a self-contained token: the user's identity and permissions are encoded directly in the token, and the server verifies the token's signature without any database query. You get the token once (on login), send it with every request, and the server trusts what it says because it signed it.
+
+## More detail
+
+A JWT is three Base64url-encoded parts separated by dots: `header.payload.signature`.
+
+**Header** — JSON specifying the algorithm:
+```json
+{"alg": "RS256", "typ": "JWT"}
+```
+
+**Payload (claims)** — JSON with assertions about the subject:
+```json
+{
+  "sub": "user123",       // subject (user ID)
+  "iss": "auth.example.com",  // issuer
+  "aud": "api.example.com",   // audience
+  "exp": 1717100000,      // expiry (Unix timestamp)
+  "iat": 1717096400,      // issued at
+  "roles": ["admin"]      // custom claim
+}
+```
+
+**Signature** — `HMAC_SHA256(base64(header) + "." + base64(payload), secret)` or RSA/ECDSA signed. The receiver verifies the signature before trusting any claim.
+
+**Algorithms:**
+- **HS256 (HMAC-SHA256)** — symmetric; signer and verifier share the same secret. Suitable when issuer and verifier are the same service.
+- **RS256 / ES256 (RSA/ECDSA)** — asymmetric; issuer signs with private key, verifiers check with public key. Enables stateless verification across multiple services without sharing a secret.
+
+**Common security mistakes:**
+- Accepting `{"alg": "none"}` — some libraries trust unsigned tokens if the algorithm is "none". Always enforce a specific algorithm.
+- Not validating `exp`, `iss`, `aud` — a valid signature doesn't mean the token is for your service or not expired.
+- Storing JWTs in `localStorage` — XSS can steal them. HTTP-only cookies are safer for browser storage.
+- No revocation mechanism — JWTs are valid until expiry. Revoke access by using short expiry (15 minutes) + refresh tokens, or a token denylist (reintroduces a lookup, partially defeating the purpose).
+
+**JWT vs sessions:** Sessions store identity server-side; tokens store it client-side. JWTs scale horizontally (any server can verify) but cannot be instantly revoked. Sessions require server-side storage (Redis) but can be invalidated immediately.
+
+## Why it matters
+
+JWTs are the dominant token format for REST API authentication and OAuth 2.0 access tokens. Understanding their structure clarifies how stateless authentication works, why they expire, and what the security pitfalls are. Every developer who builds or uses REST APIs will encounter JWTs — and the mistakes (algorithm confusion, missing expiry checks, XSS-accessible storage) are responsible for a significant fraction of real authentication vulnerabilities.
+
+## Real-world examples
+
+- OAuth 2.0 access tokens issued by Google, GitHub, and Auth0 are JWTs.
+- A React SPA stores a JWT in memory (not localStorage), sends it in `Authorization: Bearer <token>` headers.
+- Kubernetes API server uses JWTs (service account tokens) for pod-to-apiserver authentication.
+- Microservices use RS256 JWTs: a single auth service issues tokens, and any API service verifies them with the public key.
+
+## Common misconceptions
+
+- **"The payload is encrypted."** JWTs are signed (integrity), not encrypted (confidentiality) by default. Anyone can Base64-decode the payload and read the claims. Use JWE (JSON Web Encryption) if the payload must be confidential.
+- **"A valid JWT means the user is authenticated."** It means someone issued a valid token with those claims. Validate the issuer, audience, and expiry — don't trust just the signature.
+
+## Learn next
+
+JWTs are the token format; [OAuth 2.0](/t/oauth) is the protocol that issues them. They work over [TLS](/t/tls) (which provides transport security) and encode [authorization](/t/authorization) claims. [Certificate authorities](/t/certificate-authority) issue the certificates that sign the public keys used to verify RS256 JWTs.

@@ -1,0 +1,59 @@
+---
+title: Rate Limiting
+aliases: ["throttling", "rate throttling", "token bucket", "leaky bucket"]
+category: distributed-systems-and-cloud
+kind: concept
+summary: Controlling how many requests a client or service can make in a time window — protecting backends from overload, preventing abuse, and enforcing fair use across tenants.
+level: intermediate
+status: reviewed
+importance: supplemental
+tags: ["distributed-systems", "api", "availability", "reliability"]
+prerequisites: ["distributed-system"]
+related: ["circuit-breaker", "load-balancer", "idempotency"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+Rate limiting puts a cap on how often a caller can invoke an API or resource in a given time window. Exceed the cap and you get a `429 Too Many Requests` response. It protects the service from being overwhelmed — by a misbehaving client, a scraper, or a traffic spike — and ensures that no single tenant starves others.
+
+## More detail
+
+**Algorithms for counting and enforcing:**
+
+- **Fixed window counter** — increment a counter per client per time window (e.g. 1-minute buckets). Simple, but prone to burst at window boundaries: a client can fire limit requests at the end of one window and limit more at the start of the next, doubling the effective rate.
+- **Sliding window log** — store timestamps of all requests in a rolling window. Precise but memory-heavy for high-traffic clients.
+- **Sliding window counter** — a weighted hybrid of two fixed windows that approximates the sliding window with O(1) memory. Stripe and Cloudflare use this.
+- **Token bucket** — each client has a bucket that refills at a fixed rate (e.g. 100 tokens/second). Each request costs 1 token; if the bucket is empty, reject. Allows short bursts up to bucket capacity.
+- **Leaky bucket** — requests enter a queue and are processed at a fixed rate. Smooths traffic to a constant rate; excess is queued or dropped. Useful for output shaping (sending to downstream).
+
+**Where to enforce:**
+
+- **Client-side** — SDK retries with backoff; reduces wasted requests to the server.
+- **API gateway / reverse proxy** — Nginx, Kong, AWS API Gateway, Cloudflare all implement rate limiting in the request path.
+- **Application level** — in-process counters (per-process, not cluster-wide) or distributed counters in Redis/Memcached (cluster-wide, adds latency).
+
+**Distributed rate limiting** requires a shared counter store. Redis `INCR` with expiry is the most common implementation. Approximate algorithms (token bucket in Redis Lua scripts, or a service like Envoy's rate-limit service) avoid hot-key contention.
+
+**Quota types:** per-IP, per-user, per-API key, per-tenant, per-endpoint, per-cost (different operations cost different tokens).
+
+## Why it matters
+
+Without rate limiting, a single misbehaving client — intentional or not — can exhaust your server's capacity and degrade service for all other users. Rate limiting is a fundamental reliability mechanism alongside [circuit breakers](/t/circuit-breaker) and [load balancing](/t/load-balancer). It also enables monetisation: tiered API plans charge for higher rate limits.
+
+## Real-world examples
+
+- GitHub API limits unauthenticated clients to 60 req/hour and authenticated clients to 5,000 req/hour.
+- Stripe's API uses a token bucket per key; bursts are allowed up to a capacity, then throttled.
+- Cloudflare uses sliding-window rate limiting at the edge to absorb DDoS traffic before it reaches origin servers.
+- AWS API Gateway applies per-stage and per-method rate limits to protect Lambda backends.
+
+## Common misconceptions
+
+- **"Rate limiting stops DDoS attacks."** It throttles them — a sufficiently distributed DDoS can still saturate bandwidth before rate limits apply. Rate limiting is one layer of defence, not the only one.
+- **"Fixed window counting is good enough."** For most use cases it is; but APIs used by sophisticated clients (bots, automated pipelines) can exploit window boundaries for burst traffic.
+
+## Learn next
+
+Rate limiting belongs to the same reliability toolkit as [circuit breakers](/t/circuit-breaker) (fail fast when a dependency is sick) and [idempotency](/t/idempotency) (safe to retry when throttled). Together they make distributed services both resilient and fair.

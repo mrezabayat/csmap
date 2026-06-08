@@ -1,0 +1,56 @@
+---
+title: DHCP
+aliases: ["Dynamic Host Configuration Protocol", "IP address assignment"]
+category: networks-and-internet
+kind: protocol
+summary: The protocol that automatically assigns IP addresses, subnet masks, gateways, and DNS servers to devices when they join a network — the reason you don't manually configure an IP every time you connect to Wi-Fi.
+level: beginner
+status: reviewed
+importance: supplemental
+tags: ["networking", "protocols", "configuration", "ip"]
+prerequisites: ["ip-address", "udp"]
+related: ["dns", "nat", "ipv6"]
+nextSteps: []
+updated: 2026-06-08
+---
+
+## In simple terms
+
+When your laptop connects to a Wi-Fi network, it needs an IP address to communicate — but it doesn't know which address to use. DHCP solves this: the device broadcasts "I need an IP!" and a DHCP server on the network responds "Here's `192.168.1.42`, valid for 24 hours, use `192.168.1.1` as your gateway and `8.8.8.8` as your DNS." The whole exchange happens in milliseconds, silently, every time a device connects.
+
+## More detail
+
+The DHCP exchange is four steps (DORA):
+
+1. **Discover** — the new client (with no IP yet) broadcasts `DHCPDISCOVER` from `0.0.0.0` to `255.255.255.255` via UDP port 67.
+2. **Offer** — any DHCP server on the segment replies with `DHCPOFFER`, proposing an IP address, lease duration, and configuration (subnet mask, gateway, DNS).
+3. **Request** — the client broadcasts `DHCPREQUEST` accepting the first offer (and informing other servers their offers are declined).
+4. **Acknowledge** — the server confirms with `DHCPACK`. The client configures its interface.
+
+**Lease time and renewal:** the address is leased for a finite period (hours to days). At 50% of lease time the client sends a unicast `DHCPREQUEST` renewal; at 87.5% it broadcasts to any server. If the server is unreachable at expiry, the client must release the address and start over.
+
+**DHCP options** extend beyond the basics: NTP server, domain search suffix, WINS server, PXE boot server (for network boot), WPAD proxy auto-config URL, and vendor-specific options for VoIP phones and printers.
+
+**DHCP relay agents** forward DHCP broadcasts between subnets so a single DHCP server can serve multiple VLANs — otherwise DHCP broadcasts would not cross routers.
+
+**DHCPv6** serves IPv6 addresses but is used alongside or replaced by **SLAAC** (Stateless Address Auto-Configuration), which lets devices self-assign from the network prefix without any server. Many IPv6 deployments use SLAAC for address assignment and DHCPv6 only for DNS server information.
+
+## Why it matters
+
+DHCP is why home and enterprise networks require no IP management by users. Without it, every device would need a manually configured, conflict-free IP address — impractical at scale. DHCP is also a network management and visibility tool: lease logs are an audit trail of which device held which IP when. Security implications: a rogue DHCP server can redirect traffic by offering a malicious gateway or DNS server (DHCP snooping on switches prevents this). Understanding DHCP clarifies why "my IP address changed" and how network configuration is delivered.
+
+## Real-world examples
+
+- Your home router runs a DHCP server that assigns addresses from `192.168.1.2` to `.254`; your devices auto-configure.
+- Enterprise networks use Windows Server DHCP or ISC Kea for centralised lease management with reservations (fixed address per MAC).
+- Docker and Kubernetes assign container/pod IPs via internal DHCP-like mechanisms within their virtual networks.
+- PXE boot: a DHCP option points a booting machine to a TFTP server to download an OS image — how data centres provision bare-metal servers.
+
+## Common misconceptions
+
+- **"DHCP assigns a permanent IP."** It assigns a *lease* — the IP is reserved for a period, then released. Most home routers renew leases automatically, so the same device keeps the same IP, but this isn't guaranteed.
+- **"DHCP is insecure."** By default it has no authentication, making it vulnerable to rogue servers. DHCP snooping (switch feature) and 802.1X port authentication mitigate this in enterprise networks.
+
+## Learn next
+
+DHCP assigns [IP addresses](/t/ip-address) and [DNS](/t/dns) server information to new devices. [NAT](/t/nat) often works together with DHCP — the router's DHCP server assigns private IPs, and NAT translates them to the public IP. In [IPv6](/t/ipv6) networks, SLAAC can replace DHCP for address assignment.
