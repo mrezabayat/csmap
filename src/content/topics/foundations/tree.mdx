@@ -4,6 +4,7 @@ aliases: ["tree data structure", "trees"]
 category: foundations
 domain: algorithms-mathematics
 subcategory: algorithm-design-analysis
+structure: 2
 kind: concept
 summary: A hierarchical data structure where each node has children but only one parent — the basis of file systems, search structures, DOMs, and ASTs.
 level: beginner
@@ -12,12 +13,28 @@ importance: important
 tags: ["data-structures"]
 prerequisites: ["data-structure"]
 related: ["hash-table", "recursion"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **tree** is a data structure that looks like an upside-down tree: one **root** at the top, with **children** hanging off it, each of which can have its own children. Every node has exactly one parent (except the root, which has none). Trees are everywhere in computing because so much of the world is hierarchical.
+
+## The Visual Map
+
+A binary search tree holding 1–7 — smaller keys go left, larger go right:
+
+```mermaid
+flowchart TD
+  R["4 — root"] --> L2["2"]
+  R --> R2["6"]
+  L2 --> L1["1 — leaf"]
+  L2 --> L3["3 — leaf"]
+  R2 --> R1["5 — leaf"]
+  R2 --> R3["7 — leaf"]
+```
+
+Finding any key takes at most 3 comparisons — the height of the tree, not the size of the data.
 
 ## More detail
 
@@ -47,9 +64,46 @@ Traversal patterns:
 - **Post-order** — descend, then visit (for evaluating expressions, deleting subtrees).
 - **Breadth-first / level-order** — visit all nodes at depth k before depth k+1.
 
-## Why it matters
-
 Trees model hierarchy, and hierarchy is everywhere: file systems, JSON / XML / YAML documents, the DOM in a browser, scene graphs in 3D rendering, abstract syntax trees in compilers, B-tree indexes in databases, decision trees in ML, the chain-of-trust in TLS certificates, your company org chart.
+
+## Under the Hood
+
+A binary search tree in its natural, recursive form — insert and sorted traversal:
+
+```python
+class Node:
+    def __init__(self, key):
+        self.key, self.left, self.right = key, None, None
+
+def insert(node, key):
+    if node is None:
+        return Node(key)
+    if key < node.key:
+        node.left = insert(node.left, key)
+    else:
+        node.right = insert(node.right, key)
+    return node
+
+def in_order(node):                 # left, self, right -> sorted!
+    if node:
+        yield from in_order(node.left)
+        yield node.key
+        yield from in_order(node.right)
+
+root = None
+for k in [4, 6, 2, 7, 1, 5, 3]:
+    root = insert(root, k)
+print(list(in_order(root)))         # [1, 2, 3, 4, 5, 6, 7]
+```
+
+The structure *is* the algorithm: because every insert maintained the left-smaller/right-larger invariant, sorted output falls out of a simple traversal.
+
+## Engineering Trade-offs
+
+- **Naive vs self-balancing.** Insert sorted data into a plain BST and it degenerates into a linked list — O(n) everything. AVL and red-black trees pay extra work per insert (rotations) to *guarantee* O(log n). Library `TreeMap`s are always the balancing kind.
+- **Binary vs wide fanout.** In RAM, binary nodes are simple and fast. On disk, every node visit costs an I/O — so [B-trees](/t/b-tree) pack hundreds of keys per node, trading more comparisons per node for a tree only 3–4 levels deep.
+- **Tree vs hash table.** Trees keep keys ordered — range queries, nearest-key, sorted iteration — at O(log n). [Hash tables](/t/hash-table) drop ordering for O(1) point lookups. Pick by whether "give me everything between X and Y" appears in your requirements.
+- **Pointer overhead.** Every node carries 2+ pointers and an allocation. Array-backed layouts (heaps in arrays, B-tree pages) trade flexibility for density and cache behaviour.
 
 ## Real-world examples
 
@@ -64,6 +118,39 @@ Trees model hierarchy, and hierarchy is everywhere: file systems, JSON / XML / Y
 - **"Trees are always balanced."** Unbalanced BSTs degenerate to linked lists with O(n) operations. Self-balancing variants (AVL, RB, B+) fix this; naive BSTs do not.
 - **"Trees and graphs are the same."** A tree is a special case of a graph — connected, acyclic, with N-1 edges for N nodes. Graphs in general are more flexible (and harder).
 
+## Try it yourself
+
+You have a large tree on disk right now — walk two levels of it:
+
+```bash
+find . -maxdepth 2 -type d | head -20
+```
+
+Every path is a root-to-node walk. Then watch a BST sort for free:
+
+```bash
+python3 -c "
+class N:
+    def __init__(s, k): s.k, s.l, s.r = k, None, None
+
+def ins(t, k):
+    if t is None: return N(k)
+    if k < t.k: t.l = ins(t.l, k)
+    else:       t.r = ins(t.r, k)
+    return t
+
+def walk(t):
+    return walk(t.l) + [t.k] + walk(t.r) if t else []
+
+t = None
+for k in [4, 6, 2, 7, 1, 5, 3]:
+    t = ins(t, k)
+print(walk(t))   # [1, 2, 3, 4, 5, 6, 7]
+"
+```
+
 ## Learn next
 
-The other foundational data structure for fast lookups: [hash table](/t/hash-table). The control-flow pattern most tree algorithms use: [recursion](/t/recursion).
+- [B-tree](/t/b-tree) — the tree rebuilt for disks and databases.
+- [Hash table](/t/hash-table) — the unordered rival for fast lookups.
+- [Recursion](/t/recursion) — the control-flow pattern every tree algorithm leans on.

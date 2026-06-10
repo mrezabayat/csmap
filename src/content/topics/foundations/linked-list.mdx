@@ -4,6 +4,7 @@ aliases: ["linked-lists"]
 category: foundations
 domain: algorithms-mathematics
 subcategory: algorithm-design-analysis
+structure: 2
 kind: concept
 summary: A data structure built from nodes that each point to the next, allowing O(1) insert and remove at any known node — and notably awful cache behaviour.
 level: beginner
@@ -12,12 +13,27 @@ importance: important
 tags: ["data-structures"]
 prerequisites: ["data-structure"]
 related: ["stack-and-queue"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **linked list** is a chain: each element holds its data plus a pointer to the next element. Unlike an array, the elements don't need to be contiguous in memory — they can be scattered, glued together only by the pointers. That makes inserting and removing at any point in the chain cheap, but makes "find the 100th element" expensive.
+
+## The Visual Map
+
+Nodes scattered across the heap, stitched together by pointers — contrast with the array below:
+
+```mermaid
+flowchart LR
+  H["head"] --> N1["0x7f10: 'A' | next"]
+  N1 --> N2["0x3c48: 'B' | next"]
+  N2 --> N3["0x91a0: 'C' | next"]
+  N3 --> NULL["null"]
+  subgraph ARR["array: one contiguous block"]
+    A0["'A'"] --- A1["'B'"] --- A2["'C'"]
+  end
+```
 
 ## More detail
 
@@ -49,9 +65,44 @@ Where linked lists do shine:
 - **Persistent data structures** (functional languages) often use linked lists as the simplest immutable sequence.
 - **Lock-free queues** are usually linked lists because individual nodes can be CAS'd in / out.
 
-## Why it matters
+Linked lists remain the textbook example for explaining pointers, dynamic memory, and asymptotic analysis — and a great cautionary tale: textbook complexity isn't the same as real-world performance. Knowing both the theory and when arrays beat lists in practice is part of being a working engineer.
 
-Linked lists are the textbook example for explaining pointers, dynamic memory, and asymptotic analysis. They're also a great cautionary tale: textbook complexity isn't the same as real-world performance. Knowing both the theory and when arrays beat lists in practice is part of being a working engineer.
+## Under the Hood
+
+The whole structure is one struct and one pointer rewire:
+
+```c
+#include <stdlib.h>
+
+struct node {
+    int value;
+    struct node *next;
+};
+
+/* O(1) insert at the head — no shifting, no reallocation */
+struct node *push(struct node *head, int value) {
+    struct node *n = malloc(sizeof *n);
+    n->value = value;
+    n->next  = head;       /* new node points at the old head ... */
+    return n;              /* ... and becomes the new head        */
+}
+
+/* O(n) search — pointer-chasing, one cache miss per node */
+struct node *find(struct node *head, int value) {
+    for (struct node *p = head; p; p = p->next)
+        if (p->value == value) return p;
+    return NULL;
+}
+```
+
+`push` touches two pointers no matter how long the list is; `find` hops to a fresh heap address every iteration — that hop is the cache miss that makes lists slow in practice.
+
+## Engineering Trade-offs
+
+- **Splice speed vs cache locality.** The list's O(1) insert/remove-at-a-node is real — but every traversal step is a potential cache miss, while an array scan streams through prefetched memory. Benchmarks routinely show arrays winning even at workloads the list is "theoretically" better at.
+- **Memory per element.** Each node pays a pointer (8 bytes, two if doubly-linked) plus allocator metadata — often more overhead than payload for small items. Arrays pay nearly zero per element.
+- **Intrusive vs external nodes.** Kernels embed the `next`/`prev` pointers inside the object itself (`struct list_head`), eliminating the per-node allocation and letting one object sit on several lists at once — at the cost of coupling the object's layout to its containers.
+- **Stable nodes vs compaction.** A list node never moves, so pointers/iterators into it stay valid across inserts — something a resizing vector can't promise. That stability is exactly what lock-free algorithms and LRU caches buy with the list's other costs.
 
 ## Real-world examples
 
@@ -65,6 +116,24 @@ Linked lists are the textbook example for explaining pointers, dynamic memory, a
 - **"Linked lists are faster than arrays for insertion."** Only if you've already found the spot to insert at. Finding the spot is O(n) — versus O(log n) for a sorted array with binary search.
 - **"Linked lists save memory."** They often *use more* memory due to pointer overhead per node and allocator metadata.
 
+## Try it yourself
+
+Measure the front-insert trade directly — a Python `list` (dynamic array) vs `deque` (linked blocks):
+
+```bash
+python3 -c "
+import timeit
+array = timeit.timeit('a.insert(0, 1)', setup='a = []', number=100_000)
+deque = timeit.timeit('d.appendleft(1)', setup='from collections import deque; d = deque()', number=100_000)
+print(f'list.insert(0, x)   (O(n) shift): {array:.3f}s')
+print(f'deque.appendleft(x) (O(1)):       {deque:.3f}s  -> {array/deque:,.0f}x faster')
+"
+```
+
+Every front-insert into the array shifts the whole contents one slot right; the deque just rewires a pointer. Then flip the experiment — index `a[5000]` vs `d[5000]` — and watch the array win.
+
 ## Learn next
 
-The structures linked lists are often used to build: [stack and queue](/t/stack-and-queue). Why arrays often win despite the textbook complexity: cache-friendly data structures.
+- [Stack and queue](/t/stack-and-queue) — the structures linked lists classically implement.
+- [Data structures](/t/data-structure) — the full menu and how to choose.
+- [Memory management](/t/memory-management) — the allocator costs hiding behind every `malloc`'d node.

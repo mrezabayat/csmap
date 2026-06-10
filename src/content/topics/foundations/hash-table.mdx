@@ -4,6 +4,7 @@ aliases: ["hash map", "dictionary", "hashmap"]
 category: foundations
 domain: algorithms-mathematics
 subcategory: algorithm-design-analysis
+structure: 2
 kind: concept
 summary: A data structure that maps keys to values with average O(1) lookup, insert, and delete — the workhorse of dictionaries, sets, caches, and indexes.
 level: beginner
@@ -12,12 +13,25 @@ importance: important
 tags: ["data-structures", "algorithms"]
 prerequisites: ["data-structure"]
 related: ["big-o", "tree"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **hash table** is a data structure for fast "is this key in here, and if so what's the value?" lookups. It works by feeding the key through a **hash function** to produce a number, using that number to pick a slot in an array, and storing the value there. Done right, lookup, insert, and delete all happen in roughly constant time regardless of how big the table gets.
+
+## The Visual Map
+
+```mermaid
+flowchart LR
+  K1["key: 'apple'"] --> H["hash function"]
+  K2["key: 'pear'"] --> H
+  K3["key: 'plum'"] --> H
+  H -->|"hash mod 8 = 2"| S2["slot 2: ('apple', 3)"]
+  H -->|"hash mod 8 = 5"| S5["slot 5: ('pear', 7)"]
+  H -->|"hash mod 8 = 2 — collision!"| S2
+  S2 --> C["chain: ('apple', 3) -> ('plum', 1)"]
+```
 
 ## More detail
 
@@ -48,9 +62,43 @@ Hash table variants:
 
 A famous limitation: hash tables don't preserve insertion order — except many modern languages have specifically chosen to (Python 3.7+, JavaScript objects). They do this via a parallel array of insertion indices.
 
-## Why it matters
-
 Hash tables are the workhorse data structure of modern programming — `dict` in Python, `Object` and `Map` in JavaScript, `HashMap` in Java/Rust/Go, every database index that isn't a B-tree. They are also the foundation under sets, caches, deduplication, joins in databases, and most "is this in a list of N things" code.
+
+## Under the Hood
+
+A complete chaining hash table in twenty lines:
+
+```python
+class HashTable:
+    def __init__(self, size=8):
+        self.buckets = [[] for _ in range(size)]
+
+    def _bucket(self, key):
+        return self.buckets[hash(key) % len(self.buckets)]
+
+    def put(self, key, value):
+        bucket = self._bucket(key)
+        for i, (k, _) in enumerate(bucket):
+            if k == key:
+                bucket[i] = (key, value)   # overwrite existing
+                return
+        bucket.append((key, value))
+
+    def get(self, key):
+        for k, v in self._bucket(key):
+            if k == key:
+                return v
+        raise KeyError(key)
+```
+
+Everything else — resizing, open addressing, SipHash — is optimisation of this core: *hash, pick a bucket, resolve collisions*.
+
+## Engineering Trade-offs
+
+- **Chaining vs open addressing.** Chaining is simple and tolerates high load factors; open addressing keeps everything in one array, winning on cache locality — which is why every modern high-performance table (Swiss tables, Robin Hood) chose it, accepting trickier deletion logic.
+- **Load factor: space vs speed.** A half-empty table wastes memory; a nearly-full one collides constantly. The ~0.75 resize threshold most libraries use is a tuned compromise, and the resize itself is an O(n) latency spike hiding inside "amortised O(1)".
+- **Hash table vs tree.** O(1) average beats O(log n) — but you lose ordering, range queries, and predictable worst cases. Databases index with [B-trees](/t/b-tree) because `BETWEEN` and `ORDER BY` matter; in-memory lookups use hashes because they usually don't.
+- **Speed vs attack resistance.** Fast hash functions are predictable; predictable hashes let attackers manufacture collisions and degrade your server to O(n) per request (hash-flooding DoS). Languages responded with seeded/keyed hashes (SipHash) — slightly slower, attack-resistant.
 
 ## Real-world examples
 
@@ -64,6 +112,21 @@ Hash tables are the workhorse data structure of modern programming — `dict` in
 - **"Hash tables are always O(1)."** Average-case O(1). Worst case is O(n) with adversarial inputs (which is why high-stakes systems use SipHash or random seeds).
 - **"`HashMap` keeps things in order."** Most do not; Python's `dict` does as a deliberate design choice but most languages' standard hash maps don't.
 
+## Try it yourself
+
+See keys map to buckets — and see hash randomisation (the anti-DoS defence) in action:
+
+```bash
+python3 -c "
+for key in ['apple', 'pear', 'plum', 'kiwi']:
+    print(f'{key:6} -> hash {hash(key):>20} -> bucket {hash(key) % 8}')
+"
+```
+
+Run it twice: the hashes (and bucket assignments) change between runs, because Python seeds its string hash per process. Set `PYTHONHASHSEED=0` before the command and they become stable — and attackable.
+
 ## Learn next
 
-How to talk about that "constant time" claim: [Big O](/t/big-o). The other go-to associative structure: [tree](/t/tree).
+- [Big O](/t/big-o) — what that "average O(1)" claim really promises.
+- [Tree](/t/tree) — the ordered alternative when range queries matter.
+- [B-tree](/t/b-tree) — why databases picked the tree side of the trade.

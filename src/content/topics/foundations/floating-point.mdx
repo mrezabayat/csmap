@@ -4,6 +4,7 @@ aliases: ["IEEE 754", "float", "double precision", "floating point arithmetic"]
 category: foundations
 domain: algorithms-mathematics
 subcategory: information-theory-analysis-numerical
+structure: 2
 kind: concept
 summary: The standard way computers represent real numbers — a finite binary approximation with a sign, an exponent, and a significand that makes most arithmetic fast but never perfectly exact.
 level: intermediate
@@ -13,12 +14,26 @@ tags: ["representation", "numbers", "IEEE754", "arithmetic"]
 prerequisites: ["binary-numbers", "bits"]
 related: ["character-encoding"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 Integers are exact; real numbers are not. Most decimal fractions — even `0.1` — cannot be written in binary without an infinite number of digits, so the computer stores the closest approximation it can. **Floating-point** is the standard format for that approximation: a number stored as `sign × significand × 2^exponent`, where all three parts are fixed-width bit fields. The result is a system that covers an enormous range of magnitudes and is wrong by a tiny, bounded amount — usually good enough, occasionally catastrophic.
+
+## The Visual Map
+
+The 64 bits of a double (IEEE 754 binary64), and what each field buys you:
+
+```mermaid
+flowchart LR
+  subgraph D["binary64: value = sign x 1.fraction x 2^(exponent - 1023)"]
+    S["sign<br/>1 bit"] --- E["exponent (biased)<br/>11 bits"] --- F["fraction / significand<br/>52 bits"]
+  end
+  S --> SP["+ or -"]
+  E --> EP["range: ~10^-308 to 10^308"]
+  F --> FP["precision: ~15-17 decimal digits"]
+```
 
 ## More detail
 
@@ -36,9 +51,39 @@ Special values encode edge cases:
 
 The key rounding behaviours: every operation is rounded to the nearest representable value (with ties going to even). Consecutive floating-point operations accumulate rounding error. **Catastrophic cancellation** — subtracting two nearly-equal numbers — can lose almost all significant bits in one step.
 
-## Why it matters
+Every mainstream language (C, Python, Java, JavaScript, Rust) uses IEEE 754 doubles by default, and every GPU does floating-point arithmetic at its core. The bugs it produces — `0.1 + 0.2 ≠ 0.3`, comparisons against computed values failing, NaN propagation hiding errors — are among the most common surprising bugs a programmer encounters, and the fixes (epsilon comparisons, decimal arithmetic for money, checking for NaN) follow directly from understanding the representation.
 
-Every mainstream language (C, Python, Java, JavaScript, Rust) uses IEEE 754 doubles by default. Every GPU does floating-point arithmetic at its core. Machine learning uses 16-bit and 8-bit variants (half, bfloat16, fp8) to trade precision for speed and memory. The bugs that floating-point produces — `0.1 + 0.2 ≠ 0.3`, comparisons against computed values failing, NaN propagation hiding errors — are among the most common surprising bugs a programmer encounters, and the fixes (epsilon comparisons, decimal arithmetic for money, checking for NaN) follow directly from understanding the representation.
+## Under the Hood
+
+Look at the actual bits, and see why `0.1` was never really `0.1`:
+
+```python
+import struct
+
+def bits(x):
+    [i] = struct.unpack(">Q", struct.pack(">d", x))
+    s = f"{i:064b}"
+    return f"{s[0]} | {s[1:12]} | {s[12:]}"   # sign | exponent | fraction
+
+print(bits(0.1))
+# 0 | 01111111011 | 1001100110011001100110011001100110011001100110011010
+#                   ^ binary 0.1 repeats 1001 forever — truncated and rounded
+
+print(f"{0.1:.20f}")        # 0.10000000000000000555  — the stored value
+print(0.1 + 0.2 == 0.3)     # False: the two roundings differ
+
+from decimal import Decimal
+print(Decimal("0.1") + Decimal("0.2") == Decimal("0.3"))   # True — exact base-10
+```
+
+The repeating `1001` pattern in the fraction field is binary's version of 1/3 = 0.333… — the rounding at bit 52 is where the famous error is born.
+
+## Engineering Trade-offs
+
+- **Width vs precision vs speed.** Doubles give ~16 digits; singles halve memory and double SIMD throughput at ~7 digits; ML pushed further to fp16, bfloat16 (full exponent range, tiny precision), and fp8 — accepting noise in exchange for fitting bigger models in memory and multiplying throughput.
+- **Binary speed vs decimal exactness.** Hardware floats are single-cycle; `Decimal`/`BigDecimal` libraries are exact in base 10 but orders of magnitude slower and software-implemented. Money goes in decimals or integer cents; physics goes in doubles.
+- **Comparing computed values.** `a == b` is the wrong question after arithmetic; the trade is choosing a tolerance — absolute epsilon (breaks for huge values), relative epsilon (breaks near zero), or ULP-based (correct, more code).
+- **Reproducibility vs optimisation.** Compilers' `-ffast-math` and GPU fused-multiply-adds reorder operations for speed, which changes rounding — so the "same" computation can differ across machines or runs. Bit-exact reproducibility costs performance; most numerical code trades it away, consensus-critical code (games' lockstep, finance) cannot.
 
 ## Real-world examples
 
@@ -52,6 +97,29 @@ Every mainstream language (C, Python, Java, JavaScript, Rust) uses IEEE 754 doub
 - **"Just use `double` and the errors are negligible."** They usually are, but compounding operations, cancellation, and comparison failures can amplify them to real bugs.
 - **"NaN is like zero."** NaN propagates silently: `NaN + 1 = NaN`, `NaN > 0 = false`, `NaN == NaN = false`. A computation feeding NaN-infected values downstream can produce wrong answers for many steps before anyone notices.
 
+## Try it yourself
+
+The classic, plus the accumulation effect:
+
+```bash
+python3 -c "
+print(0.1 + 0.2)                    # 0.30000000000000004
+print(f'{0.1:.20f}')                # what 0.1 actually stores
+
+total = 0.0
+for _ in range(10):
+    total += 0.1
+print(total, total == 1.0)          # 0.9999999999999999 False
+
+nan = float('nan')
+print(nan == nan)                   # False — NaN is not even equal to itself
+"
+```
+
+Ten additions of `0.1` already drift visibly from `1.0` — now imagine a million timesteps in a simulation. (Fun fact: Python's built-in `sum()` quietly switched to error-compensated [Neumaier] summation in 3.12, so `sum([0.1] * 10) == 1.0` is `True` there — the naive loop above shows what the hardware actually does.)
+
 ## Learn next
 
-Floating-point is [binary numbers](/t/binary-numbers) extended to fractions — understanding bits and binary first makes the representation clear. In ML contexts, the precision trade-off connects to how models are stored and computed in [training and inference](/t/training-and-inference).
+- [Binary numbers](/t/binary-numbers) — the integer representation floating-point extends to fractions.
+- [Numerical methods](/t/numerical-methods) — the discipline of computing accurately *despite* rounding.
+- [Training and inference](/t/training-and-inference) — where fp16/bfloat16 precision trades shape modern AI hardware.
