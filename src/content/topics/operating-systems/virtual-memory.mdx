@@ -4,6 +4,7 @@ aliases: ["virtual address space", "paging"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: A technique that gives each process the illusion of a private, contiguous memory space — built from page tables that map virtual addresses to physical RAM.
 level: intermediate
@@ -14,12 +15,27 @@ prerequisites: ["memory", "process"]
 related: ["paging"]
 partOf: ["operating-system"]
 nextSteps: ["kernel"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 Virtual memory is the trick that lets every program on your computer act as if it owns all of RAM. Each program sees a clean, private address space starting at zero; behind the scenes, the operating system and CPU translate those virtual addresses to scattered locations in real RAM, swap unused chunks to disk, and stop programs from peeking at each other's memory.
+
+## The Visual Map
+
+The journey of one memory access:
+
+```mermaid
+flowchart TD
+  VA["virtual address from program"] --> TLB{"TLB hit?"}
+  TLB -->|"yes (vast majority)"| PA["physical address — done, ~free"]
+  TLB -->|"no"| PT{"page table walk: mapping exists?"}
+  PT -->|"mapped in RAM"| PA
+  PT -->|"on disk (swapped out)"| PF["page fault: kernel loads page, retry"]
+  PF --> PA
+  PT -->|"no mapping at all"| SEG["segmentation fault — process killed"]
+```
 
 ## More detail
 
@@ -41,16 +57,40 @@ This buys several powerful features at once:
 
 Modern systems also use **address-space layout randomisation (ASLR)** — placing each process's stack, heap, and libraries at random virtual addresses — as a security measure against exploits that depend on knowing where things live.
 
-## Why it matters
+Without virtual memory, programs would clash over physical addresses, a single rogue write could corrupt the kernel, and computers would need as much RAM as the sum of their largest programs. It is the single most important abstraction in modern operating systems.
 
-Without virtual memory, programs would clash over physical addresses, a single rogue write could corrupt the kernel, and computers would need as much RAM as the sum of their largest programs. Virtual memory is the single most important abstraction in modern operating systems.
+## Under the Hood
+
+Lazy allocation, demonstrated: reserving address space costs nothing until pages are touched.
+
+```python
+import mmap
+
+# "give me 1 GB" — the kernel just creates page-table entries, no RAM moves
+region = mmap.mmap(-1, 1024 * 1024 * 1024)
+
+# touch one byte every 4096 — each touch page-faults exactly one page in
+for offset in range(0, 64 * 4096, 4096):
+    region[offset] = 1            # first write to a page = one page fault
+
+print("reserved 1 GB of address space, actually dirtied 64 pages = 256 KB")
+region.close()
+```
+
+This is why a process's "virtual size" (VSZ) can be gigabytes while its "resident size" (RSS) is megabytes — address space is a promise, RAM is delivered page-by-page on first touch.
+
+## Engineering Trade-offs
+
+- **Translation overhead vs protection.** Every memory access goes through translation. The TLB makes the common case free, but TLB misses cost real cycles — which is why huge pages (2 MB instead of 4 KB) exist: fewer entries to cache, at the cost of coarser allocation and potential waste.
+- **Swapping: more memory vs unpredictable latency.** Paging to disk lets the system survive memory pressure, but a page fault to disk is ~100,000× slower than a RAM access. Latency-critical services (databases, trading systems) lock their pages into RAM (`mlock`) or disable swap rather than risk it.
+- **Overcommit vs guarantees.** Linux happily promises more memory than exists, betting processes won't touch it all — enabling cheap fork and sparse allocations, but punishable by the OOM killer choosing a victim under pressure. Strict accounting (Windows-style) refuses allocations earlier but never has to kill.
+- **4 KB pages: granularity vs overhead.** Small pages waste little memory per allocation but need millions of page-table entries for big processes; large pages cut bookkeeping but fragment. Modern kernels mix both (transparent huge pages) — and inherit both failure modes.
 
 ## Real-world examples
 
 - Run `top` or Task Manager: the "Virtual" or "VSZ" column is how much address space each process has reserved; "Resident" is how much is actually in RAM.
 - A `Segmentation fault` or `Access violation` is the CPU telling the OS that a process touched a virtual address with no valid mapping.
 - The operating system can run an 8 GB program on a 4 GB machine by paging cold pages out to disk (slowly).
-
 - A 64-bit process can `mmap` a multi-gigabyte database file and treat it as memory; the kernel pages it in on demand, never loading the whole thing.
 
 ## Common misconceptions
@@ -58,6 +98,20 @@ Without virtual memory, programs would clash over physical addresses, a single r
 - **"Virtual memory means swapping to disk."** Swapping is one feature it enables; the bigger story is per-process isolation and mapping.
 - **"Address `0x7fff…` is a real RAM address."** It is a virtual address; what lives at the corresponding physical address depends entirely on the kernel's mapping for that process at that moment.
 
+## Try it yourself
+
+See ASLR scramble the address space — the *same* variable in the *same* program lands somewhere new every run:
+
+```bash
+python3 -c "x = 42; print(hex(id(x)))"
+python3 -c "x = 42; print(hex(id(x)))"
+python3 -c "x = 42; print(hex(id(x)))"
+```
+
+Three runs, three different virtual addresses. On Linux, look at a process's full memory map with `cat /proc/self/maps | head -15` — every line (stack, heap, libraries) is one mapped region of virtual address space.
+
 ## Learn next
 
-Virtual memory is one of the [kernel's](/t/kernel) responsibilities. The actual translation hardware (TLB, MMU) is studied under [computer architecture](/c/computer-architecture).
+- [Paging](/t/paging) — the page-fault machinery in detail.
+- [Kernel](/t/kernel) — the code that owns the page tables.
+- [Memory hierarchy](/t/memory-hierarchy) — where the TLB and caches fit in the bigger picture.

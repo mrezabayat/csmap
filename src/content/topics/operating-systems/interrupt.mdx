@@ -4,6 +4,7 @@ aliases: ["irq", "hardware interrupt"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: A hardware signal that pauses the CPU mid-instruction so the OS can react to an event — a keystroke, a packet, a timer tick.
 level: intermediate
@@ -12,12 +13,26 @@ importance: important
 tags: ["os", "kernel", "hardware"]
 prerequisites: ["kernel"]
 related: ["system-call", "context-switch"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 An **interrupt** is the hardware equivalent of "excuse me, this needs attention right now." A device — keyboard, network card, timer chip — raises a signal on the CPU's interrupt line. The CPU finishes the current instruction, jumps to a handler the OS registered for that interrupt, deals with the event, and returns to whatever it was doing. Interrupts are how an OS finds out anything has happened in the outside world.
+
+## The Visual Map
+
+```mermaid
+flowchart LR
+  KB["keyboard"] --> IC["interrupt controller (APIC/GIC)"]
+  NIC["network card"] --> IC
+  TMR["timer"] --> IC
+  IC -->|"highest-priority IRQ"| CPU["CPU: finish current instruction"]
+  CPU --> H["jump to kernel handler (via IDT/vector table)"]
+  H --> TOP["top half: ack device, queue work — microseconds"]
+  TOP --> BOT["bottom half: real processing, interrupts re-enabled"]
+  TOP -->|"return"| RES["resume interrupted thread"]
+```
 
 ## More detail
 
@@ -40,9 +55,36 @@ Modern systems also use **interrupt coalescing** and **NAPI-style polling**: at 
 
 Interrupt vectors are numbered and registered in an **IDT** (interrupt descriptor table) on x86 or **vector table** on ARM. Each entry maps a vector number to a handler function in the kernel.
 
-## Why it matters
-
 Interrupts are the OS's eyes and ears. Every keypress, every network packet, every disk completion, every timer tick is one. The performance and correctness of interrupt handling is what separates a responsive OS from a janky one — and is also the source of an entire class of difficult bugs (race conditions between handlers and threads, missed wakeups, IRQ storms).
+
+## Under the Hood
+
+The shape of every interrupt handler — top half fast, bottom half later. Signals are the user-space miniature of the same pattern:
+
+```python
+import signal
+
+events = []                       # the "work queue"
+
+def handler(signum, frame):       # the "top half": runs between two of
+    events.append(signum)         # your instructions — keep it tiny
+
+signal.signal(signal.SIGINT, handler)
+signal.raise_signal(signal.SIGINT)        # simulate the async event
+
+# back in the main loop — the "bottom half" drains the queue calmly
+for e in events:
+    print(f"handled deferred event: signal {e}")
+```
+
+Your main code was paused mid-stream, a registered handler ran, control returned — exactly the hardware sequence, one level up. The same rule applies too: do almost nothing inside the handler.
+
+## Engineering Trade-offs
+
+- **Interrupts vs polling.** Interrupts cost ~zero when idle and react instantly — perfect at low event rates. At high rates the per-event overhead drowns the CPU (an "IRQ storm"), so fast NICs flip to polling (NAPI, DPDK) under load: burn a core checking the queue, never miss a beat. Hybrid designs switch modes by load.
+- **Handler brevity vs immediacy.** Doing work in the top half means it happens *now* but blocks every same-line interrupt meanwhile. Deferring to a bottom half keeps the system responsive at the cost of latency and a scheduling hop. Audio drivers and trading systems agonise over this line.
+- **Coalescing: throughput vs latency.** Batching ten packets per interrupt cuts overhead 10× and adds up to one batch-window of delay to the first packet. NIC tuning knobs (`rx-usecs`) exist because the right answer differs between a file server and a game server.
+- **IRQ affinity.** Steering all interrupts to one core keeps the others undisturbed (good for pinned latency-critical threads) but can bottleneck that core; spreading them shares load but jitters everyone. `irqbalance` picks for you; low-latency setups pick by hand.
 
 ## Real-world examples
 
@@ -55,6 +97,19 @@ Interrupts are the OS's eyes and ears. Every keypress, every network packet, eve
 - **"Interrupts are slow."** A single interrupt is nanoseconds-fast — the cost is *what the handler does* and what it blocks while it runs.
 - **"An interrupt always preempts."** The kernel can mask interrupts during critical sections; some handlers run with interrupts disabled, which is exactly when you can lose interrupts.
 
+## Try it yourself
+
+Watch your machine's interrupts arrive, live (Linux):
+
+```bash
+head -8 /proc/interrupts            # one row per IRQ source, one column per core
+watch -n1 'grep -E "timer|i8042|eth|nvme" /proc/interrupts | head'
+```
+
+Type, move the mouse, download something — the counters jump as you generate hardware events. Then run the Python signal demo from Under the Hood to feel the handler pattern from the inside.
+
 ## Learn next
 
-The related kernel-mode crossing for software-initiated events: [system call](/t/system-call). The state-saving cost paid on each transition: [context switch](/t/context-switch).
+- [System call](/t/system-call) — the software-initiated crossing into the same kernel.
+- [Context switch](/t/context-switch) — what the timer interrupt triggers a thousand times a second.
+- [Kernel](/t/kernel) — where every handler lives.

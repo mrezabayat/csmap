@@ -4,6 +4,7 @@ aliases: ["filesystem", "file systems"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: The layer that organises raw storage into named files and directories, manages free space, and enforces permissions.
 level: beginner
@@ -13,12 +14,28 @@ tags: ["os", "filesystem", "storage"]
 prerequisites: ["storage", "operating-system"]
 related: ["kernel", "inode", "ext4-vs-zfs-vs-btrfs"]
 partOf: []
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **file system** is the bookkeeping that turns a disk full of nameless bytes into folders and files you can open. It tracks where each file's bytes live, what its name and permissions are, how big it is, and what's free space.
+
+## The Visual Map
+
+What happens between a path and the bytes:
+
+```mermaid
+flowchart LR
+  P["path: /home/ada/notes.txt"] --> D["directory entries — name to inode number"]
+  D --> I["inode 4221: size, owner, permissions, timestamps"]
+  I --> B1["data block 9001"]
+  I --> B2["data block 9002"]
+  I --> B3["data block 17440 — blocks need not be contiguous"]
+  FREE["free-space map"] -.->|"allocates"| B3
+```
+
+The name lives in the directory; everything else about the file lives in the inode.
 
 ## More detail
 
@@ -48,16 +65,39 @@ Examples in 2026:
 
 There are also **network file systems** (NFS, SMB) that expose a remote machine's tree as if it were local, and **virtual file systems** like `/proc` and `/sys` on Linux that expose kernel state as if it were files.
 
-## Why it matters
+Almost every program reads or writes a file, and the file system is what makes those operations meaningful and durable across reboots, crashes, and bad sectors. It's also the boundary at which most permission and security checks happen.
 
-Almost every program reads or writes a file. The file system is what makes those operations meaningful and durable across reboots, crashes, and bad sectors. It's also the boundary at which most permission and security checks happen.
+## Under the Hood
+
+Everything the file system knows about a file, via one stat call:
+
+```python
+import os, stat, time
+
+st = os.stat("/etc/hostname" if os.path.exists("/etc/hostname") else __file__)
+
+print("inode:      ", st.st_ino)            # the file's real identity
+print("size:       ", st.st_size, "bytes")
+print("permissions:", stat.filemode(st.st_mode))   # e.g. -rw-r--r--
+print("owner uid:  ", st.st_uid)
+print("hard links: ", st.st_nlink)          # how many names point here
+print("modified:   ", time.ctime(st.st_mtime))
+```
+
+Note what's *missing*: the filename. A file's name is not a property of the file — it's an entry in a directory that points at the inode. That's why hard links work and why a file can stay alive after deletion as long as a process holds it open.
+
+## Engineering Trade-offs
+
+- **Journaling vs copy-on-write.** Journaling (ext4, NTFS) logs metadata changes before applying them — fast, mature, crash-consistent, but the data itself can still be torn. CoW designs (ZFS, Btrfs, APFS) never overwrite live blocks, giving atomic updates, snapshots, and checksums — at the cost of fragmentation and heavier metadata.
+- **Consistency vs speed.** Every durability guarantee costs writes: full data journaling roughly doubles them. Most systems default to metadata-only journaling and let applications call `fsync` when *their* data must survive — and databases do, constantly.
+- **Small-file overhead vs large-file throughput.** Block-based allocation wastes up to a block per file (millions of 1 KB files on 4 KB blocks waste ~75%) and metadata operations dominate; large sequential files instead need extent-based allocation and readahead. Tuning for one workload penalises the other.
+- **Local semantics vs network transparency.** NFS/SMB make remote storage look local, but hide failure modes local files never have — a `read` that hangs on a dead server, caching that breaks lock assumptions. "It's just a file" is the leakiest abstraction in the building.
 
 ## Real-world examples
 
 - `ls`, `cd`, `mkdir`, `cp`, `mv`, `rm` — all file-system operations.
 - A "disk full" error is the file system saying it has no free blocks.
 - A USB stick that "needs to be repaired" is a file system whose metadata got inconsistent.
-
 - Modern macOS uses APFS snapshots so Time Machine backups are nearly instant — they record only what changed between snapshots, not the whole disk.
 
 ## Common misconceptions
@@ -65,6 +105,23 @@ Almost every program reads or writes a file. The file system is what makes those
 - **"Reformatting erases the data."** A quick format usually erases the index, not the bytes. Recovery tools can often resurrect files.
 - **"Deleting a file frees disk immediately."** Many systems delay actual block reclamation; on SSDs the `TRIM` command is what finally tells the device the blocks are free.
 
+## Try it yourself
+
+Prove a filename is just a pointer — two names, one file:
+
+```bash
+cd "$(mktemp -d)"
+echo "same file" > original.txt
+ln original.txt alias.txt          # hard link: a second name for the same inode
+ls -i original.txt alias.txt       # identical inode numbers
+echo "edited via alias" >> alias.txt
+cat original.txt                   # the "other" file sees the edit — same bytes
+rm original.txt
+cat alias.txt                      # still alive: the inode survives until the last name goes
+```
+
 ## Learn next
 
-The underlying physical layer is [storage](/t/storage). The OS's privileged layer that runs the file system code is the [kernel](/t/kernel).
+- [Inode](/t/inode) — the metadata record at the centre of it all.
+- [Storage](/t/storage) — the physical layer underneath the blocks.
+- [ext4 vs ZFS vs Btrfs](/t/ext4-vs-zfs-vs-btrfs) — the journaling-vs-CoW trade-off in shipping systems.

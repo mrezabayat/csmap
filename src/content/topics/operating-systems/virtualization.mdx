@@ -4,6 +4,7 @@ aliases: ["hypervisor", "VM", "virtual machine", "Type-1 hypervisor", "KVM", "VM
 category: operating-systems
 domain: systems-software
 subcategory: interpreters-middleware-vm
+structure: 2
 kind: concept
 summary: Running multiple isolated operating systems simultaneously on a single physical machine by intercepting privileged operations and presenting each OS with a virtual hardware interface.
 level: intermediate
@@ -13,12 +14,37 @@ tags: ["operating-systems", "cloud", "hypervisor", "infrastructure"]
 prerequisites: ["operating-system", "virtual-memory", "process"]
 related: ["container", "cloud-provider", "copy-on-write"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A hypervisor is software that tricks an operating system into thinking it has dedicated hardware, while actually sharing that hardware with other operating systems. Each "guest" OS runs in its own isolated virtual machine (VM), with its own virtual CPU, virtual memory, and virtual devices. The hypervisor mediates all hardware access and maintains isolation between VMs — a bug in one VM's guest OS cannot affect another VM's memory. This is how AWS, Google Cloud, and Azure run thousands of customer VMs on the same physical server.
+
+## The Visual Map
+
+The three isolation stacks, side by side:
+
+```mermaid
+flowchart TD
+  subgraph T1["Type 1 — bare metal (ESXi, KVM)"]
+    G1["guest OS A"] --> H1["hypervisor"]
+    G2["guest OS B"] --> H1
+    H1 --> HW1["hardware"]
+  end
+  subgraph T2["Type 2 — hosted (VirtualBox)"]
+    G3["guest OS"] --> H2["hypervisor app"]
+    H2 --> HO["host OS"]
+    HO --> HW2["hardware"]
+  end
+  subgraph CT["containers (Docker)"]
+    C1["app A"] --> K["ONE shared kernel"]
+    C2["app B"] --> K
+    K --> HW3["hardware"]
+  end
+```
+
+VMs virtualise the *hardware* (each guest brings its own kernel); containers virtualise the *OS* (everyone shares one kernel).
 
 ## More detail
 
@@ -38,9 +64,30 @@ A hypervisor is software that tricks an operating system into thinking it has de
 
 **MicroVMs (Firecracker, gVisor):** AWS Firecracker is a KVM-based microVM with a minimal device model, booting in 125 ms, using under 5 MB memory overhead. Used for AWS Lambda — each function invocation gets a fresh microVM for security isolation.
 
-## Why it matters
-
 Virtualisation is the foundation of cloud computing — it enables multi-tenancy, on-demand provisioning, VM migration (live migration for maintenance), and resource overprovisioning. Understanding it explains how cloud VMs work, why "noisy neighbours" exist, what Spectre/Meltdown meant for cloud providers (same physical CPU, different VMs), and how serverless functions achieve isolation.
+
+## Under the Hood
+
+Launching a full virtual machine is one (long) command — every flag is a piece of fake hardware:
+
+```bash
+qemu-system-x86_64 \
+  -enable-kvm \                        # use VT-x/AMD-V: guest runs at native speed
+  -cpu host -smp 2 \                   # 2 virtual CPUs that look like the host's
+  -m 2048 \                            # 2 GB of guest-"physical" memory (EPT-mapped)
+  -drive file=disk.qcow2,if=virtio \   # a file pretending to be a block device
+  -netdev user,id=n0 -device virtio-net,netdev=n0 \   # paravirtual NIC
+  -cdrom ubuntu.iso -boot d            # boot an installer like it's 2005
+```
+
+The guest kernel inside will probe "hardware", find virtio devices, and load drivers for them — never suspecting the disk is a `qcow2` file and the NIC is a ring buffer into QEMU. `-enable-kvm` is the line that matters: without it QEMU *interprets* every instruction; with it the CPU runs guest code directly and only traps the privileged ones.
+
+## Engineering Trade-offs
+
+- **VMs vs containers.** A VM carries its own kernel: strongest isolation boundary short of separate hardware, at hundreds of MB and seconds to boot. A container is just kernel namespaces around a process: milliseconds and megabytes, but a kernel exploit escapes *all* containers on the host. Clouds layer them — containers for density, inside VMs for tenant isolation. Firecracker microVMs deliberately split the difference.
+- **Emulation vs paravirtualisation.** Emulating real hardware (an IDE disk) runs unmodified ancient guests but traps constantly; virtio requires the guest to *know* it's virtualised in exchange for near-native I/O. Modern guests all choose cooperation over illusion.
+- **Overcommit vs guarantees.** Promising VMs more total vCPU/RAM than the host has raises utilisation (most guests idle) but creates noisy neighbours and ballooning under pressure. Cloud instance types are essentially priced positions on this dial — "burstable" vs "dedicated".
+- **Live migration vs locality.** Moving a running VM between hosts enables zero-downtime maintenance, but requires shared/replicated storage and copies dirty memory pages across the network — workloads that dirty memory fast may never converge. Pinned-hardware features (GPU passthrough, SR-IOV) trade migration away entirely for performance.
 
 ## Real-world examples
 
@@ -54,6 +101,20 @@ Virtualisation is the foundation of cloud computing — it enables multi-tenancy
 - **"VMs are always slow."** Hardware virtualisation (VT-x + EPT) adds ~2–10% overhead for CPU-intensive workloads. I/O-intensive workloads with full device emulation can be much slower, but virtio and hardware offload (Nitro, SR-IOV) bring it close to bare metal.
 - **"Containers replaced VMs."** Containers complement VMs. Most container workloads run inside VMs on cloud platforms for the security isolation that containers alone don't provide.
 
+## Try it yourself
+
+Check whether you're *inside* a VM right now, and whether your machine can host one (Linux):
+
+```bash
+systemd-detect-virt                   # 'kvm', 'vmware', 'wsl'... or 'none'
+grep -c -E 'vmx|svm' /proc/cpuinfo    # >0 = CPU supports hardware virtualisation
+ls -l /dev/kvm                        # exists = the KVM hypervisor door is open
+```
+
+On WSL the first command prints `wsl` — you've been running this whole Atlas inside a VM. With QEMU installed (`# requires: qemu-system-x86`), the Under-the-Hood command boots a real guest from any ISO.
+
 ## Learn next
 
-Virtualisation and [containers](/t/container) are the two isolation primitives of modern cloud infrastructure. [Copy-on-write](/t/copy-on-write) enables efficient VM snapshots and memory overcommit. [Cloud computing](/t/cloud-computing) depends entirely on virtualisation for multi-tenancy.
+- [Container](/t/container) — the lighter-weight isolation primitive VMs are compared against.
+- [Virtual memory](/t/virtual-memory) — the same translation trick, one level down.
+- [Cloud provider](/t/cloud-provider) — the business built on top of hypervisors.

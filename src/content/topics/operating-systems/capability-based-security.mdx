@@ -4,6 +4,7 @@ aliases: ["capabilities", "OCAP", "capability-based access control", "object cap
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: A security model where authority to access a resource is represented by an unforgeable token (a capability) that must be explicitly held and passed — removing the need for centralised access control tables and preventing ambient authority vulnerabilities.
 level: advanced
@@ -13,12 +14,30 @@ tags: ["security", "operating-systems", "access-control", "design"]
 prerequisites: ["operating-system", "process", "sandbox"]
 related: ["microkernel-vs-monolithic", "authorization"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 In traditional Unix security, a process has an identity (user ID), and the OS checks permissions by looking up that identity in access control lists. The problem: a process has *ambient authority* — if it can read files as user `alice`, it can read *all* alice's files, even in code you didn't intend to give file access to. Capability-based security flips this: you don't check identities; you hold an unforgeable token (a capability) for each resource you're allowed to use. If you don't have the capability, you cannot use the resource — period. Passing a capability to another function is an explicit grant of authority.
+
+## The Visual Map
+
+The same request under the two models:
+
+```mermaid
+flowchart TD
+  subgraph ACL["identity / ACL model (Unix)"]
+    P1["process running as alice"] -->|"open('/home/alice/x')"| C1{"kernel: is alice<br/>on x's ACL?"}
+    C1 -->|"yes"| F1["access — to x and EVERY file alice can touch"]
+  end
+  subgraph CAP["capability model (seL4, WASI, Deno)"]
+    P2["process holds cap #7<br/>(read-only handle to x)"] -->|"read(cap7)"| C2{"kernel: is the<br/>token valid?"}
+    C2 -->|"yes"| F2["access to x ONLY — nothing else exists for it"]
+  end
+```
+
+Under ACLs, authority is ambient — it follows the identity everywhere. Under capabilities, authority is exactly the set of tokens you were handed.
 
 ## More detail
 
@@ -40,9 +59,34 @@ A **capability** is an unforgeable reference to an object that includes the righ
 - **WebAssembly Component Model** — uses capability-based imports; a Wasm component can only call imported functions (capabilities); it cannot freely access host resources.
 - **WASI (WebAssembly System Interface)** — capability-based: modules receive specific file descriptor capabilities rather than ambient filesystem access.
 
-## Why it matters
+Capability-based security is considered the gold standard for access control by security researchers, and the Principle of Least Authority (POLA) is most cleanly implemented with it. Understanding capabilities matters for anyone designing security-sensitive systems, evaluating microkernel architectures, or working with WebAssembly and modern sandboxing.
 
-Capability-based security is considered the gold standard for access control by security researchers. Systems like seL4 and CHERI demonstrate practical implementations. The Principle of Least Authority (POLA) is most cleanly implemented via capabilities. Understanding capabilities is important for anyone designing security-sensitive systems, evaluating microkernel architectures, or working with WebAssembly or modern sandboxing technologies.
+## Under the Hood
+
+Unix already contains a working capability in miniature: the **file descriptor**. Once you hold it, the *name* and even the ACL no longer matter:
+
+```python
+import os
+
+# acquire the capability (the ACL check happens ONCE, at open time)
+fd = os.open("secret.txt", os.O_RDONLY)
+
+os.remove("secret.txt")           # the name is gone from the namespace...
+os.chmod                           # ...and no later permission check occurs:
+
+print(os.read(fd, 100))           # the fd still grants access — it IS the
+os.close(fd)                      # authority, transferable to children,
+                                  # revoked only by closing it
+```
+
+This is exactly why WASI and Deno build on "preopened" descriptors: hand a sandboxed module *one* directory fd, and arbitrary `open("/etc/passwd")` simply has no token to present.
+
+## Engineering Trade-offs
+
+- **Precise authority vs administration model.** ACLs answer "who can access this file?" by reading one table — auditors love it. Capabilities answer "what can this process touch?" precisely — but "list everyone with access to X" now requires tracing every token ever delegated. Each model makes the other's primary question hard.
+- **Delegation: power and peril.** Passing capabilities is frictionless delegation — no admin, no sudo. That same ease means authority can flow somewhere you didn't anticipate; disciplined systems wrap capabilities in attenuating proxies (read-only views, revocable forwarders), which adds design work ACLs never need.
+- **Revocation.** An ACL edit revokes instantly at the next check. A raw capability, once handed out, works until destroyed — revocation requires planning ahead (indirection objects you can null out). It's the model's classic weak spot.
+- **Retrofit cost.** The Unix/Windows world assumes ambient authority everywhere; pure capability systems (seL4, CHERI) rebuild from the kernel or the hardware up. The pragmatic adoption path has been new platforms (Wasm/WASI, Deno, Fuchsia) rather than converting old ones.
 
 ## Real-world examples
 
@@ -56,6 +100,27 @@ Capability-based security is considered the gold standard for access control by 
 - **"Unix permissions and capabilities are the same."** Linux has a "capabilities" feature (`CAP_NET_ADMIN`, etc.) that is *not* object capabilities — it's a refinement of the Unix privilege model (splitting root into granular privileges). True object capabilities are a different paradigm.
 - **"Capability-based systems are impractical."** seL4 runs production drones and automotive systems. WASI is standardised. Deno is widely used. The model is practical — it's the defaults (Unix ACLs everywhere) that make it seem unusual.
 
+## Try it yourself
+
+Hold a file's capability while its name disappears (Linux/WSL semantics):
+
+```bash
+cd "$(mktemp -d)"
+echo "the fd is the authority" > secret.txt
+python3 -c "
+import os
+fd = os.open('secret.txt', os.O_RDONLY)   # token acquired
+os.remove('secret.txt')                   # name destroyed
+print('file gone from namespace:', not os.path.exists('secret.txt'))
+print('but the capability still reads:', os.read(fd, 100))
+os.close(fd)
+"
+```
+
+If you have Deno installed, the model is even more visible: `deno run script.ts` can touch *nothing* — every `--allow-read=...` flag is you handing the process one capability.
+
 ## Learn next
 
-Capability-based security is the access control model underlying secure [sandbox](/t/sandbox) designs and [microkernel](/t/microkernel-vs-monolithic) architectures. It is the implementation of [authorization](/t/authorization) at the OS level.
+- [Authorization](/t/authorization) — the general problem capabilities are one answer to.
+- [Sandbox](/t/sandbox) — where capability thinking dominates modern designs.
+- [Microkernel vs monolithic](/t/microkernel-vs-monolithic) — the kernel architecture capabilities pair with.

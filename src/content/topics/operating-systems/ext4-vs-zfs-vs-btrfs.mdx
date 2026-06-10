@@ -4,6 +4,7 @@ aliases: ["ext4", "ZFS", "Btrfs", "file system comparison", "modern file systems
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: Three dominant Unix file systems with different design philosophies — ext4 is stable and simple; ZFS is enterprise-grade with built-in integrity and pooled storage; Btrfs brings COW snapshots and checksums to Linux with a familiar interface.
 level: intermediate
@@ -13,12 +14,28 @@ tags: ["operating-systems", "file-systems", "storage", "linux"]
 prerequisites: ["operating-system", "storage", "copy-on-write"]
 related: ["database", "inode"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A file system is the on-disk structure that organises files and directories. ext4 (the Linux default) is like a reliable, simple spreadsheet — it works, it's fast, but it doesn't self-check for corruption. ZFS is like a fortress: every block has a checksum, storage is pooled across drives, and snapshots are instant and free. Btrfs tries to bring ZFS-like features (COW, checksums, snapshots) to Linux as a native kernel module. Each suits different workloads and tolerance for complexity.
+
+## The Visual Map
+
+The design-philosophy split, at a glance:
+
+```mermaid
+flowchart TD
+  FS["Unix file system designs"] --> J["journaling, update-in-place"]
+  FS --> C["copy-on-write, never overwrite"]
+  J --> EXT["ext4: metadata journal,<br/>extents, kernel-native, no data checksums"]
+  C --> ZFS["ZFS: pooled storage + RAID-Z,<br/>end-to-end checksums, ARC cache,<br/>out-of-tree (CDDL licence)"]
+  C --> BT["Btrfs: kernel-native CoW,<br/>subvolumes + snapshots,<br/>RAID 1/10 stable, 5/6 not"]
+  EXT -.-> U1["default for general Linux"]
+  ZFS -.-> U2["NAS / enterprise storage"]
+  BT -.-> U3["desktop rollbacks, Facebook fleet"]
+```
 
 ## More detail
 
@@ -62,9 +79,39 @@ Key features:
 | Maturity | Very mature | Mature (enterprise) | Maturing |
 | Best for | General Linux use | Enterprise NAS/servers | Desktop Linux, NAS |
 
-## Why it matters
+File system choice affects data integrity, performance, backup strategy, and administration complexity. ZFS's checksumming catches silent corruption that has historically caused data loss in ext4 systems running on aging hardware; Btrfs snapshots power Linux system rollbacks; ext4's simplicity keeps it the safe default. The choice shapes how you handle RAID, snapshots, and scrubbing.
 
-File system choice affects data integrity, performance, backup strategy, and administration complexity. Engineers who manage databases, NAS servers, production Linux systems, or backup infrastructure need to understand the trade-offs. ZFS's checksumming catches silent corruption that has historically caused data loss in ext4 systems running on aging hardware. Btrfs snapshots power Linux system rollbacks. The choice shapes how you handle RAID, snapshots, and scrubbing.
+## Under the Hood
+
+The three day-to-day workflows, side by side:
+
+```bash
+# ext4: simple, but integrity and snapshots are someone else's job
+mkfs.ext4 /dev/sdb1
+mount /dev/sdb1 /data                  # snapshots? add LVM. checksums? none.
+
+# ZFS: pool first, then file systems become cheap administrative objects
+zpool create tank raidz2 sda sdb sdc sdd
+zfs create tank/projects
+zfs set compression=lz4 tank/projects
+zfs snapshot tank/projects@before-upgrade        # instant, free
+zfs rollback tank/projects@before-upgrade        # undo everything since
+
+# Btrfs: subvolumes give snapshot/rollback inside one ordinary volume
+mkfs.btrfs /dev/sdb1 && mount /dev/sdb1 /data
+btrfs subvolume create /data/projects
+btrfs subvolume snapshot /data/projects /data/projects-snap
+btrfs scrub start /data                          # verify every checksum
+```
+
+The shape of the commands *is* the philosophy: ext4 manages a disk; ZFS manages a storage system; Btrfs retrofits the latter onto the former's habits.
+
+## Engineering Trade-offs
+
+- **Integrity vs overhead.** Checksumming every block (ZFS, Btrfs) catches bit rot that ext4 silently serves back to you — at the cost of CPU per I/O and metadata writes. For aging consumer drives holding family photos, that trade is obviously right; for a scratch build directory, obviously wrong.
+- **CoW vs update-in-place for databases.** Databases doing random in-place writes fragment badly on CoW file systems and double-journal (the DB's WAL on top of CoW). Common practice: `nodatacow` for Btrfs database directories, or tuned `recordsize` on ZFS — partially disabling the features you chose the file system for.
+- **Integrated RAID vs layered storage.** ZFS owning the whole stack (disks → pool → FS) closes the RAID-5 write hole and enables self-healing, but locks you into its management model. ext4-on-mdadm/LVM composes standard tools — and the RAID layer can't tell which copy is the corrupt one.
+- **In-kernel vs out-of-tree.** Btrfs ships with every Linux kernel; ZFS's CDDL licence keeps it a separately-maintained module — a kernel upgrade can briefly strand your storage driver. Stability of code vs stability of packaging point in opposite directions here.
 
 ## Real-world examples
 
@@ -79,6 +126,20 @@ File system choice affects data integrity, performance, backup strategy, and adm
 - **"ZFS is only for enterprise storage."** ZFS on Linux (OpenZFS) works on a home server with a few drives and gives you integrity checking, compression, and snapshots for free.
 - **"Btrfs is not production-ready."** RAID 1/10 and single-device Btrfs are production-safe. RAID 5/6 remain a known risk and should be avoided for critical data.
 
+## Try it yourself
+
+Find out what you're running on, then read the kernel's menu of supported file systems:
+
+```bash
+df -T /                  # the Type column: ext4? btrfs?
+cat /proc/filesystems | head -20
+findmnt -t ext4,btrfs,zfs,xfs    # every mount, by file system type
+```
+
+On a Btrfs system, try the headline feature risk-free in a loop device: `truncate -s 1G img && mkfs.btrfs img && mount -o loop img /mnt` — then create a subvolume, snapshot it, delete files, and roll back.
+
 ## Learn next
 
-All three file systems use [copy-on-write](/t/copy-on-write) in different ways. Understanding [RAID](/t/raid) helps evaluate the built-in RAID alternatives. ZFS and Btrfs snapshots are the foundation of many Linux backup and rollback tools.
+- [Copy-on-write](/t/copy-on-write) — the mechanism behind ZFS/Btrfs snapshots.
+- [File system](/t/file-system) — the general concepts all three implement.
+- [Inode](/t/inode) — the per-file metadata structure underneath the trees.

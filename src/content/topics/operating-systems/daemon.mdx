@@ -4,6 +4,7 @@ aliases: ["daemons", "background process", "service"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: A long-running background process with no controlling terminal, usually started at boot and supervised by the system, that quietly does work or waits for requests.
 level: intermediate
@@ -13,12 +14,27 @@ tags: ["os", "process", "background"]
 prerequisites: ["process"]
 related: ["kernel", "operating-system"]
 nextSteps: ["scheduler"]
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **daemon** is a program that runs quietly in the background, detached from any terminal, waiting to do its job — serving web pages, delivering mail, writing logs, syncing the clock. You never "see" a daemon the way you see an app window; it just sits there, usually started when the machine boots and shut down when it powers off. By convention many of their names end in *d*: `sshd`, `cron`, `systemd`, `journald`.
+
+## The Visual Map
+
+The classic daemonization recipe — how a terminal-bound process becomes a free-floating service:
+
+```mermaid
+flowchart TD
+  S["shell starts program (has a terminal)"] --> F1["fork(), parent exits — child orphaned, adopted by PID 1"]
+  F1 --> SS["setsid() — new session, no controlling terminal"]
+  SS --> F2["fork() again — can never reacquire a terminal"]
+  F2 --> CH["chdir('/'), close stdin/stdout/stderr"]
+  CH --> D["daemon: supervised by init, logs to journal/syslog"]
+  D -.->|"crash"| R["service manager restarts it"]
+  R -.-> D
+```
 
 ## More detail
 
@@ -36,9 +52,36 @@ In practice you rarely write that by hand anymore. A **service manager** does th
 
 Well-behaved daemons often start as root to bind a privileged port or open a device, then **drop privileges** to an unprivileged user for everything after.
 
-## Why it matters
-
 Almost everything a server *does* is a daemon: the web server listening on port 443, the database, the SSH login service, the metrics agent, the scheduled-job runner. Understanding the daemon lifecycle — how it's launched, supervised, restarted, and where its logs go — is most of what "running a service in production" actually means. When a service "won't start" or "keeps restarting," you're debugging daemon mechanics.
+
+## Under the Hood
+
+What the service manager replaced — and what a unit file actually says:
+
+```ini
+; /etc/systemd/system/myapp.service — the modern way to declare a daemon
+[Unit]
+Description=My background service
+After=network.target          ; dependency ordering
+
+[Service]
+ExecStart=/usr/local/bin/myapp
+Restart=on-failure            ; the supervision loop
+User=myapp                    ; privilege dropping, declared not coded
+StandardOutput=journal        ; stdout becomes structured logs
+
+[Install]
+WantedBy=multi-user.target    ; start at boot
+```
+
+Everything the double-fork dance achieved in code — detachment, supervision, logging, privilege drop — is now five declarative lines. The daemon itself can be a completely ordinary program that just runs in the foreground; systemd handles the rest.
+
+## Engineering Trade-offs
+
+- **Self-daemonizing vs foreground + supervisor.** The double-fork recipe makes a program independent of any manager — and invisible to one: the supervisor can't tell the real PID or notice crashes reliably. Modern practice inverts it: run in the foreground, log to stdout, let systemd/launchd/Kubernetes own the lifecycle. Simpler code, better supervision; the cost is assuming a manager exists.
+- **Restart policy.** `Restart=always` masks crash loops (a service failing every 2 seconds looks "up"); no restart means 3 a.m. pages for transient faults. Backoff plus a failure budget (`StartLimitBurst`) is the usual compromise — and still needs alerting on the *rate* of restarts.
+- **Root vs privilege separation.** Starting as root to bind port 443 then dropping privileges shrinks the blast radius of a compromise, but privilege-drop code is itself easy to get wrong (forgotten supplementary groups, inherited file descriptors). Capabilities (`CAP_NET_BIND_SERVICE`) and socket activation let many daemons never be root at all.
+- **One daemon per job vs combined.** Many small daemons isolate failures and follow Unix philosophy but multiply ops surface (units, logs, monitoring per daemon). Consolidation simplifies operations and couples failure domains — the systemd-vs-traditional-init argument in miniature.
 
 ## Real-world examples
 
@@ -51,6 +94,23 @@ Almost everything a server *does* is a daemon: the web server listening on port 
 - **"Daemon means something malicious."** No — the name is an old MIT joke (a helpful background spirit), not "demon." Malware sometimes *runs* as a daemon, but so does almost every legitimate service.
 - **"Daemons must run as root."** Many start as root only to grab a privileged resource, then drop to a low-privilege user; plenty never need root at all.
 
+## Try it yourself
+
+Find the daemons on a Linux box — they're the processes with no terminal (`TTY` shows `?`):
+
+```bash
+ps -eo pid,ppid,tty,comm | awk '$3 == "?"' | head -12
+```
+
+Note how many have `PPID` 1 or 2 — children of init or the kernel. If the machine runs systemd, inspect one end to end:
+
+```bash
+systemctl status cron        # state, PID, uptime, recent log lines
+journalctl -u cron -n 5      # its last five log entries
+```
+
 ## Learn next
 
-A daemon is just a [process](/t/process) the system keeps alive in the background — the [scheduler](/t/scheduler) decides when it actually gets the CPU.
+- [Process](/t/process) — the thing a daemon fundamentally is.
+- [Shell](/t/shell) — the terminal-attached world daemons detach from.
+- [Scheduler](/t/scheduler) — how background daemons share the CPU with your foreground work.

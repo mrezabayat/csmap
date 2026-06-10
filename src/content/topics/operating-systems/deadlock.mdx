@@ -4,6 +4,7 @@ aliases: ["deadlocked"]
 category: operating-systems
 domain: concurrency-parallelism
 subcategory: concurrent-parallel-computing
+structure: 2
 kind: concept
 summary: A state where two or more threads are each waiting for the other to release a lock — so none of them ever make progress.
 level: intermediate
@@ -12,12 +13,28 @@ importance: important
 tags: ["concurrency", "locking"]
 prerequisites: ["mutex"]
 related: ["thread"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A **deadlock** is when threads get stuck waiting for each other in a circle. Thread A holds lock 1 and wants lock 2. Thread B holds lock 2 and wants lock 1. Both wait forever. The classic example: two people approach a single-lane bridge from opposite sides, each politely refusing to back up until the other does.
+
+## The Visual Map
+
+The circular wait, drawn as the wait-for graph a detector would build:
+
+```mermaid
+flowchart LR
+  A["thread A"] -->|"holds"| L1["lock 1"]
+  B["thread B"] -->|"holds"| L2["lock 2"]
+  A -.->|"waits for"| L2
+  B -.->|"waits for"| L1
+  L1 -.->|"held by"| A
+  L2 -.->|"held by"| B
+```
+
+Follow the dotted arrows: A → lock 2 → B → lock 1 → A. The cycle *is* the deadlock.
 
 ## More detail
 
@@ -49,9 +66,44 @@ Related-but-different pathologies:
 - **Starvation** — a thread is technically eligible but never scheduled because higher-priority work always arrives first.
 - **Priority inversion** — a high-priority thread waits on a lock held by a low-priority thread the OS isn't bothering to schedule. Famously almost killed the Mars Pathfinder mission.
 
-## Why it matters
-
 Deadlocks are nondeterministic — they happen under specific timing, often in production after stress builds up, and they bring a system to a complete halt. Designing concurrency to avoid them (or fail fast when they occur) is a core skill in any multi-threaded codebase.
+
+## Under the Hood
+
+The two-lock deadlock, defused with timeouts so it's safe to run — and the ordering fix beside it:
+
+```python
+import threading
+
+lock1, lock2 = threading.Lock(), threading.Lock()
+
+def worker_a():
+    with lock1:                                   # A holds 1 ...
+        ok = lock2.acquire(timeout=1)             # ... wants 2
+        print("A got lock2:", ok)
+        if ok: lock2.release()
+
+def worker_b():
+    with lock2:                                   # B holds 2 ...
+        ok = lock1.acquire(timeout=1)             # ... wants 1 — the cycle
+        print("B got lock1:", ok)
+        if ok: lock1.release()
+
+a, b = threading.Thread(target=worker_a), threading.Thread(target=worker_b)
+a.start(); b.start(); a.join(); b.join()
+# typically: both print False — each timed out waiting for the other.
+# THE FIX: make worker_b take lock1 FIRST, then lock2 (same global order
+# as worker_a). The cycle becomes impossible — condition 4 eliminated.
+```
+
+With real blocking `acquire()` calls this program would hang forever. The timeout converts a silent hang into a visible failure — which is itself a production strategy.
+
+## Engineering Trade-offs
+
+- **Prevention vs detection.** Lock ordering prevents deadlock by construction but demands global discipline nobody can see locally — one new code path acquiring out of order reintroduces the bug. Detection (databases' wait-for graphs) allows natural lock usage but requires every caller to handle "transaction aborted, retry".
+- **Trylock-and-retry vs blocking.** Backing off on failure eliminates deadlock but invites *livelock* (everyone retrying in lockstep) and wastes work; randomised backoff mitigates it at the cost of latency jitter.
+- **One big lock vs many small ones.** Coarse locking cannot deadlock with itself and is easy to reason about — and serialises everything. Fine-grained locking scales and multiplies the cycle possibilities. Most mature systems migrate coarse → fine only under measured contention, adding lockdep-style validation as they go.
+- **Timeouts as last resort.** Watchdog timeouts turn infinite hangs into errors, but choosing the value is guesswork: too short misfires under load, too long means minutes of frozen service. They are a backstop, not a design.
 
 ## Real-world examples
 
@@ -64,6 +116,32 @@ Deadlocks are nondeterministic — they happen under specific timing, often in p
 - **"Deadlocks only happen with explicit locks."** They happen any time there's a circular dependency on a finite resource — DB transactions, file handles, semaphores, message queues, network connections.
 - **"Detecting a deadlock is enough."** Detection without a recovery plan (retry, rollback, abort) just turns silent hangs into noisy hangs.
 
+## Try it yourself
+
+Run the defused deadlock and watch both threads time out; then apply the ordering fix and watch it vanish:
+
+```bash
+python3 -c "
+import threading
+lock1, lock2 = threading.Lock(), threading.Lock()
+
+def a():
+    with lock1:
+        print('A got lock2:', lock2.acquire(timeout=1))
+
+def b():
+    with lock2:
+        print('B got lock1:', lock1.acquire(timeout=1))
+
+ta, tb = threading.Thread(target=a), threading.Thread(target=b)
+ta.start(); tb.start(); ta.join(); tb.join()
+"
+```
+
+Both `False` (after a 1-second stare-down) is the deadlock, made visible. Edit `b()` to take `lock1` before `lock2` — same global order as `a()` — and both threads print `True` instantly.
+
 ## Learn next
 
-The basic primitive that makes deadlocks possible: [mutex](/t/mutex). The unit of execution that gets stuck: [thread](/t/thread).
+- [Mutex](/t/mutex) — the primitive whose combinations create the cycle.
+- [Semaphore](/t/semaphore) — counting resources, with the same circular-wait risks.
+- [Thread](/t/thread) — the unit of execution that gets stuck.

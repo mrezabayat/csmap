@@ -4,6 +4,7 @@ aliases: ["counting semaphore", "binary semaphore", "P/V operations", "Dijkstra 
 category: operating-systems
 domain: concurrency-parallelism
 subcategory: concurrent-parallel-computing
+structure: 2
 kind: concept
 summary: A signalling mechanism that controls access to shared resources by maintaining a counter — threads decrement it to acquire a resource and increment it to release, blocking when the count reaches zero.
 level: intermediate
@@ -13,12 +14,26 @@ tags: ["concurrency", "synchronization", "operating-systems", "threads"]
 prerequisites: ["thread", "mutex", "process"]
 related: ["deadlock", "lock-free-programming", "real-time-os"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A semaphore is like a bucket of permits. A thread must take a permit before entering a critical section; it returns the permit when done. If the bucket is empty, the thread waits until someone returns a permit. Dijkstra invented semaphores in 1965 as one of the first solutions to the critical section problem. They are the building block from which mutexes, condition variables, and higher-level concurrency primitives are constructed.
+
+## The Visual Map
+
+A counting semaphore guarding a pool of 3 database connections:
+
+```mermaid
+flowchart LR
+  T1["thread 1"] -->|"P() — permit 1"| POOL["semaphore count: 3 -> 0<br/>(connection pool)"]
+  T2["thread 2"] -->|"P() — permit 2"| POOL
+  T3["thread 3"] -->|"P() — permit 3"| POOL
+  T4["thread 4"] -->|"P() — blocks"| WAIT["wait queue"]
+  POOL -->|"thread 2 done: V()"| WAKE["count 0 -> 1, wake thread 4"]
+  WAKE --> WAIT
+```
 
 ## More detail
 
@@ -56,9 +71,43 @@ consumer: P(full);  P(mutex); get_item(); V(mutex); V(empty)
 
 **In POSIX:** `sem_init`, `sem_wait`, `sem_post`. In Linux, also futex-based for fast user-space semaphores.
 
-## Why it matters
+Semaphores are the oldest synchronisation primitive and appear in every OS, RTOS, and concurrent programming textbook. They remain directly used in OS kernels, device drivers, and real-time systems where low-level control is required — and understanding them is foundational to every higher-level concurrency abstraction.
 
-Semaphores are the oldest synchronisation primitive and appear in every OS, RTOS, and concurrent programming textbook. Understanding them is foundational to understanding mutexes, condition variables, monitors, and all higher-level concurrency abstractions. They are still directly used in OS kernels, device drivers, and real-time systems where low-level control is required.
+## Under the Hood
+
+A bounded connection pool — the counting semaphore's signature use:
+
+```python
+import threading, time, random
+
+pool = threading.Semaphore(3)        # 3 permits = 3 "connections"
+active = 0
+lock = threading.Lock()
+
+def query(worker_id):
+    global active
+    with pool:                       # P(): blocks if all 3 permits are out
+        with lock:
+            active += 1
+            print(f"worker {worker_id} in  (active: {active})")
+        time.sleep(random.uniform(0.1, 0.3))   # "use the connection"
+        with lock:
+            active -= 1
+    # leaving `with pool` = V(): permit returned, a waiter wakes
+
+threads = [threading.Thread(target=query, args=(i,)) for i in range(8)]
+for t in threads: t.start()
+for t in threads: t.join()
+```
+
+Eight workers, three permits — `active` never exceeds 3, with no scheduling code anywhere. The semaphore *is* the admission control.
+
+## Engineering Trade-offs
+
+- **Semaphore vs mutex for exclusion.** A binary semaphore can play mutex, but with no ownership: any thread can `V()`, releasing a lock it never held, and the runtime can't detect it. Mutexes add ownership checks and priority inheritance. Rule of thumb: exclusion → mutex; *signalling between threads* or *counting* → semaphore.
+- **Counting admission vs queueing.** A semaphore caps concurrency (3 connections, 10 inflight requests) with one line; it doesn't preserve order fairness on all platforms, can't time out uniformly everywhere, and gives no backpressure signal. A bounded queue costs more machinery and tells you when you're saturated.
+- **Blocking vs failing fast.** `P()` that blocks keeps callers simple but hides saturation — threads pile up invisibly. `acquire(timeout=...)`/`try-acquire` surfaces overload as an explicit error you can shed or retry; rate limiters built on semaphores almost always want the latter.
+- **Cross-process power vs lifecycle hazards.** POSIX named semaphores synchronise unrelated processes — nothing thread-local matches that. But a process that dies holding a permit leaks it permanently (no owner means no automatic release), which is why robust mutexes exist and why supervisors often just reset the world.
 
 ## Real-world examples
 
@@ -72,6 +121,35 @@ Semaphores are the oldest synchronisation primitive and appear in every OS, RTOS
 - **"A semaphore is the same as a mutex."** A binary semaphore can be used like a mutex, but it lacks ownership semantics and priority inheritance — using it as a mutex introduces bugs that are hard to debug.
 - **"Semaphores are outdated."** They remain the right tool for counting resources and for producer-consumer signalling where condition variables are unavailable (e.g., between processes via `sem_open`).
 
+## Try it yourself
+
+Run the connection pool from Under the Hood and watch `active` never pass 3:
+
+```bash
+python3 -c "
+import threading, time, random
+pool = threading.Semaphore(3)
+active = 0
+lock = threading.Lock()
+
+def query(i):
+    global active
+    with pool:
+        with lock:
+            active += 1; print(f'worker {i} in  (active: {active})')
+        time.sleep(random.uniform(0.05, 0.15))
+        with lock:
+            active -= 1
+
+ts = [threading.Thread(target=query, args=(i,)) for i in range(8)]
+[t.start() for t in ts]; [t.join() for t in ts]
+"
+```
+
+Change `Semaphore(3)` to `Semaphore(1)` and you've built a (ownership-free) mutex; change it to `Semaphore(8)` and the gate disappears entirely.
+
 ## Learn next
 
-Semaphores are a foundation for understanding [mutexes](/t/mutex) and [deadlocks](/t/deadlock). They are widely used in [real-time operating systems](/t/real-time-os). [Lock-free programming](/t/lock-free-programming) replaces semaphore-based synchronisation with atomic operations for better performance.
+- [Mutex](/t/mutex) — the ownership-enforcing special case.
+- [Deadlock](/t/deadlock) — what multiple semaphores can still get you into.
+- [Lock-free programming](/t/lock-free-programming) — coordinating without blocking at all.

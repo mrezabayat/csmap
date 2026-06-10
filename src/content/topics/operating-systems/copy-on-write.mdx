@@ -4,6 +4,7 @@ aliases: ["COW", "copy-on-write fork", "COW pages"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: A resource management optimisation where copying is deferred until modification — shared pages are kept as a single copy until one party writes, triggering a private copy only then.
 level: intermediate
@@ -13,12 +14,24 @@ tags: ["operating-systems", "memory", "virtualization", "performance"]
 prerequisites: ["virtual-memory", "process", "memory"]
 related: ["garbage-collection", "container"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 When a Unix process forks a child, the child is a copy of the parent — potentially hundreds of megabytes. Copying all that memory immediately would be slow and wasteful if the child immediately calls `exec()` anyway. Copy-on-write (COW) defers the copy: child and parent share the same physical pages, marked read-only. The moment either party writes to a page, the OS intercepts the write fault, copies just that one page (4 KB), and lets the write proceed on the private copy. If neither ever writes, the copy never happens.
+
+## The Visual Map
+
+```mermaid
+flowchart TD
+  F["fork()"] --> S["parent & child page tables both point<br/>at the SAME physical pages, marked read-only"]
+  S --> R["both read freely — zero copying"]
+  S --> W["child writes to page 3"]
+  W --> PF["CPU: write fault on read-only page"]
+  PF --> CP["kernel: allocate new page, copy page 3,<br/>remap child to the copy, make it writable"]
+  CP --> D["pages 1,2,4...N still shared;<br/>only page 3 diverged"]
+```
 
 ## More detail
 
@@ -43,9 +56,42 @@ When a Unix process forks a child, the child is a copy of the parent — potenti
 
 **COW and garbage collection:** managed runtimes (JVM, Python) moving GC that updates pointers in a forked process can cause high COW page faults — because GC touches many pages, making most pages diverge. This is why Redis warns about "copy-on-write amplification" during BGSAVE when the parent is under heavy write load.
 
-## Why it matters
-
 COW makes `fork()` fast, enables cheap snapshots, and underlies container layering and persistent data structures. Any engineer working with Unix processes, containers, databases with snapshot capabilities, or functional data structures needs to understand COW to reason about memory usage and performance — especially the counterintuitive cost: writes *after* a fork or snapshot are more expensive than usual because they trigger page copies.
+
+## Under the Hood
+
+COW observed from user space — fork a process holding a big buffer and watch memory accounting (Linux):
+
+```python
+import os, mmap, time
+
+big = mmap.mmap(-1, 200 * 1024 * 1024)        # 200 MB, touched once
+big.write(b"x" * len(big)); big.seek(0)
+
+def rss_mb():
+    with open("/proc/self/status") as f:
+        for line in f:
+            if line.startswith("VmRSS"):
+                return int(line.split()[1]) // 1024
+
+pid = os.fork()                               # instant — no 200 MB copy
+if pid == 0:                                  # child
+    print("child RSS just after fork:", rss_mb(), "MB (shared)")
+    for i in range(0, 50 * 1024 * 1024, 4096):
+        big[i] = 0x79                         # write -> COW-copy that page
+    print("child RSS after dirtying 50 MB:", rss_mb(), "MB")
+    os._exit(0)
+os.wait()
+```
+
+The fork returns in microseconds regardless of the 200 MB; the child's resident memory grows only as it *writes* — one 4 KB page per fault, exactly the deferred copy in action.
+
+## Engineering Trade-offs
+
+- **Deferred cost vs predictable cost.** COW makes creation (fork, snapshot) effectively free and moves the price to later writes — each first-write takes a page fault plus a 4 KB copy. For fork+exec that's a pure win; for a long-lived child that dirties everything, you pay the full copy anyway, *plus* a million page faults of overhead.
+- **Memory accounting gets fuzzy.** With pages shared between N processes, "how much memory does this process use?" has three answers (RSS, PSS, USS) and naive monitoring double-counts. Worse, total commitment can exceed RAM silently — until simultaneous writes de-share pages and summon the OOM killer mid-snapshot (the classic Redis BGSAVE incident pattern).
+- **Write amplification in CoW storage.** File systems that never overwrite in place (ZFS, Btrfs) get free snapshots and crash consistency, but every logical write becomes new-block writes plus metadata updates — fragmenting files and inflating I/O for random-write workloads like databases. ZFS tuning guides exist mostly because of this.
+- **GC vs COW.** Runtimes that touch every object header (refcounts, mark bits) de-share pages wholesale after fork — CPython forks lose most sharing within one GC cycle. This shapes real designs: Redis is C partly so BGSAVE's COW stays cheap.
 
 ## Real-world examples
 
@@ -59,6 +105,30 @@ COW makes `fork()` fast, enables cheap snapshots, and underlies container layeri
 - **"COW means the copy is free."** COW defers cost, not eliminates it. Heavy write traffic after a fork leads to many page faults — sometimes worse than copying upfront.
 - **"COW only applies to memory."** COW is a general technique applied to file systems (ZFS, Btrfs, APFS), container layers, and data structures — not just OS page management.
 
+## Try it yourself
+
+Time the headline benefit — fork is constant-time no matter how big the process (Linux/WSL):
+
+```bash
+python3 -c "
+import os, time, mmap
+
+big = mmap.mmap(-1, 500 * 1024 * 1024)     # half a gigabyte of dirty memory
+big.write(b'x' * len(big))
+
+t = time.perf_counter()
+pid = os.fork()
+if pid == 0:
+    os._exit(0)                            # child does nothing
+os.wait()
+print(f'fork+exit of a 500 MB process: {(time.perf_counter()-t)*1000:.1f} ms')
+"
+```
+
+Milliseconds, not the seconds a real 500 MB copy would take — because nothing was copied. Re-run with the child writing into the buffer before exiting and watch the time climb with every dirtied page.
+
 ## Learn next
 
-Copy-on-write is a key optimisation in [virtual memory](/t/virtual-memory) and is tightly related to [process](/t/process) creation via `fork()`. [Containers](/t/container) use COW-based file system layers. [Garbage collectors](/t/garbage-collection) must account for COW effects in multi-process runtimes.
+- [Paging](/t/paging) — the page-fault machinery COW is built from.
+- [Process](/t/process) — fork/exec, the pattern COW exists to make cheap.
+- [Container](/t/container) — COW layers as the basis of image storage.

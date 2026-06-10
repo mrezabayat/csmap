@@ -4,6 +4,7 @@ aliases: ["demand paging", "page swapping"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: The mechanism that moves fixed-size pages of memory between RAM and disk on demand — the engine inside virtual memory.
 level: intermediate
@@ -12,12 +13,28 @@ importance: important
 tags: ["memory", "virtual-memory", "os"]
 prerequisites: ["virtual-memory"]
 related: ["kernel", "memory"]
-updated: 2026-06-07
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 **Paging** divides memory into fixed-size chunks (typically 4 KB) called **pages** and lets the OS move them between RAM and disk on demand. If a program reaches for a page that isn't currently in RAM, the CPU stops, the OS finds room, loads the page from disk (or from a swap file), and the program continues — usually without ever knowing.
+
+## The Visual Map
+
+The page-fault decision tree:
+
+```mermaid
+flowchart TD
+  T["program touches a virtual address"] --> M{"page mapped in RAM?"}
+  M -->|"yes"| OK["access proceeds (TLB-speed)"]
+  M -->|"no — page fault"| W{"what kind?"}
+  W -->|"minor: in memory, just unmapped"| MAP["map it — microseconds"]
+  W -->|"major: on disk / in swap"| DISK["evict a victim if needed,<br/>read page from disk — much slower"]
+  W -->|"invalid: no such mapping"| KILL["SIGSEGV — process killed"]
+  MAP --> OK
+  DISK --> OK
+```
 
 ## More detail
 
@@ -45,9 +62,41 @@ Modern wrinkles:
 - **NVMe SSDs** make swap viable again; old wisdom about "swap is always bad" was from spinning-disk days.
 - **PSI** (Pressure Stall Information) on Linux tells you when paging is hurting performance, with much more nuance than just looking at "swap used".
 
-## Why it matters
-
 Paging is what makes computers run programs bigger than their RAM, what isolates processes from each other, and what backs file-mapped memory (`mmap`), shared libraries, and copy-on-write fork. When tuning a database or a high-traffic service, paging behaviour is often the difference between fast and unusable.
+
+## Under the Hood
+
+Demand paging, observed — allocate a big region, then watch faults happen only on first touch:
+
+```python
+import mmap, time
+
+PAGE = mmap.PAGESIZE              # 4096 on most systems
+region = mmap.mmap(-1, 200_000 * PAGE)    # ~800 MB of address space, no RAM yet
+
+t = time.perf_counter()
+for i in range(0, 50_000 * PAGE, PAGE):
+    region[i] = 1                 # first touch: page fault, kernel maps a page
+first = time.perf_counter() - t
+
+t = time.perf_counter()
+for i in range(0, 50_000 * PAGE, PAGE):
+    region[i] = 2                 # second touch: already mapped, no faults
+second = time.perf_counter() - t
+
+print(f"first touch (50k page faults): {first:.3f}s")
+print(f"second touch (0 faults):       {second:.3f}s")
+region.close()
+```
+
+Same loop, same memory — the first pass pays one minor fault per page, the second runs at full speed. That difference *is* demand paging.
+
+## Engineering Trade-offs
+
+- **Page size: TLB reach vs waste.** 4 KB pages waste little memory but a large process needs millions of mappings, thrashing the TLB. 2 MB huge pages multiply TLB coverage 512× — and waste up to 2 MB per small allocation, page in slower, and fragment. Databases and JVMs opt in deliberately; kernels apply them transparently with mixed results.
+- **Swap: survival vs latency.** With swap, memory pressure degrades gradually (cold pages leave); without it, pressure ends in OOM kills. But a major fault is ~10⁵× slower than a RAM access, so latency-critical services often run swapless or `mlock` their hot data — choosing a clean death over a slow one.
+- **Eviction policy.** True LRU is too expensive to track per-access, so kernels approximate (clock/second-chance, active/inactive lists). Better approximations cost CPU and memory themselves; the policy only matters when you're already short on RAM.
+- **Preloading vs demand.** Pure demand paging makes startup lazy but every first touch stalls; readahead and `MAP_POPULATE` prefault pages, trading upfront work for smooth steady state. Wrong guesses waste RAM and I/O.
 
 ## Real-world examples
 
@@ -60,6 +109,19 @@ Paging is what makes computers run programs bigger than their RAM, what isolates
 - **"Any swap is bad."** Some swap usage is healthy — it lets the kernel evict cold pages to make room for hot file cache. *Active* swapping under load is what's bad.
 - **"Paging is slow."** Reading a page from disk is slow (microseconds on SSD, milliseconds on HDD). A *minor* page fault is fast — microseconds. Conflating them obscures what's actually happening.
 
+## Try it yourself
+
+Run the first-touch demo from Under the Hood, then check your page size and your processes' fault counts:
+
+```bash
+getconf PAGE_SIZE                        # almost certainly 4096
+ps -o pid,min_flt,maj_flt,comm -p $$     # your shell's lifetime fault counters
+```
+
+`min_flt` (minor faults) climbs constantly and harmlessly; a growing `maj_flt` means real disk reads — the number to watch when something feels swap-bound.
+
 ## Learn next
 
-The bigger abstraction paging implements: [virtual memory](/t/virtual-memory). The hardware paging interacts with: [memory](/t/memory).
+- [Virtual memory](/t/virtual-memory) — the abstraction this machinery implements.
+- [Memory hierarchy](/t/memory-hierarchy) — where disk-backed pages sit in the speed pyramid.
+- [Copy-on-write](/t/copy-on-write) — the page-fault trick behind cheap fork and snapshots.

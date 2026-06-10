@@ -4,6 +4,7 @@ aliases: ["RTOS", "hard real-time", "soft real-time", "FreeRTOS", "VxWorks"]
 category: operating-systems
 domain: systems-software
 subcategory: architecture-embedded-real-time
+structure: 2
 kind: concept
 summary: An operating system that guarantees tasks complete within specified time bounds — critical for embedded systems, robotics, and safety-critical applications where missing a deadline is as bad as an incorrect result.
 level: intermediate
@@ -13,12 +14,28 @@ tags: ["operating-systems", "embedded", "real-time", "scheduling"]
 prerequisites: ["operating-system", "process", "scheduler"]
 related: ["thread", "interrupt", "semaphore", "real-time-systems"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 A general-purpose OS (Linux, Windows) optimises for *average* throughput — it might delay your task for 10 milliseconds if something else is running. A real-time OS guarantees *worst-case* latency: "this task will start within 500 microseconds of its trigger, every time, no exceptions." For an airbag controller that must fire in 1 ms after a crash, "usually fast enough" means people die. RTOSes are designed so the worst case is bounded and guaranteed.
+
+## The Visual Map
+
+The same workload on two philosophies:
+
+```mermaid
+flowchart TD
+  E["sensor event arrives"] --> G["general-purpose OS"]
+  E --> R["RTOS"]
+  G --> G1["fair scheduler, page faults,<br/>caches, background work"]
+  G1 --> G2["latency: usually 50 µs...<br/>occasionally 50 ms"]
+  R --> R1["strict priority preemption,<br/>no paging, bounded handlers"]
+  R1 --> R2["latency: ALWAYS under 500 µs<br/>(proven, not measured)"]
+  G2 -.-> X["fine for browsers"]
+  R2 -.-> Y["required for airbags"]
+```
 
 ## More detail
 
@@ -43,9 +60,41 @@ A general-purpose OS (Linux, Windows) optimises for *average* throughput — it 
 
 **Memory management:** RTOSes typically avoid dynamic memory allocation (no `malloc`) because allocation latency is unpredictable. Pre-allocate all memory at startup, or use memory pools with fixed-size blocks.
 
-## Why it matters
+RTOSes power the systems humans trust with their lives — medical devices, aircraft, cars, industrial robots. Even in non-embedded contexts, RTOS concepts (bounded latency, priority inversion, rate monotonic analysis) apply whenever you need predictable response times — trading systems, real-time audio, autonomous vehicles.
 
-RTOSes power the systems humans trust with their lives — medical devices, aircraft, cars, industrial robots. Understanding hard real-time guarantees is essential for embedded software engineers. Even in non-embedded contexts, RTOS concepts (bounded latency, priority inversion, rate monotonic analysis) apply whenever you need predictable response times — trading systems, real-time audio, autonomous vehicles.
+## Under the Hood
+
+What RTOS application code actually looks like — FreeRTOS tasks with fixed priorities and a strict period:
+
+```c
+/* FreeRTOS: a 1 kHz control loop that must never miss its tick */
+void motor_control_task(void *params) {
+    TickType_t last_wake = xTaskGetTickCount();
+    for (;;) {
+        read_sensors();
+        compute_pid();
+        write_actuators();
+        /* sleep until EXACTLY the next 1 ms boundary — no drift */
+        vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(1));
+    }
+}
+
+void main(void) {
+    /* highest number = highest priority; control beats logging, always */
+    xTaskCreate(motor_control_task, "ctrl", 256, NULL, /*prio*/ 5, NULL);
+    xTaskCreate(logging_task,       "log",  512, NULL, /*prio*/ 1, NULL);
+    vTaskStartScheduler();          /* hand the CPU to the RTOS forever */
+}
+```
+
+`vTaskDelayUntil` (not plain `delay`) anchors each cycle to an absolute schedule, and the priority gap guarantees the control loop preempts logging mid-line if it must. Note what's absent: no `malloc` in the loop, no unbounded work.
+
+## Engineering Trade-offs
+
+- **Worst-case guarantees vs average throughput.** Everything that makes Linux fast on average — caches you can't predict, demand paging, batched I/O — adds variance. RTOSes strip those out: lower peak performance, provable ceilings. You buy the guarantee with efficiency.
+- **RMS vs EDF.** Rate-monotonic priorities are static, simple to analyse and certify, but only guarantee schedulability up to ~69% CPU use. EDF reaches 100% utilisation but with dynamic priorities that are harder to certify — and degrades unpredictably when overloaded. Safety-critical industries overwhelmingly pick the simpler math.
+- **Static allocation vs flexibility.** Banning `malloc` after startup makes memory behaviour provable and fragmentation impossible — and means sizing every queue and pool at design time, wasting RAM as margin. Dynamic allocation is exactly the kind of unbounded-latency convenience an RTOS exists to forbid.
+- **RTOS vs PREEMPT_RT Linux.** Real-time Linux gets tens-of-microseconds worst cases with the full Linux ecosystem — often the right trade for robots and audio. But its guarantees are empirical, not certified; pacemakers and flight control still require a dedicated, often formally analysed RTOS.
 
 ## Real-world examples
 
@@ -59,6 +108,29 @@ RTOSes power the systems humans trust with their lives — medical devices, airc
 - **"Linux is real-time with the right patches."** PREEMPT_RT Linux improves worst-case latency but cannot provide hard real-time guarantees — page faults and hardware unpredictability remain. For hard real-time, use a dedicated RTOS.
 - **"Faster hardware solves real-time requirements."** Speed helps average latency but not worst-case bounds. A 1 GHz RTOS with 10 µs guaranteed latency beats a 10 GHz Linux system with 50 ms occasional spikes for a pacemaker.
 
+## Try it yourself
+
+Measure your general-purpose OS failing the real-time test — sleep jitter:
+
+```bash
+python3 -c "
+import time
+target = 0.001                      # ask for exactly 1 ms, 500 times
+worst = 0.0; total = 0.0
+for _ in range(500):
+    t = time.perf_counter()
+    time.sleep(target)
+    actual = time.perf_counter() - t
+    worst = max(worst, actual)
+    total += actual
+print(f'requested: 1.000 ms   average: {total/500*1000:.3f} ms   WORST: {worst*1000:.3f} ms')
+"
+```
+
+The average is close to 1 ms; the worst case can be many times that — and it changes run to run. That gap between average and worst is precisely what an RTOS eliminates, and why "fast on average" can't fire an airbag.
+
 ## Learn next
 
-RTOSes are specialised [operating systems](/t/operating-system) with specific [scheduling](/t/scheduling) algorithms. They make heavy use of [semaphores](/t/semaphore) for synchronisation. [Interrupt](/t/interrupt) handling is critical to achieving bounded latency.
+- [Scheduler](/t/scheduler) — the general-purpose policies RTOSes replace with strict priority.
+- [Interrupt](/t/interrupt) — bounded interrupt latency is where every RTOS guarantee starts.
+- [Real-time systems](/t/real-time-systems) — the broader engineering discipline around deadlines.

@@ -4,6 +4,7 @@ aliases: ["OS", "operating-systems"]
 category: operating-systems
 domain: systems-software
 subcategory: kernels-os-drivers
+structure: 2
 kind: concept
 summary: The system software that manages hardware and provides services and abstractions to all other programs.
 level: beginner
@@ -12,12 +13,29 @@ importance: core
 tags: ["os", "kernel"]
 prerequisites: ["cpu", "memory", "storage"]
 related: ["file-system", "embedded-system"]
-updated: 2026-06-04
+updated: 2026-06-10
 ---
 
 ## In simple terms
 
 An operating system is the program that runs all the other programs. It hides the messy details of the hardware and gives every app a clean, shared environment to live in.
+
+## The Visual Map
+
+```mermaid
+flowchart TD
+  A["applications: browser, editor, games"] -->|"system calls"| K["kernel"]
+  K --> P["process & thread scheduling"]
+  K --> M["memory management"]
+  K --> F["file systems"]
+  K --> D["device drivers"]
+  K --> N["networking stack"]
+  P --> HW["hardware: CPU, RAM, disks, NICs"]
+  M --> HW
+  F --> HW
+  D --> HW
+  N --> HW
+```
 
 ## More detail
 
@@ -34,11 +52,34 @@ Its main responsibilities include:
 
 The core of an OS is called the **kernel**. It runs in a privileged mode where it can talk to hardware directly. Normal applications run in **user mode** and have to ask the kernel for help via **system calls**.
 
+This is what makes a computer a *general-purpose* machine: without an OS you would have to write every program from scratch — including the code to talk to the screen, the disk, the network, and the keyboard.
+
 Examples of operating systems include **Linux**, **macOS**, **Windows**, **iOS**, **Android**, and embedded OSes like **FreeRTOS**.
 
-## Why it matters
+## Under the Hood
 
-Without an OS you would have to write every program from scratch — including the code to talk to the screen, the disk, the network, and the keyboard. The OS is what makes a computer a *general-purpose* machine.
+Even "hello world" is a conversation with the OS. Strip away the language runtime and what remains is a system call:
+
+```python
+import os
+
+# print() eventually becomes this: "kernel, write these bytes to stdout"
+os.write(1, b"hello from a system call\n")
+
+# everything your process has, the OS gave it:
+print("my PID:", os.getpid())
+print("my working directory:", os.getcwd())
+print("environment entries:", len(os.environ))
+```
+
+File descriptor `1` (stdout), the process ID, the working directory, the environment — none of these are language features. They are OS services every program inherits at birth.
+
+## Engineering Trade-offs
+
+- **General-purpose vs real-time.** Linux/Windows optimise for average throughput and fairness; a real-time OS (FreeRTOS, QNX) guarantees worst-case response times instead. You can't fully have both — desktop OSes occasionally pause any program, which is fine for a browser and fatal for an airbag controller.
+- **Abstraction vs overhead.** Every OS service costs something: a system call is ~100× slower than a function call, and the file system adds layers between you and the disk. High-performance systems (databases, trading, games) sometimes bypass the OS deliberately (`O_DIRECT`, kernel-bypass networking) — accepting complexity to escape the abstractions.
+- **Compatibility vs progress.** Windows still runs decades-old binaries; that promise constrains every new design decision. Apple breaks compatibility more freely and ships cleaner subsystems sooner. Both are defensible positions with real costs.
+- **Monolithic vs microkernel.** Keeping drivers inside the kernel (Linux) is fast but means one buggy driver can crash everything; pushing them to user space (microkernels) contains failures at the price of message-passing overhead.
 
 ## Real-world examples
 
@@ -51,6 +92,20 @@ Without an OS you would have to write every program from scratch — including t
 - **"The OS and the desktop are the same."** The desktop you see is a *user interface* running on top of the OS. The OS underneath is mostly invisible.
 - **"You can install any program on any OS."** Programs are usually compiled for a specific OS and CPU architecture and will not run elsewhere without a compatibility layer.
 
+## Try it yourself
+
+Ask the OS what it is and what it's running:
+
+```bash
+uname -a                      # kernel name, version, architecture
+ps aux | head -8              # the processes it is currently managing
+python3 -c "import os; print('PID', os.getpid(), '| parent', os.getppid())"
+```
+
+Every line of that output is the OS doing its accounting job — naming itself, listing the programs it schedules, and tracking who started whom.
+
 ## Learn next
 
-From here you can dive into specific OS subsystems — processes, virtual memory, file systems — or jump into [networks](/c/networks-and-internet) to see how operating systems cooperate across machines.
+- [Kernel](/t/kernel) — the privileged core where all of this actually happens.
+- [Process](/t/process) — the OS's unit of isolation and accounting.
+- [File system](/t/file-system) — how raw storage becomes files and folders.
