@@ -4,6 +4,7 @@ aliases: ["throttling", "rate throttling", "token bucket", "leaky bucket"]
 category: distributed-systems-and-cloud
 domain: concurrency-parallelism
 subcategory: distributed-computing
+structure: 2
 kind: concept
 summary: Controlling how many requests a client or service can make in a time window — protecting backends from overload, preventing abuse, and enforcing fair use across tenants.
 level: intermediate
@@ -13,12 +14,23 @@ tags: ["distributed-systems", "api", "availability", "reliability"]
 prerequisites: ["distributed-system"]
 related: ["circuit-breaker", "load-balancer", "idempotency"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 Rate limiting puts a cap on how often a caller can invoke an API or resource in a given time window. Exceed the cap and you get a `429 Too Many Requests` response. It protects the service from being overwhelmed — by a misbehaving client, a scraper, or a traffic spike — and ensures that no single tenant starves others.
+
+## The Visual Map
+
+```mermaid
+flowchart LR
+  R["requests arrive"] --> B{"token bucket:<br/>tokens available?"}
+  B -->|"yes — take 1 token"| P["allow -> backend"]
+  B -->|"no — bucket empty"| D["reject: 429 Too Many Requests<br/>+ Retry-After header"]
+  T["refill: +100 tokens/sec,<br/>capped at bucket size"] -.-> B
+  note["bucket capacity = max burst;<br/>refill rate = sustained rate"] -.-> B
+```
 
 ## More detail
 
@@ -40,9 +52,47 @@ Rate limiting puts a cap on how often a caller can invoke an API or resource in 
 
 **Quota types:** per-IP, per-user, per-API key, per-tenant, per-endpoint, per-cost (different operations cost different tokens).
 
-## Why it matters
+Without rate limiting, a single misbehaving client — intentional or not — can exhaust your server's capacity and degrade service for all other users. Rate limiting is a fundamental reliability mechanism alongside [circuit breakers](/t/circuit-breaker) and [load balancing](/t/load-balancer), and it also enables monetisation: tiered API plans charge for higher rate limits.
 
-Without rate limiting, a single misbehaving client — intentional or not — can exhaust your server's capacity and degrade service for all other users. Rate limiting is a fundamental reliability mechanism alongside [circuit breakers](/t/circuit-breaker) and [load balancing](/t/load-balancer). It also enables monetisation: tiered API plans charge for higher rate limits.
+## Under the Hood
+
+The token bucket — the most-used algorithm — is a few lines, and its elegance is that it stores no history, just two numbers and a timestamp:
+
+```python
+import time
+
+class TokenBucket:
+    def __init__(self, rate, capacity):
+        self.rate = rate            # tokens added per second (sustained rate)
+        self.capacity = capacity    # max tokens (burst allowance)
+        self.tokens = capacity
+        self.last = time.monotonic()
+
+    def allow(self, cost=1):
+        now = time.monotonic()
+        # refill lazily: no background timer, just compute elapsed * rate
+        self.tokens = min(self.capacity, self.tokens + (now - self.last) * self.rate)
+        self.last = now
+        if self.tokens >= cost:
+            self.tokens -= cost
+            return True
+        return False
+
+bucket = TokenBucket(rate=5, capacity=10)        # 5/s sustained, burst of 10
+allowed = sum(bucket.allow() for _ in range(15)) # hammer 15 at once
+print(f'instant burst: {allowed} allowed, {15 - allowed} threw 429')
+time.sleep(1)
+print('after 1s refill:', sum(bucket.allow() for _ in range(8)), 'of 8 allowed')
+```
+
+Lazy refill is the trick: instead of a timer adding tokens, `allow` computes how many *would* have accrued since the last call. That makes it O(1) memory and trivially portable to a Redis Lua script for cluster-wide limits — the same five lines, shared state.
+
+## Engineering Trade-offs
+
+- **Burst tolerance vs smoothness.** Token bucket allows bursts up to capacity (good for bursty-but-legitimate clients); leaky bucket forces a constant output rate (good for protecting a fragile downstream). The choice is whether you're guarding *yourself* or someone you call.
+- **Accuracy vs memory.** Sliding-window logs are exact but store every timestamp; fixed windows are O(1) but allow 2× bursts at boundaries; sliding-window counters split the difference — the pragmatic default Stripe and Cloudflare ship.
+- **Local speed vs global correctness.** Per-process counters add zero latency but let N replicas each grant the full limit (effective N× the intended cap); a shared Redis counter is globally correct but adds a network hop and a hot-key bottleneck per limited entity.
+- **Throttling vs rejecting.** A 429 with `Retry-After` is honest and cheap; queuing excess requests (leaky bucket) hides the limit but risks unbounded latency and memory. Rejecting early is usually kinder than accepting work you'll drop later.
 
 ## Real-world examples
 
@@ -56,6 +106,34 @@ Without rate limiting, a single misbehaving client — intentional or not — ca
 - **"Rate limiting stops DDoS attacks."** It throttles them — a sufficiently distributed DDoS can still saturate bandwidth before rate limits apply. Rate limiting is one layer of defence, not the only one.
 - **"Fixed window counting is good enough."** For most use cases it is; but APIs used by sophisticated clients (bots, automated pipelines) can exploit window boundaries for burst traffic.
 
+## Try it yourself
+
+Expose the fixed-window boundary exploit — the bug that motivates sliding windows — with a burst straddling the reset:
+
+```bash
+python3 -c "
+LIMIT = 5     # 5 requests per 10-second window
+
+# a client fires 5 at the END of window 1, then 5 at the START of window 2
+events = [(9.8, 1), (9.8, 1), (9.8, 1), (9.8, 1), (9.8, 1),
+          (10.1, 2), (10.1, 2), (10.1, 2), (10.1, 2), (10.1, 2)]
+
+counts = {}
+allowed = 0
+for t, window in events:
+    counts[window] = counts.get(window, 0) + 1
+    if counts[window] <= LIMIT:
+        allowed += 1
+
+print(f'fixed-window allowed {allowed} requests in a ~0.3s span')
+print(f'intended max for any 10s window: {LIMIT} -> client got {allowed/LIMIT:.0f}x the cap')
+"
+```
+
+Ten requests in a third of a second, every one allowed, because they split across two windows the counter treats independently. Sliding-window counters weight the previous window to close exactly this gap.
+
 ## Learn next
 
-Rate limiting belongs to the same reliability toolkit as [circuit breakers](/t/circuit-breaker) (fail fast when a dependency is sick) and [idempotency](/t/idempotency) (safe to retry when throttled). Together they make distributed services both resilient and fair.
+- [Circuit breaker](/t/circuit-breaker) — fail fast when a dependency is already sick.
+- [Idempotency](/t/idempotency) — what makes the client's retry-after-429 safe.
+- [Load balancer](/t/load-balancer) — where edge rate limits are often enforced.

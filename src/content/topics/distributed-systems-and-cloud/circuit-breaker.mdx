@@ -4,6 +4,7 @@ aliases: ["circuit breaker pattern"]
 category: distributed-systems-and-cloud
 domain: concurrency-parallelism
 subcategory: distributed-computing
+structure: 2
 kind: concept
 summary: A fault-tolerance pattern that stops calling a failing dependency and returns a fast error instead — giving the dependency time to recover and preventing cascading failures across services.
 level: intermediate
@@ -13,12 +14,26 @@ tags: ["distributed-systems", "reliability", "patterns", "fault-tolerance"]
 prerequisites: ["distributed-system", "microservices"]
 related: ["rate-limiting", "idempotency", "load-balancer"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 If a service you call is failing, calling it again is usually pointless — you'll just accumulate slow timeouts while your own service degrades. A circuit breaker watches the call success rate; when it drops below a threshold, the breaker **opens**: subsequent calls immediately return an error without touching the network, sparing your threads and your dependency's overloaded servers. After a cooldown, it tries one call (half-open); if that succeeds, the breaker closes and normal operation resumes.
+
+## The Visual Map
+
+```mermaid
+stateDiagram-v2
+  [*] --> Closed
+  Closed --> Open: failure rate over threshold<br/>(e.g. 50% of last 20 calls)
+  Open --> HalfOpen: cooldown elapsed<br/>(e.g. 30 s)
+  HalfOpen --> Closed: probe call succeeds
+  HalfOpen --> Open: probe call fails
+  note right of Closed: calls pass through,<br/>outcomes recorded
+  note right of Open: calls fail INSTANTLY —<br/>no network, fallback served
+  note right of HalfOpen: exactly one trial<br/>request allowed
+```
 
 ## More detail
 
@@ -36,9 +51,54 @@ A circuit breaker has three states:
 
 **Interaction with retries:** a circuit breaker wraps the call; a retry policy wraps the circuit breaker. When the circuit is open, the retry policy should not retry (it would just fail fast repeatedly). Most retry libraries integrate with circuit breakers to distinguish "open circuit" errors from transient errors.
 
-## Why it matters
+Without circuit breakers, a failing downstream service causes request threads to pile up waiting for timeouts, exhausting the connection pool and crashing the caller — a **cascading failure**. Circuit breakers contain the blast radius: the caller degrades gracefully, and the downstream gets breathing room to recover.
 
-Without circuit breakers, a failing downstream service causes request threads to pile up waiting for timeouts, exhausting the connection pool and crashing the caller — a **cascading failure**. Circuit breakers contain the blast radius: the caller degrades gracefully, and the downstream gets breathing room to recover. The pattern is one of the three pillars of microservice resilience (alongside [rate limiting](/t/rate-limiting) and [retries with idempotency](/t/idempotency)).
+## Under the Hood
+
+The full state machine fits in a small class:
+
+```python
+import time
+
+class CircuitBreaker:
+    def __init__(self, threshold=0.5, window=10, cooldown=30):
+        self.results = []                     # last `window` outcomes
+        self.threshold, self.window, self.cooldown = threshold, window, cooldown
+        self.state, self.opened_at = "closed", None
+
+    def call(self, fn, fallback):
+        if self.state == "open":
+            if time.monotonic() - self.opened_at < self.cooldown:
+                return fallback()             # instant — no network touched
+            self.state = "half-open"          # cooldown over: allow one probe
+        try:
+            result = fn()
+            self._record(True)
+            return result
+        except Exception:
+            self._record(False)
+            return fallback()
+
+    def _record(self, ok):
+        if self.state == "half-open":         # the probe decides everything
+            self.state = "closed" if ok else "open"
+            self.opened_at = None if ok else time.monotonic()
+            self.results.clear()
+            return
+        self.results = (self.results + [ok])[-self.window:]
+        if len(self.results) == self.window and \
+           self.results.count(False) / self.window >= self.threshold:
+            self.state, self.opened_at = "open", time.monotonic()
+```
+
+Note what the open state buys: `call` returns the fallback without invoking `fn` at all — no socket, no timeout wait, no thread parked. The caller's latency under dependency failure drops from "timeout × pile-up" to microseconds.
+
+## Engineering Trade-offs
+
+- **Fast failure vs lost recoveries.** An open breaker rejects calls that *might* have succeeded — that's the deal. Tuning the threshold trades false trips (flaky-but-working dependency cut off) against slow trips (pool exhausted before the breaker reacts).
+- **Per-instance vs shared state.** A breaker in each process reacts instantly but each instance must rediscover the failure; a shared breaker (mesh proxy, Redis-backed) gives a consistent view at the cost of coordination latency and a new dependency that can itself fail.
+- **Fallbacks define your degraded product.** Cached recommendations, empty lists, "feature unavailable" — each open circuit needs an answer, and that answer is a product decision made in advance, not an infrastructure default.
+- **Half-open thundering herd.** Naively letting *all* callers probe at cooldown's end re-crushes the recovering service. Single-probe gating and jittered cooldowns matter precisely when things are at their most fragile.
 
 ## Real-world examples
 
@@ -52,6 +112,44 @@ Without circuit breakers, a failing downstream service causes request threads to
 - **"Circuit breakers replace retries."** No — they complement each other. Retries handle transient glitches; circuit breakers handle sustained failures. Use both, with the circuit breaker on the outside.
 - **"Opening the circuit harms the dependency."** It helps it: stopping call load during recovery is exactly what a struggling service needs to avoid being overwhelmed while it heals.
 
+## Try it yourself
+
+Watch the full lifecycle — trip, fast-fail, probe, recover — against a dependency that dies and comes back:
+
+```bash
+python3 -c "
+calls = {'n': 0}
+def dependency():
+    calls['n'] += 1
+    if 5 <= calls['n'] <= 12:          # the outage window
+        raise RuntimeError('503')
+    return 'ok'
+
+results, state, fails = [], 'closed', 0
+for i in range(1, 19):
+    if state == 'open':
+        if i % 4 == 0:                 # 'cooldown elapsed' -> probe
+            state = 'half-open'
+        else:
+            results.append('FAST-FAIL (no call made)'); continue
+    try:
+        r = dependency()
+        state, fails = 'closed', 0
+        results.append(r)
+    except RuntimeError:
+        fails += 1
+        state = 'open' if (fails >= 3 or state == 'half-open') else state
+        results.append('error')
+for i, r in enumerate(results, 1):
+    print(f'call {i:2}: {r}')
+print('dependency actually invoked:', calls['n'], 'times (of 18 attempts)')
+"
+```
+
+The fast-fail lines are the pattern's value: attempts that cost the caller nothing and gave the sick dependency nothing to choke on.
+
 ## Learn next
 
-Circuit breakers pair with [rate limiting](/t/rate-limiting) (prevent overload before failure) and [idempotency](/t/idempotency) (make retries safe when the circuit closes again). Together they are the resilience pattern vocabulary for [microservices](/t/microservices).
+- [Rate limiting](/t/rate-limiting) — preventing the overload before it becomes failure.
+- [Idempotency](/t/idempotency) — making the retries safe once the circuit closes.
+- [Load balancer](/t/load-balancer) — ejecting bad backends, the fleet-level sibling of this pattern.
