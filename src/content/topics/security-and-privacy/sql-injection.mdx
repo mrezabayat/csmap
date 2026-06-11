@@ -4,6 +4,7 @@ aliases: ["sqli", "sql-injection"]
 category: security-and-privacy
 domain: security-privacy
 subcategory: hardware-network-application-security
+structure: 2
 kind: concept
 summary: A vulnerability where attacker-controlled input is concatenated into a SQL query, letting them rewrite it to read, modify, or destroy any data the app can access.
 level: intermediate
@@ -11,72 +12,146 @@ status: reviewed
 importance: important
 tags: ["security", "sql", "vulnerability"]
 prerequisites: ["sql"]
-related: ["xss", "threat-model"]
-updated: 2026-06-07
+related: ["threat-model"]
+nextSteps: ["xss", "vulnerability"]
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
-**SQL injection** is when user-supplied text gets glued directly into a SQL query string, allowing the user to change what the query does. The textbook example: a login form that builds `SELECT * FROM users WHERE name = '$name' AND password = '$pw'`. An attacker enters `' OR 1=1 --` as the name; the query becomes `WHERE name = '' OR 1=1 -- AND password = ...`, which matches every row and logs them in.
+**SQL injection** is when user-supplied text gets glued directly into a SQL query string, allowing the attacker to change what the query does. A login form that builds `SELECT * FROM users WHERE name = '$name'` lets an attacker enter `' OR 1=1 --` — the query becomes `WHERE name = '' OR 1=1 --`, which matches every row and bypasses authentication.
+
+## The Visual Map
+
+```mermaid
+flowchart TD
+  I["User input"] --> V{"Concatenation?"}
+  V -->|"Yes — VULNERABLE"| Q1["SELECT * FROM users\nWHERE name='' OR 1=1--"]
+  V -->|"No — parameterized"| Q2["SELECT * FROM users\nWHERE name=?  param: input"]
+  Q1 --> DB1["DB executes rewritten query\nreturns all rows"]
+  Q2 --> DB2["DB treats input as literal string\nreturns nothing for ' OR 1=1--"]
+  DB1 --> BREACH["Data breach / auth bypass"]
+  DB2 --> SAFE["Safe result"]
+```
 
 ## More detail
 
-The fix is fundamentally simple: **never concatenate user input into SQL**. Use **parameterised queries** (also called prepared statements), where the SQL and the parameters are sent separately to the database. The database engine never confuses one for the other:
+The fix is simple: **never concatenate user input into SQL**. Use **parameterised queries** (prepared statements), where the SQL structure and the data are sent to the database separately — the engine never interprets the data as SQL:
 
 ```sql
 -- Vulnerable
-String query = "SELECT * FROM users WHERE name = '" + name + "'";
+query = "SELECT * FROM users WHERE name = '" + name + "'"
 
 -- Safe (parameterised)
-PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE name = ?");
-ps.setString(1, name);
+cursor.execute("SELECT * FROM users WHERE name = ?", (name,))
 ```
 
-Every modern database driver supports this. Every ORM uses parameterised queries by default. The only way to write injectable code in 2026 is to deliberately bypass these.
+Every modern database driver supports parameterised queries. Every ORM uses them by default. Writing injectable code in 2026 requires deliberately bypassing these defaults.
 
 Classes of SQL injection:
 
-- **In-band** — the attacker sees the query's results in the page they get back.
-- **Blind** — no visible output, but the attacker can infer data via the page's behaviour (timing differences, true/false redirects).
-- **Out-of-band** — the attacker forces the DB to make a network connection (DNS lookup, HTTP call) that leaks data.
+- **In-band** — the attacker sees query results in the page.
+- **Blind** — no visible output, but the attacker infers data via page behaviour (timing, true/false redirects).
+- **Out-of-band** — the DB is forced to make a network call (DNS lookup, HTTP request) that leaks data.
 
 What an attacker can do once they have injection:
 
 - Read any data the app can read — usually the whole database.
-- Write / modify data.
-- Escalate privileges (e.g., grant themselves admin via UPDATE on the users table).
-- Execute OS commands via certain DB features (`xp_cmdshell` on SQL Server, `COPY ... TO PROGRAM` on Postgres if configured).
-- Pivot to other services on the network.
+- Write / modify data; escalate privileges via `UPDATE` on the users table.
+- Execute OS commands via DB features (`xp_cmdshell` on SQL Server, `COPY ... TO PROGRAM` on PostgreSQL).
+- Pivot to other services on the internal network.
 
-Adjacent injection vulnerabilities:
+Adjacent injection vulnerabilities follow the same pattern:
 
-- **NoSQL injection** — same idea against MongoDB / DynamoDB query languages.
+- **NoSQL injection** — against MongoDB/DynamoDB query languages.
 - **Command injection** — `system("$user_input")` in shell calls.
-- **LDAP injection**, **XPath injection**, **template injection** — same pattern, different target language.
+- **LDAP injection**, **XPath injection**, **template injection**.
 
-Defences beyond parameterised queries:
+Additional defences:
+- **Least privilege** — the app's DB user shouldn't be able to `DROP TABLE`.
+- **Input validation** — numeric IDs as integers, enums validated against allowlists.
+- **WAFs** — defence-in-depth, not a substitute for parameterised queries.
 
-- **Principle of least privilege** — the app's DB user shouldn't be able to `DROP TABLE`.
-- **Input validation** — narrow types help (numeric IDs as integers, enums as enums).
-- **Output encoding** — separately, prevents the consequences of *injected* data leaking out (XSS).
-- **Web Application Firewalls (WAFs)** — defence-in-depth, not a substitute.
+## Under the Hood
 
-## Why it matters
+Live demonstration using Python's `sqlite3` — the difference between vulnerable and parameterised:
 
-SQL injection has been on the OWASP Top 10 since OWASP existed. It's almost trivially preventable yet still causes major breaches every year — usually in legacy code or in places where someone built a "quick" raw query.
+```python
+import sqlite3
+
+conn = sqlite3.connect(':memory:')
+conn.execute("CREATE TABLE users (id INT, name TEXT, password TEXT)")
+conn.execute("INSERT INTO users VALUES (1,'alice','s3cret')")
+conn.execute("INSERT INTO users VALUES (2,'bob','hunter2')")
+conn.commit()
+
+def login_vulnerable(name, pw):
+    q = f"SELECT * FROM users WHERE name='{name}' AND password='{pw}'"
+    return conn.execute(q).fetchone()
+
+def login_safe(name, pw):
+    return conn.execute(
+        "SELECT * FROM users WHERE name=? AND password=?", (name, pw)
+    ).fetchone()
+
+print("=== VULNERABLE ===")
+print("normal login:", login_vulnerable("alice", "s3cret"))
+injection = "' OR 1=1 --"
+print("injected     :", login_vulnerable(injection, "anything"))   # bypasses auth!
+
+print()
+print("=== PARAMETERISED (safe) ===")
+print("normal login:", login_safe("alice", "s3cret"))
+print("injected     :", login_safe(injection, "anything"))          # returns None
+```
+
+The parameterised version treats the injection string as a literal search term — the DB looks for a user literally named `' OR 1=1 --`, finds none, and returns nothing.
+
+## Engineering Trade-offs
+
+- **Parameterised queries vs ORMs.** ORMs use parameterised queries internally and add a layer of abstraction — but they offer raw-query escape hatches (`execute()`, `raw()`) that bypass safety. Safety requires discipline, not just tool choice.
+- **Parameterised queries vs stored procedures.** Stored procedures are safe if they don't dynamically build queries internally; they add DB coupling and migration complexity with no security benefit over parameterised queries in application code.
+- **WAF as a supplement.** WAFs can block known injection patterns but are bypassable by obfuscation, and cannot distinguish malicious input from bizarre-but-legitimate queries. They reduce risk without eliminating it.
+- **Least privilege reduces blast radius.** Even with injection, a DB user that can only `SELECT` from the app's tables limits the attacker far more than the `SUPERUSER` role most defaults use. Scope the DB account to exactly what the app needs.
 
 ## Real-world examples
 
 - The **2008 Heartland Payment Systems breach** (130 million card numbers) started with SQL injection.
-- The **2011 Sony Pictures hack** (Sony's first major breach, by LulzSec) was SQL injection; the published table dump went on for pages.
-- **TalkTalk's 2015 breach** (157,000 customer records, £77M fine) was again SQL injection — through a legacy webpage the company had forgotten existed.
-- Bobby Tables (the xkcd comic) is the universal mnemonic. `Robert'); DROP TABLE Students;--`
+- The **2011 Sony Pictures hack** (LulzSec) was SQL injection; the published dump went on for pages.
+- **TalkTalk's 2015 breach** (157,000 customer records, £77M fine) was SQL injection through a legacy page the company had forgotten existed.
+- Bobby Tables is the universal mnemonic: `Robert'); DROP TABLE Students;--`
 
 ## Common misconceptions
 
-- **"My ORM protects me."** Yes, *as long as you only use parameterised queries through it*. Raw queries with string interpolation are still vulnerable. Most ORMs offer escape hatches that bypass safety.
-- **"SQL injection is a solved problem."** The fix is well-known. The bugs are still shipped. Treat any string concatenation around SQL as a real bug.
+- **"My ORM protects me."** Yes — *as long as you only use parameterised queries through it*. Raw queries with string interpolation bypass safety. Most ORMs have escape hatches.
+- **"SQL injection is a solved problem."** The fix is well-known. The bugs are still shipped every year, usually in legacy code or "quick" raw queries added during debugging.
+
+## Try it yourself
+
+See injection bypass and parameterised defence side-by-side in an in-memory database:
+
+```bash
+python3 -c "
+import sqlite3
+conn = sqlite3.connect(':memory:')
+conn.execute('CREATE TABLE users (name TEXT, pw TEXT)')
+conn.execute(\"INSERT INTO users VALUES ('alice','s3cret')\")
+conn.commit()
+
+injection = \"' OR 1=1 --\"
+
+# Vulnerable
+row = conn.execute(f\"SELECT * FROM users WHERE name='{injection}' AND pw='x'\").fetchone()
+print('vulnerable — got row:', row)
+
+# Safe
+row2 = conn.execute('SELECT * FROM users WHERE name=? AND pw=?', (injection, 'x')).fetchone()
+print('parameterised — got row:', row2)
+"
+```
 
 ## Learn next
 
-The web's other classic injection: [XSS](/t/xss). The discipline of thinking about attacks in general: [threat model](/t/threat-model).
+- [XSS](/t/xss) — the other half of the classic web injection pair.
+- [Vulnerability](/t/vulnerability) — how flaws like this are tracked, scored, and disclosed via CVE/CVSS.
+- [Threat model](/t/threat-model) — the discipline for deciding which injection surfaces in your app are highest priority.

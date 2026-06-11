@@ -4,6 +4,7 @@ aliases: ["cross-site request forgery", "xsrf"]
 category: security-and-privacy
 domain: security-privacy
 subcategory: hardware-network-application-security
+structure: 2
 kind: concept
 summary: A vulnerability where an attacker tricks the victim's browser into making a state-changing request to a site the victim is logged into.
 level: intermediate
@@ -11,60 +12,118 @@ status: reviewed
 importance: important
 tags: ["csrf", "web", "security", "vulnerability"]
 prerequisites: ["authentication"]
-related: ["xss"]
-updated: 2026-06-07
+related: []
+nextSteps: ["xss", "threat-model"]
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 **Cross-Site Request Forgery (CSRF)** exploits the fact that browsers automatically attach cookies to requests. The victim is logged into `bank.com` in one tab; in another tab they visit `attacker.com`, which contains an invisible form that POSTs to `bank.com/transfer?to=attacker&amount=10000`. The browser dutifully attaches the bank's session cookie. The bank sees an authenticated request and processes the transfer.
 
+## The Visual Map
+
+```mermaid
+sequenceDiagram
+  participant V as Victim browser
+  participant E as evil.com
+  participant B as bank.com
+
+  V->>E: visits evil.com (while logged into bank)
+  E-->>V: page with hidden form auto-submitting to bank.com
+  Note over V: browser auto-attaches bank session cookie
+  V->>B: POST /transfer (with bank's cookie)
+  B-->>V: 200 OK — transfer processed
+  Note over B: sees valid session — no CSRF token checked
+```
+
 ## More detail
-
-The classic CSRF setup:
-
-1. Victim is signed into `bank.com`.
-2. Attacker emails them a link to `evil.com`.
-3. `evil.com` contains:
-   ```html
-   <form id="x" action="https://bank.com/transfer" method="POST">
-     <input name="to" value="attacker">
-     <input name="amount" value="10000">
-   </form>
-   <script>document.getElementById('x').submit();</script>
-   ```
-4. Victim visits `evil.com`; browser submits the form with the bank's cookies.
 
 Why it works: the browser attaches cookies to *any* request to a domain, regardless of which page initiated it.
 
+The classic CSRF attack: a forged form on `evil.com` that auto-submits to `bank.com/transfer`, or an `<img src="https://bank.com/transfer?to=attacker">` tag that fires a GET — both carry the victim's cookie.
+
 Defences (use in combination):
 
-1. **`SameSite` cookies** — `SameSite=Lax` blocks cookies on cross-site POSTs and most cross-site requests; `SameSite=Strict` blocks them on cross-site navigation too. Browsers default to `Lax` since ~2020, which prevented many naive CSRFs overnight. Set it explicitly.
-2. **CSRF tokens** — server includes a random per-session token in every form; legitimate POSTs include it; cross-site forms can't read it (same-origin policy). Most server frameworks (Django, Rails, Laravel, Spring) do this by default.
-3. **Custom request headers** — JavaScript-driven APIs require `X-Requested-With: XMLHttpRequest` or similar; cross-site forms can't set custom headers (without explicit CORS approval).
+1. **`SameSite` cookies** — `SameSite=Lax` blocks cookies on cross-site POSTs; `SameSite=Strict` blocks them on all cross-site navigation. Browsers default to `Lax` since 2020. Set it explicitly.
+2. **CSRF tokens** — server embeds a random per-session token in every form; cross-site forms can't read it (same-origin policy). Django, Rails, Laravel, and Spring all do this by default.
+3. **Custom request headers** — JavaScript-driven APIs require `X-Requested-With: XMLHttpRequest`; cross-site forms can't set custom headers without explicit CORS approval.
 4. **Origin / Referer checks** — verify the request came from your own domain.
-5. **Re-authentication for sensitive actions** — money transfers, password changes, mfa changes — re-prompt for password regardless of session.
+5. **Re-authentication for sensitive actions** — money transfers, password changes — re-prompt regardless of session.
 
-**SameSite=Lax becoming the browser default** has dramatically reduced naive CSRF, but it hasn't killed it: same-site subdomain attacks still work (`a.example.com` vs `b.example.com`), and Lax still allows top-level GET navigation.
+`SameSite=Lax` has dramatically reduced naive CSRF, but it hasn't killed it: same-site subdomain attacks still work (`a.example.com` vs `b.example.com`), and Lax still allows top-level GET navigation.
 
-CSRF is conceptually about **forcing a request**; XSS is about **executing code inside the origin**. XSS is strictly worse (it can do everything CSRF can plus much more) — if you have XSS, CSRF defences don't help.
+CSRF is about **forcing a request**; [XSS](/t/xss) is about **executing code inside the origin**. XSS is strictly worse — if you have XSS, CSRF defences don't help.
 
-## Why it matters
+## Under the Hood
 
-CSRF caused some of the most embarrassing web bugs of the 2000s and early 2010s. Modern browsers and frameworks have made the basic attack much harder, but the bug class isn't dead — APIs, mobile webviews, and unusual cookie configurations still produce CSRF vulnerabilities every year.
+The double-submit / HMAC token pattern — how frameworks like Django generate and verify CSRF tokens without server-side state:
+
+```python
+import secrets, hmac, hashlib
+
+def make_csrf_token(session_id: str, secret: bytes) -> str:
+    return hmac.new(secret, session_id.encode(), hashlib.sha256).hexdigest()
+
+def verify_csrf(session_id: str, submitted_token: str, secret: bytes) -> bool:
+    expected = make_csrf_token(session_id, secret)
+    return hmac.compare_digest(expected, submitted_token)   # constant-time
+
+secret = secrets.token_bytes(32)
+session_id = "user-session-abc123"
+
+token = make_csrf_token(session_id, secret)
+print("csrf token:", token[:16], "...")
+print("valid request:", verify_csrf(session_id, token, secret))
+print("forged token: ", verify_csrf(session_id, "forged_token_here000000000000000000000000000000000000000000000000", secret))
+print("wrong session:", verify_csrf("other-session", token, secret))
+```
+
+The attacker can't forge the token because the HMAC requires the server's secret, and they can't read it from the victim's browser due to the same-origin policy.
+
+## Engineering Trade-offs
+
+- **`SameSite` vs CSRF tokens.** `SameSite=Strict` is the strongest single control and requires no token logic, but breaks cross-origin navigations that some legitimate integrations rely on. CSRF tokens work on all cookie configurations but add a round-trip and token-injection into every form.
+- **Stateless (HMAC) tokens vs stateful tokens.** HMAC tokens like above need no server storage and are trivially scalable; stateful tokens (stored per session in a DB/cache) can be invalidated immediately but add storage complexity.
+- **`SameSite=Lax` blind spots.** Lax protects most POST-based attacks but is bypassed by top-level GET navigations (so never use GET to change state) and by same-site subdomain attacks (a malicious `cdn.example.com` can still CSRF `app.example.com`).
+- **API clients vs browser forms.** Bearer-token APIs (mobile, SPA with Authorization header) are not CSRF-vulnerable because browsers don't auto-attach Authorization headers — only cookies. CSRF protection is only needed if you use cookies for auth.
 
 ## Real-world examples
 
-- **The classic Gmail CSRF (2007)** changed account recovery email via a forged form — fixed and disclosed by Robert Graham, leading to widespread CSRF awareness.
-- **A 2018 Twitter CSRF** let attackers tweet on behalf of any logged-in user via a crafted link; fixed within days.
-- The shift to **`SameSite=Lax` as default** in Chrome 80 (2020) measurably reduced CSRF in the wild — and broke some legitimate cross-site integrations, prompting a wave of `SameSite=None; Secure` cookie reconfigurations.
-- Django's `csrf_token` template tag — automatically included via middleware — has prevented countless CSRFs since 2005.
+- **The 2007 Gmail CSRF** changed account recovery email via a forged form — one of the first public CSRF disclosures that drove widespread awareness.
+- **A 2018 Twitter CSRF** let attackers tweet on behalf of logged-in users via a crafted link.
+- The shift to **`SameSite=Lax` as default** in Chrome 80 (2020) measurably reduced CSRF — and also broke some legitimate cross-site integrations, prompting waves of `SameSite=None; Secure` reconfigurations.
+- Django's `{% csrf_token %}` template tag has prevented countless CSRFs since 2005.
 
 ## Common misconceptions
 
-- **"HTTPS prevents CSRF."** HTTPS protects in-flight content; CSRF is about a request the user's browser issued willingly. Orthogonal.
-- **"GET requests are safe."** They aren't if they change state. Make sure GET is read-only; use POST / PUT / DELETE for changes.
+- **"HTTPS prevents CSRF."** HTTPS protects in-flight content; CSRF exploits the browser's automatic cookie attachment, which happens over HTTPS just as readily.
+- **"GET requests are safe from CSRF."** They aren't if they change state. Keep GET idempotent; use POST/PUT/DELETE for mutations.
+
+## Try it yourself
+
+See the CSRF token mechanism — the token is unforgeable without the server secret, and session-scoped so tokens don't transfer between users:
+
+```bash
+python3 -c "
+import secrets, hmac, hashlib
+
+def token(session, secret):
+    return hmac.new(secret, session.encode(), hashlib.sha256).hexdigest()
+
+def verify(session, tok, secret):
+    return hmac.compare_digest(token(session, secret), tok)
+
+secret = secrets.token_bytes(32)
+legit_tok = token('alice-session', secret)
+print('legit token:  ', verify('alice-session', legit_tok, secret))    # True
+print('wrong session:', verify('bob-session',   legit_tok, secret))    # False
+print('forged:       ', verify('alice-session', 'a'*64,    secret))    # False
+"
+```
 
 ## Learn next
 
-The other classic web vulnerability that makes CSRF defences moot if exploited: [XSS](/t/xss). The discipline that ties them together: [threat model](/t/threat-model).
+- [XSS](/t/xss) — if the attacker has XSS, CSRF tokens are irrelevant; XSS is strictly more powerful.
+- [Threat model](/t/threat-model) — the discipline for deciding which of these vulnerabilities matters most in your system.
+- [Authentication](/t/authentication) — the session mechanism CSRF piggybacks on.
