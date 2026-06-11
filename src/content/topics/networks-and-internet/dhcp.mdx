@@ -4,6 +4,7 @@ aliases: ["Dynamic Host Configuration Protocol", "IP address assignment"]
 category: networks-and-internet
 domain: networks-communications
 subcategory: protocols-components
+structure: 2
 kind: protocol
 summary: The protocol that automatically assigns IP addresses, subnet masks, gateways, and DNS servers to devices when they join a network — the reason you don't manually configure an IP every time you connect to Wi-Fi.
 level: beginner
@@ -13,12 +14,26 @@ tags: ["networking", "protocols", "configuration", "ip"]
 prerequisites: ["ip-address", "udp"]
 related: ["dns", "nat", "ipv6"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 When your laptop connects to a Wi-Fi network, it needs an IP address to communicate — but it doesn't know which address to use. DHCP solves this: the device broadcasts "I need an IP!" and a DHCP server on the network responds "Here's `192.168.1.42`, valid for 24 hours, use `192.168.1.1` as your gateway and `8.8.8.8` as your DNS." The whole exchange happens in milliseconds, silently, every time a device connects.
+
+## The Visual Map
+
+```mermaid
+sequenceDiagram
+  participant C as new device<br/>(no IP yet)
+  participant S as DHCP server<br/>(on the router)
+  C->>S: DISCOVER (broadcast from 0.0.0.0)<br/>"anyone out there?"
+  S->>C: OFFER<br/>"192.168.1.42, lease 24h,<br/>gateway .1, DNS 8.8.8.8"
+  C->>S: REQUEST (broadcast)<br/>"I'll take that one"
+  S->>C: ACK — lease recorded
+  Note over C: configures interface, ready in ms
+  Note over C,S: at 50% of lease: unicast renewal<br/>at 87.5%: broadcast to any server
+```
 
 ## More detail
 
@@ -37,9 +52,41 @@ The DHCP exchange is four steps (DORA):
 
 **DHCPv6** serves IPv6 addresses but is used alongside or replaced by **SLAAC** (Stateless Address Auto-Configuration), which lets devices self-assign from the network prefix without any server. Many IPv6 deployments use SLAAC for address assignment and DHCPv6 only for DNS server information.
 
-## Why it matters
+DHCP is why home and enterprise networks require no IP management by users — without it, every device would need a manually configured, conflict-free address. Lease logs double as an audit trail of which device held which IP when.
 
-DHCP is why home and enterprise networks require no IP management by users. Without it, every device would need a manually configured, conflict-free IP address — impractical at scale. DHCP is also a network management and visibility tool: lease logs are an audit trail of which device held which IP when. Security implications: a rogue DHCP server can redirect traffic by offering a malicious gateway or DNS server (DHCP snooping on switches prevents this). Understanding DHCP clarifies why "my IP address changed" and how network configuration is delivered.
+## Under the Hood
+
+A DHCP message is a fixed binary layout (inherited from BOOTP) plus a list of typed options:
+
+```python
+import struct
+
+xid = 0x39174542                      # random transaction id ties DORA together
+mac = bytes.fromhex("aabbccddeeff")
+
+discover = struct.pack("!BBBBIHH4s4s4s4s16s",
+    1, 1, 6, 0,                       # op=request, htype=ethernet, hlen=6, hops=0
+    xid, 0, 0x8000,                   # secs, flags (broadcast bit)
+    b"\0"*4, b"\0"*4, b"\0"*4, b"\0"*4,   # ciaddr/yiaddr/siaddr/giaddr: all zero
+    mac + b"\0"*10)                   # chaddr (padded)
+discover += b"\0"*192                 # legacy BOOTP sname/file fields
+discover += bytes.fromhex("63825363") # DHCP magic cookie
+discover += bytes([53, 1, 1])         # option 53: message type = DISCOVER
+discover += bytes([55, 3, 1, 3, 6])   # option 55: please send subnet, router, DNS
+discover += bytes([255])              # end option
+
+print(f"{len(discover)} bytes, sent from 0.0.0.0:68 to 255.255.255.255:67")
+print(discover[:16].hex(" "))
+```
+
+Option 53 makes it a DISCOVER; option 55 is the client's shopping list. The server's OFFER comes back in the same layout with `yiaddr` ("your address") filled in.
+
+## Engineering Trade-offs
+
+- **Zero-touch convenience vs zero authentication.** Any box answering on the segment can hand out leases — a rogue DHCP server offering itself as gateway or DNS silently intercepts traffic. Enterprise switches counter with DHCP snooping; the protocol itself has no defense.
+- **Lease length: stability vs pool churn.** Long leases keep devices on stable addresses and quiet the network, but a guest-heavy network (café Wi-Fi) exhausts its pool on departed phones; short leases recycle fast at the cost of constant renewal chatter.
+- **Central state vs availability.** The lease database is authoritative state: lose the DHCP server and new devices can't join. Redundancy needs failover protocols or split scopes — compare IPv6 SLAAC, which removed the server (and with it, the central lease audit trail).
+- **Broadcast bootstrap doesn't route.** Starting from "no address" forces link-level broadcast, which routers won't forward — every subnet needs either its own server or a relay agent, a recurring cost in segmented networks.
 
 ## Real-world examples
 
@@ -53,6 +100,23 @@ DHCP is why home and enterprise networks require no IP management by users. With
 - **"DHCP assigns a permanent IP."** It assigns a *lease* — the IP is reserved for a period, then released. Most home routers renew leases automatically, so the same device keeps the same IP, but this isn't guaranteed.
 - **"DHCP is insecure."** By default it has no authentication, making it vulnerable to rogue servers. DHCP snooping (switch feature) and 802.1X port authentication mitigate this in enterprise networks.
 
+## Try it yourself
+
+Inspect the lease your machine is currently living on:
+
+```bash
+ip -4 addr show | grep -A1 dynamic     # addresses tagged "dynamic" came from DHCP
+ip route show default                  # the gateway the lease handed you
+
+# the resolver configuration DHCP (or its successor) delivered:
+cat /etc/resolv.conf | grep -v '^#' | head -5
+```
+
+The `valid_lft` countdown on the dynamic address is your lease timer — watch it reset when the renewal at 50% fires. (On WSL the address comes from a virtual DHCP-like service; on real Wi-Fi you'll see your router's lease.)
+
 ## Learn next
 
-DHCP assigns [IP addresses](/t/ip-address) and [DNS](/t/dns) server information to new devices. [NAT](/t/nat) often works together with DHCP — the router's DHCP server assigns private IPs, and NAT translates them to the public IP. In [IPv6](/t/ipv6) networks, SLAAC can replace DHCP for address assignment.
+- [IP address](/t/ip-address) — the resource DHCP hands out.
+- [NAT](/t/nat) — the partner mechanism: DHCP assigns private addresses, NAT shares the public one.
+- [IPv6](/t/ipv6) — where SLAAC lets devices configure themselves with no server at all.
+- [DNS](/t/dns) — the other essential setting every lease delivers.

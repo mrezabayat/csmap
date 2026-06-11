@@ -4,6 +4,7 @@ aliases: ["HTTP/3", "QUIC protocol", "Quick UDP Internet Connections"]
 category: networks-and-internet
 domain: networks-communications
 subcategory: protocols-components
+structure: 2
 kind: protocol
 summary: A transport protocol built on UDP that combines TCP's reliability with TLS's encryption in a single handshake — eliminating head-of-line blocking and reducing connection setup latency.
 level: intermediate
@@ -13,12 +14,31 @@ tags: ["networking", "protocols", "http3", "performance"]
 prerequisites: ["udp", "tcp", "tls"]
 related: ["http", "socket"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 TCP + TLS has a problem: setting up a secure connection takes 2–3 round trips before data can flow, and if one packet is lost, everything else in the stream must wait (head-of-line blocking). QUIC rebuilds reliable, encrypted transport on top of UDP, combining the handshake into one round trip and multiplexing streams so a lost packet only stalls its own stream, not all the others. HTTP/3 runs over QUIC; as of 2024 it carries around 30% of web traffic.
+
+## The Visual Map
+
+```mermaid
+sequenceDiagram
+  participant C as client
+  participant S as server
+  Note over C,S: TCP+TLS 1.3: handshakes stacked
+  C->>S: TCP SYN
+  S->>C: SYN-ACK
+  C->>S: ACK + TLS ClientHello
+  S->>C: TLS ServerHello...
+  C->>S: HTTP request (after ~2 RTT)
+  Note over C,S: QUIC: one merged handshake
+  C->>S: Initial (transport + TLS ClientHello)
+  S->>C: Handshake (TLS done, keys ready)
+  C->>S: HTTP/3 request (after 1 RTT — or 0-RTT resumed)
+  Note over C,S: streams 1, 2, 3 multiplexed —<br/>a loss on stream 2 never stalls 1 or 3
+```
 
 ## More detail
 
@@ -32,11 +52,39 @@ TCP + TLS has a problem: setting up a secure connection takes 2–3 round trips 
 
 **UDP as the substrate:** QUIC uses UDP because UDP passes through existing firewalls and NATs, and because user-space implementations can evolve independently. QUIC implements its own reliability, congestion control (CUBIC, BBR, or QUIC-specific variants), and flow control.
 
-**Congestion control:** QUIC uses pluggable congestion controllers; BBR and Cubic are the most common. The QUIC packet number space is separate from the stream offset, enabling cleaner loss detection and retransmission.
+QUIC eliminates the latency taxes of TCP+TLS that show up most on mobile networks (high loss rates, network switching) and for pages with many parallel resources. HTTP/3 is now standard across Google, Cloudflare, and Meta, and QUIC generalises beyond HTTP to tunnels and gaming protocols.
 
-## Why it matters
+## Under the Hood
 
-QUIC eliminates the latency taxes of TCP+TLS that show up most on mobile networks (high loss rates, network switching) and for pages with many parallel resources (head-of-line blocking). For a page that requests 30 resources, QUIC's stream multiplexing can cut page load times measurably. HTTP/3 is now standard across Google, Cloudflare, and Meta. All major browsers support it. QUIC also generalises beyond HTTP — QUIC-based tunnels (WireGuard-over-QUIC) and gaming protocols use it for its low-latency, encrypted, multiplexed transport.
+Head-of-line blocking, demonstrated: the same lossy packet arrival, delivered through one ordered stream (TCP) vs independent streams (QUIC):
+
+```python
+# packets arrive out of order; packet 2 (stream B) was lost and arrives last
+arrivals = [("A", 1), ("B", 3), ("A", 2), ("C", 1), ("B", 2)]   # (stream, seq)
+lost_then_retransmitted = ("B", 1)
+
+# TCP: one global sequence — EVERYTHING waits for the earliest hole
+print("TCP-like : nothing delivered until the lost packet arrives;",
+      f"{len(arrivals)} packets buffered behind one hole")
+
+# QUIC: per-stream sequencing — only stream B waits
+buffers, delivered = {}, []
+for stream, seq in arrivals:
+    buffers.setdefault(stream, []).append(seq)
+    if stream != "B":
+        delivered.append((stream, seq))
+print("QUIC-like: delivered immediately:", delivered)
+print("           only stream B buffers, waiting for its own retransmit")
+```
+
+The architectural shift is exactly this: loss recovery scoped to the stream that suffered the loss. HTTP/3 maps each resource (image, script, stylesheet) to its own stream, so one dropped packet no longer freezes the whole page.
+
+## Engineering Trade-offs
+
+- **User-space agility vs kernel efficiency.** Living in libraries lets QUIC ship features at app-update speed (the anti-ossification win), but it forgoes decades of kernel TCP optimisation — QUIC burns measurably more CPU per byte, a real cost at video-scale traffic.
+- **Encrypting the transport headers.** Hiding sequence numbers and connection state from middleboxes prevents the meddling that froze TCP — and blinds network operators' diagnostic tooling; the spec added an explicit "spin bit" as a deliberate, minimal concession to RTT measurement.
+- **0-RTT speed vs replay risk.** Sending data in the very first packet of a resumed connection saves a round trip, but that data can be replayed by an attacker — safe only for idempotent requests, enforced by application policy.
+- **UDP's second-class network status.** Some networks throttle or block UDP, so every QUIC deployment carries a TCP+TLS fallback (negotiated via Alt-Svc) — you ship and operate two stacks, not one.
 
 ## Real-world examples
 
@@ -50,6 +98,27 @@ QUIC eliminates the latency taxes of TCP+TLS that show up most on mobile network
 - **"QUIC is just UDP."** QUIC provides reliability, ordering, congestion control, and encryption on top of UDP — everything TCP+TLS provides, but without the ossification and blocking.
 - **"HTTP/3 means the web gets slower."** Some middleboxes block or throttle UDP; in those environments HTTP/3 falls back to HTTP/2. But where QUIC reaches the server, it is almost always faster than TCP for multi-resource page loads.
 
+## Try it yourself
+
+Servers advertise HTTP/3 over the *old* protocol first — read the Alt-Svc header that invites the upgrade:
+
+```bash
+# requires: network
+python3 -c "
+import urllib.request
+for site in ('https://www.cloudflare.com', 'https://www.google.com'):
+    req = urllib.request.Request(site, method='HEAD',
+                                 headers={'User-Agent': 'curiosity/1.0'})
+    with urllib.request.urlopen(req, timeout=5) as r:
+        print(site, '->', r.headers.get('alt-svc', '(no HTTP/3 advertised)')[:60])
+"
+```
+
+`h3=":443"` means "I also speak HTTP/3 over QUIC on UDP 443" — your browser remembers it and switches transports on the next visit.
+
 ## Learn next
 
-QUIC replaces [TCP](/t/tcp) + [TLS](/t/tls) at the transport layer for [HTTP](/t/http)/3. The motivation is [socket](/t/socket)-level multiplexing without head-of-line blocking — understanding TCP's stream model makes QUIC's improvement concrete.
+- [TCP](/t/tcp) — the stream model whose limits QUIC was built to escape.
+- [UDP](/t/udp) — the deliberately empty substrate QUIC builds on.
+- [TLS](/t/tls) — the handshake QUIC absorbed into its own.
+- [HTTP](/t/http) — whose version 3 is QUIC's flagship application.

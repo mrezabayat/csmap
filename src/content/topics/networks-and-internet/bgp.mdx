@@ -4,6 +4,7 @@ aliases: ["Border Gateway Protocol", "internet routing", "autonomous system"]
 category: networks-and-internet
 domain: networks-communications
 subcategory: protocols-components
+structure: 2
 kind: protocol
 summary: The routing protocol that holds the internet together — autonomous systems exchange reachability information so each router knows how to forward packets to any IP address on earth.
 level: advanced
@@ -13,12 +14,23 @@ tags: ["networking", "routing", "internet", "infrastructure"]
 prerequisites: ["router", "ip-address", "packet"]
 related: ["anycast", "ipv6", "mpls"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 The internet is not one network — it's tens of thousands of independently operated networks (ISPs, cloud providers, universities) each called an **Autonomous System (AS)**. BGP is the protocol they use to tell each other: "I can reach these IP address ranges; here's the path through me." Every router on the internet builds a routing table from BGP announcements, and packets hop from AS to AS until they reach their destination. If BGP breaks, large swaths of the internet go dark.
+
+## The Visual Map
+
+```mermaid
+flowchart LR
+  G["AS15169 (Google)<br/>announces 8.8.8.0/24"] -->|"path: [15169]"| T1["AS3356<br/>(Lumen, transit)"]
+  G -->|"path: [15169]"| T2["AS1299<br/>(Arelion, transit)"]
+  T1 -->|"path: [3356, 15169]"| ISP["AS9009<br/>(your ISP)"]
+  T2 -->|"path: [1299, 15169]"| ISP
+  ISP -->|"prefers one path:<br/>policy, then shortest AS_PATH"| Y["your router's table:<br/>8.8.8.0/24 via AS3356"]
+```
 
 ## More detail
 
@@ -36,11 +48,37 @@ Each AS has a unique **AS Number (ASN)** (e.g. AS15169 = Google, AS16509 = Amazo
 
 **BGP security** is notoriously weak. **BGP hijacking** (announcing someone else's prefix) occurs regularly — accidentally (fat-finger, misconfiguration) and maliciously. RPKI (Resource Public Key Infrastructure) cryptographically ties prefixes to ASNs and is gradually being adopted to verify origin. BGPSEC extends this to path signing.
 
-**BGP convergence** is slow (seconds to minutes after a failure); this is why internet outages from routing changes linger. The internet "routes around" failures but takes time to do so.
+BGP is literally the protocol that makes the internet work as one network instead of thousands of disconnected ones. A BGP misconfiguration can and regularly does take down significant fractions of internet reachability. Understanding BGP explains why the internet is resilient to some failures and fragile to others, how anycast works, and how traffic engineering is done at scale.
 
-## Why it matters
+## Under the Hood
 
-BGP is literally the protocol that makes the internet work as one network instead of thousands of disconnected ones. Every cloud provider, ISP, and content network engineers BGP. A BGP misconfiguration can and regularly does take down significant fractions of internet reachability — Facebook's 2021 outage was caused by a BGP withdrawal that made Facebook's entire infrastructure unreachable. Understanding BGP explains why the internet is resilient to some failures and fragile to others, how anycast works, and how traffic engineering is done at scale.
+BGP's path-selection algorithm, reduced to its decision ladder:
+
+```python
+def best_path(paths):
+    return sorted(paths, key=lambda p: (
+        -p["local_pref"],        # 1. business policy beats everything
+        len(p["as_path"]),       # 2. then fewest AS hops
+        p["med"],                # 3. then the neighbour's entry-point hint
+        p["ibgp"],               # 4. prefer routes learned from outside (eBGP=0)
+        p["router_id"],          # 5. final deterministic tie-break
+    ))[0]
+
+paths = [
+    {"via": "cheap peer",    "local_pref": 200, "as_path": [64500, 15169], "med": 0, "ibgp": 0, "router_id": 2},
+    {"via": "fast transit",  "local_pref": 100, "as_path": [3356, 15169],  "med": 0, "ibgp": 0, "router_id": 1},
+]
+print(best_path(paths)["via"])   # "cheap peer" — policy (LOCAL_PREF) outranks path length
+```
+
+The crucial fact is step 1: operators set LOCAL_PREF by *commercial* relationships (customer > peer > paid transit). Internet routing optimises for money first, topology second — most BGP behavior that looks irrational is economics.
+
+## Engineering Trade-offs
+
+- **Trust vs verification.** BGP believes whatever its neighbours announce — that openness let the internet grow without central coordination, and it's why a single fat-fingered announcement can redirect a country's traffic. RPKI origin validation is closing the gap, but only where deployed.
+- **Policy expressiveness vs predictability.** LOCAL_PREF, MED, and communities let every AS encode its business logic — which means no one can compute end-to-end paths from topology alone, and debugging "why does my traffic go via Madrid?" requires understanding other people's contracts.
+- **Stability vs convergence speed.** Route-flap dampening and conservative timers keep the global table from thrashing, at the cost of seconds-to-minutes of blackholed traffic after a failure — an eternity compared to MPLS Fast ReRoute's ~50 ms local repair.
+- **Table growth has no brake.** Every de-aggregated /24 announced for traffic engineering lands in ~1M-route tables in every default-free router on Earth. The cost of one operator's precision is paid by everyone else's TCAM.
 
 ## Real-world examples
 
@@ -54,6 +92,28 @@ BGP is literally the protocol that makes the internet work as one network instea
 - **"The internet is centrally managed."** BGP is decentralised — no single authority controls it. Any AS can (incorrectly) announce any prefix, and the internet will (often) believe it.
 - **"BGP is secure."** The base protocol has no authentication of prefix ownership. RPKI adds this, but adoption is incomplete and not universal.
 
+## Try it yourself
+
+Ask the global routing system who announces an IP — Team Cymru's whois service maps addresses to origin ASNs:
+
+```bash
+# requires: network
+python3 -c "
+import socket
+s = socket.create_connection(('whois.cymru.com', 43), timeout=10)
+s.sendall(b' -v 1.1.1.1\r\n')
+data = b''
+while chunk := s.recv(4096):
+    data += chunk
+print(data.decode())
+"
+```
+
+The reply shows the origin AS (13335, Cloudflare), the announced prefix, and the registry — the same facts every BGP router on the internet is acting on right now. Try your own public IP.
+
 ## Learn next
 
-BGP is how [routers](/t/router) agree on global [IP address](/t/ip-address) reachability. [Anycast](/t/anycast) routing is a BGP trick; [IPv6](/t/ipv6) adds new address families that BGP also carries. Understanding BGP makes incidents like Facebook's 2021 outage legible.
+- [Router](/t/router) — the devices whose tables BGP fills.
+- [Anycast](/t/anycast) — the BGP trick behind global one-IP services.
+- [IPv6](/t/ipv6) — the second address family the global table carries.
+- [MPLS](/t/mpls) — the intra-carrier layer below BGP's inter-AS routing.

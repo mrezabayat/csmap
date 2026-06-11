@@ -1,6 +1,6 @@
 # Content Enrichment & Taxonomy Plan
 
-> **Status (2026-06-11):** Phase 0 (infrastructure) shipped, **Phase 1 complete** (334/334 classified; ambiguous calls recorded in the per-category commit messages, `git log --grep="Master Computing Taxonomy"`). **Phase 2 in progress: 49/334 enriched — foundations (26/26) and operating-systems (23/23) COMPLETE**, all gates green. Next category per §5 order: networks-and-internet. Use `/enrich-topic` per topic; `npm run audit:taxonomy` is the progress meter.
+> **Status (2026-06-11):** Phase 0 (infrastructure) shipped, **Phase 1 complete** (334/334 classified; ambiguous calls recorded in the per-category commit messages, `git log --grep="Master Computing Taxonomy"`). **Phase 2 in progress: 72/334 enriched — foundations (26/26), operating-systems (23/23), networks-and-internet (23/23) COMPLETE**, all gates green. Next category per §5 order: distributed-systems-and-cloud. Use `/enrich-topic` per topic; `npm run audit:taxonomy` is the progress meter.
 >
 > Follows on from `content-roadmap.md` (all 3 rings complete, 334 topics, all `status: reviewed`). This plan upgrades every topic from the v1 six-heading structure to the enriched v2 structure, classifies every topic into the Master Computing Taxonomy, and installs the tooling so every *future* topic is born classified and enriched.
 
