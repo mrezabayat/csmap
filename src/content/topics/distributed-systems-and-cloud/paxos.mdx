@@ -4,6 +4,7 @@ aliases: ["Paxos protocol", "Multi-Paxos", "single-decree Paxos"]
 category: distributed-systems-and-cloud
 domain: concurrency-parallelism
 subcategory: distributed-computing
+structure: 2
 kind: protocol
 summary: The foundational consensus algorithm that proved distributed agreement is possible in the face of message loss and crashes — notoriously hard to understand, but the theoretical backbone of nearly all consensus work.
 level: advanced
@@ -13,12 +14,35 @@ tags: ["distributed-systems", "consensus", "fault-tolerance", "theory"]
 prerequisites: ["consensus", "distributed-system"]
 related: ["raft", "gossip-protocol"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-11
 ---
 
 ## In simple terms
 
 Paxos solves one precise problem: get a group of servers to agree on a single value, even if messages are delayed, duplicated, or lost, and even if some servers crash (but not all). Lamport published it in 1989 (circulated as a technical report, published 1998); it became the foundation of almost all distributed consensus theory. The algorithm is famously counterintuitive — Lamport himself wrote a paper titled "Paxos Made Simple" because the original was so hard to follow.
+
+## The Visual Map
+
+```mermaid
+sequenceDiagram
+  participant P as proposer
+  participant A1 as acceptor 1
+  participant A2 as acceptor 2
+  participant A3 as acceptor 3
+  Note over P,A3: Phase 1 — Prepare / Promise
+  P->>A1: Prepare(n=5)
+  P->>A2: Prepare(n=5)
+  P->>A3: Prepare(n=5)
+  A1-->>P: Promise(5, none)
+  A2-->>P: Promise(5, none)
+  Note over P: majority promised -> proceed
+  Note over P,A3: Phase 2 — Accept / Accepted
+  P->>A1: Accept(5, "x")
+  P->>A2: Accept(5, "x")
+  A1-->>P: Accepted
+  A2-->>P: Accepted
+  Note over P,A3: quorum accepted -> "x" is chosen
+```
 
 ## More detail
 
@@ -36,9 +60,56 @@ Paxos solves one precise problem: get a group of servers to agree on a single va
 
 Notable variants: **Multi-Paxos** (stable leader, log-level agreement), **Fast Paxos** (lower latency by skipping the leader), **EPaxos** (leaderless, reorders commuting operations), **Flexible Paxos** (smaller quorums for read-heavy workloads).
 
-## Why it matters
+## Under the Hood
 
-Every consensus algorithm in production — Raft, Zab (ZooKeeper), Viewstamped Replication — is either Paxos or a refinement of it. Understanding Paxos gives you the theoretical floor: what properties any consensus protocol must satisfy, what fault models it assumes (crash-stop, not Byzantine), and why no consensus protocol can be both safe and live in an asynchronous network (FLP impossibility). It is the lens through which to read the literature on [distributed systems](/t/distributed-system).
+The subtle, load-bearing rule is in Phase 2: a proposer does not always propose its *own* value. The acceptor and proposer logic that guarantees safety:
+
+```python
+class Acceptor:
+    def __init__(self):
+        self.promised = -1            # highest n promised
+        self.accepted = None          # (n, value) actually accepted
+
+    def prepare(self, n):
+        if n > self.promised:
+            self.promised = n
+            return ("promise", self.accepted)   # report any prior acceptance
+        return ("reject", None)
+
+    def accept(self, n, v):
+        if n >= self.promised:
+            self.promised = n
+            self.accepted = (n, v)
+            return "accepted"
+        return "reject"
+
+def propose(proposer_value, n, acceptors):
+    promises = [a.prepare(n) for a in acceptors]
+    oks = [p for tag, p in promises if tag == "promise"]
+    if len(oks) <= len(acceptors) // 2:
+        return None                              # no quorum
+    # THE crucial step: if any acceptor already accepted a value,
+    # we MUST re-propose the highest-numbered one, not our own.
+    prior = [acc for acc in oks if acc is not None]
+    value = max(prior, key=lambda a: a[0])[1] if prior else proposer_value
+    if sum(a.accept(n, value) == "accepted" for a in acceptors) > len(acceptors)//2:
+        return value
+    return None
+
+acceptors = [Acceptor() for _ in range(3)]
+print(propose("x", n=1, acceptors))   # 'x' chosen
+print(propose("y", n=2, acceptors))   # 'x' again! a later proposer ADOPTS the
+                                      # already-chosen value — this is safety
+```
+
+That second call returning `'x'` instead of `'y'` is the heart of Paxos: once a value can have been chosen, every higher-numbered proposal is forced to propose the same value. The quorum overlap guarantees the new proposer *sees* it.
+
+## Engineering Trade-offs
+
+- **Proven safety vs specified completeness.** Paxos gives an airtight correctness proof for single-decree agreement — and leaves leader election, log compaction, and reconfiguration entirely to the implementer. That gap produced a generation of subtly-broken implementations and, eventually, [Raft](/t/raft).
+- **Two phases vs one round-trip.** Basic Paxos costs two round-trips per decision; Multi-Paxos amortises Phase 1 away by keeping a stable leader, trading the pure-protocol symmetry for the practical need of a leader (and leader-election machinery the spec doesn't describe).
+- **Crash-stop only.** Paxos assumes nodes fail by halting, not by lying — which keeps it at 2f+1 nodes and cheap. Adversarial or buggy nodes that send conflicting messages break it; Byzantine agreement (3f+1, more rounds) is the costly alternative.
+- **Liveness is not guaranteed.** Per FLP, no asynchronous consensus can guarantee progress; dueling proposers can livelock forever bumping proposal numbers. Real systems add leader election and randomised backoff to make progress *practically* certain — never theoretically.
 
 ## Real-world examples
 
@@ -52,6 +123,40 @@ Every consensus algorithm in production — Raft, Zab (ZooKeeper), Viewstamped R
 - **"Paxos is provably optimal."** It is proven correct for crash-stop failures in a partially synchronous model. It makes no progress under Byzantine (arbitrary) failures — that requires BFT protocols.
 - **"Raft replaced Paxos."** Raft replaced Paxos as the preferred *implementation* choice for new systems; Paxos remains the theoretical reference point.
 
+## Try it yourself
+
+Demonstrate the safety property directly — once a value is chosen, a competing later proposal is forced to adopt it:
+
+```bash
+python3 -c "
+class Acceptor:
+    def __init__(self): self.promised, self.accepted = -1, None
+    def prepare(self, n):
+        if n > self.promised: self.promised = n; return self.accepted
+        return 'reject'
+    def accept(self, n, v):
+        if n >= self.promised: self.promised, self.accepted = n, (n, v); return True
+        return False
+
+def propose(value, n, acc):
+    oks = [a.prepare(n) for a in acc]
+    if oks.count('reject') > len(acc)//2: return None
+    prior = [o for o in oks if o not in (None, 'reject')]
+    v = max(prior, key=lambda a: a[0])[1] if prior else value   # adopt if chosen
+    if sum(a.accept(n, v) for a in acc) > len(acc)//2: return v
+    return None
+
+acc = [Acceptor() for _ in range(3)]
+print('proposer 1 proposes x ->', propose('x', 1, acc))
+print('proposer 2 proposes y ->', propose('y', 2, acc), '(forced to adopt x)')
+print('proposer 3 proposes z ->', propose('z', 9, acc), '(still x — value is locked)')
+"
+```
+
+Three different proposers, three different intended values, one outcome: the first chosen value wins forever. That immutability is what "consensus" actually buys you.
+
 ## Learn next
 
-Paxos is the theory; [Raft](/t/raft) is the more implementation-friendly alternative. Both implement [consensus](/t/consensus) — the guarantee that all nodes agree on the same sequence of values. The difference matters in practice when choosing or reading about a distributed database.
+- [Raft](/t/raft) — the implementation-friendly reformulation of these ideas.
+- [Consensus](/t/consensus) — the general problem Paxos was the first to solve.
+- [Gossip protocol](/t/gossip-protocol) — the contrasting coordination-free approach.
