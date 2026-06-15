@@ -347,14 +347,82 @@ async function lintPath(file) {
   }
 }
 
+/**
+ * Validate a checkpoint quiz JSON (gamification G4). Mirrors the canonical
+ * contract in src/lib/quiz.ts (`validateQuiz`) — kept inline because this script
+ * runs under plain `node` with no TypeScript loader. Keep the two in sync.
+ */
+function lintQuiz(file, json, topicIds) {
+  if (typeof json !== "object" || json === null) {
+    err(file, "quiz is not a JSON object");
+    return;
+  }
+  // Topic id is the filename minus the `.quiz.json` suffix.
+  const base = file.split(/[\\/]/).pop().replace(/\.quiz\.json$/, "");
+  if (!topicIds.has(base)) {
+    err(file, `no topic named "${base}" — a quiz must sit beside its topic`);
+  }
+  if (typeof json.topic !== "string" || json.topic.length === 0) {
+    err(file, "`topic` must be a non-empty string");
+  } else if (json.topic !== base) {
+    err(file, `\`topic\` is "${json.topic}" but the file is named for "${base}"`);
+  }
+  if (!Array.isArray(json.questions) || json.questions.length === 0) {
+    err(file, "`questions` must be a non-empty array");
+    return;
+  }
+  json.questions.forEach((qn, i) => {
+    const where = `question ${i + 1}`;
+    if (typeof qn?.q !== "string" || qn.q.length === 0) {
+      err(file, `${where}: \`q\` must be a non-empty string`);
+    }
+    if (!Array.isArray(qn?.choices) || qn.choices.length < 2) {
+      err(file, `${where}: \`choices\` must have at least 2 options`);
+      return;
+    }
+    if (!qn.choices.every((c) => typeof c === "string" && c.length > 0)) {
+      err(file, `${where}: every choice must be a non-empty string`);
+    }
+    if (
+      typeof qn.answer !== "number" ||
+      !Number.isInteger(qn.answer) ||
+      qn.answer < 0 ||
+      qn.answer >= qn.choices.length
+    ) {
+      err(file, `${where}: \`answer\` must be an integer index into \`choices\``);
+    }
+    if (typeof qn.explain !== "string" || qn.explain.length === 0) {
+      err(file, `${where}: \`explain\` must be a non-empty string`);
+    }
+  });
+}
+
+async function lintQuizFile(file, topicIds) {
+  const src = await readFile(file, "utf8");
+  let json;
+  try {
+    json = JSON.parse(src);
+  } catch (e) {
+    err(file, `invalid JSON: ${e.message}`);
+    return;
+  }
+  lintQuiz(file, json, topicIds);
+}
+
 async function main() {
   const topicFiles = globSync("src/content/topics/**/*.mdx");
   const pathFiles = globSync("src/content/paths/**/*.mdx");
+  const quizFiles = globSync("src/content/topics/**/*.quiz.json");
+
+  const topicIds = new Set(
+    topicFiles.map((f) => f.split(/[\\/]/).pop().replace(/\.mdx$/, "")),
+  );
 
   await Promise.all(topicFiles.map(lintTopic));
   await Promise.all(pathFiles.map(lintPath));
+  await Promise.all(quizFiles.map((f) => lintQuizFile(f, topicIds)));
 
-  const total = topicFiles.length + pathFiles.length;
+  const total = topicFiles.length + pathFiles.length + quizFiles.length;
   if (warnings.length) {
     console.warn("warnings:");
     for (const w of warnings) console.warn(`  - ${w}`);
@@ -364,7 +432,7 @@ async function main() {
     for (const e of errors) console.error(`  - ${e}`);
     process.exit(1);
   }
-  console.log(`lint-content OK (${total} files: ${topicFiles.length} topics, ${pathFiles.length} paths)`);
+  console.log(`lint-content OK (${total} files: ${topicFiles.length} topics, ${pathFiles.length} paths, ${quizFiles.length} quizzes)`);
 }
 
 main().catch((e) => {

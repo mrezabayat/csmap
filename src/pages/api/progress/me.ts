@@ -1,6 +1,19 @@
 import type { APIRoute } from "astro";
 import { createAuth } from "~/lib/auth";
+import {
+  BADGE_DEFS,
+  evaluateBadge,
+  ringScholarDef,
+  type Badge,
+} from "~/lib/badges";
 import { getCloudflareEnv, type CloudflareEnv } from "~/lib/cloudflare";
+import {
+  computeStreak,
+  computeXp,
+  dayIndex,
+  rankProgress,
+  type RankProgress,
+} from "~/lib/gamification";
 import { loadGraph } from "~/lib/graph";
 import { normalisePathTopics } from "~/lib/paths";
 
@@ -50,9 +63,30 @@ export interface ProgressMeRecent {
   completedAt: string;
 }
 
+export interface ProgressActivity {
+  /** Consecutive-day study streak ending today or yesterday. */
+  streakCurrent: number;
+  /** Longest daily streak on record. */
+  streakLongest: number;
+  /**
+   * Non-empty days only, as `[utcDayIndex, distinctTopicCount]`. Sparse on
+   * purpose — the client fills the rest of the grid with zeros — so the payload
+   * stays tiny regardless of how long the account has been active.
+   */
+  days: Array<[day: number, count: number]>;
+}
+
 export interface ProgressMeResponse {
   paths: ProgressMePathSummary[];
   recentTopics: ProgressMeRecent[];
+  /** Derived XP + rank over all distinct completed topics (gamification G1). */
+  rank: RankProgress;
+  /** Derived daily streak + activity histogram (gamification G2). */
+  activity: ProgressActivity;
+  /** Topics the user has mastered via a checkpoint quiz (gamification G4). */
+  masteredCount: number;
+  /** Derived milestone badges (gamification G5). */
+  badges: Badge[];
 }
 
 export const GET: APIRoute = async (context) => {
@@ -163,5 +197,99 @@ export const GET: APIRoute = async (context) => {
     return bt - at;
   });
 
-  return json({ paths: summaries, recentTopics } satisfies ProgressMeResponse);
+  // Mastered topics (passed the topic's quiz). Failure to read mastery must not
+  // break the dashboard, so fall back to none.
+  let masteredIds = new Set<string>();
+  try {
+    const masteredResult = await env.DB.prepare(
+      `SELECT topic_id FROM topic_mastery WHERE user_id = ?1`,
+    )
+      .bind(userId)
+      .all<{ topic_id: string }>();
+    masteredIds = new Set(masteredResult.results.map((r) => r.topic_id));
+  } catch {
+    masteredIds = new Set();
+  }
+
+  const xpLookup = (id: string) => {
+    const topic = topicsById.get(id);
+    return topic
+      ? { importance: topic.data.importance, level: topic.data.level }
+      : undefined;
+  };
+
+  // XP counts each topic once, even if completed in several paths. Mastery is a
+  // premium tier (G4 two-tier model): it adds the topic's XP again on top of the
+  // completion XP.
+  const distinctCompleted = new Set(rows.map((row) => row.topic_id));
+  const xp = computeXp(distinctCompleted, xpLookup) + computeXp(masteredIds, xpLookup);
+  const rank = rankProgress(xp);
+
+  // Bucket completions by UTC day, counting distinct topics so the same topic
+  // completed in two paths on one day is a single contribution, not two.
+  const topicsByDay = new Map<number, Set<string>>();
+  for (const row of rows) {
+    const day = dayIndex(row.completed_at);
+    let set = topicsByDay.get(day);
+    if (!set) {
+      set = new Set();
+      topicsByDay.set(day, set);
+    }
+    set.add(row.topic_id);
+  }
+  const days: Array<[number, number]> = [...topicsByDay.entries()]
+    .map(([day, set]): [number, number] => [day, set.size])
+    .sort((a, b) => a[0] - b[0]);
+  const streak = computeStreak(topicsByDay.keys(), dayIndex(Date.now()));
+
+  const activity: ProgressActivity = {
+    streakCurrent: streak.current,
+    streakLongest: streak.longest,
+    days,
+  };
+
+  // Badge inputs derived from the content graph (static) intersected with the
+  // user's completions. One pass over all topics.
+  const categoryTotal = new Map<string, number>();
+  const categoryDone = new Map<string, number>();
+  let totalCore = 0;
+  let completedCore = 0;
+  for (const [id, topic] of topicsById) {
+    const cat = topic.data.category;
+    categoryTotal.set(cat, (categoryTotal.get(cat) ?? 0) + 1);
+    const done = distinctCompleted.has(id);
+    if (done) categoryDone.set(cat, (categoryDone.get(cat) ?? 0) + 1);
+    if (topic.data.importance === "core") {
+      totalCore++;
+      if (done) completedCore++;
+    }
+  }
+  let categoriesComplete = 0;
+  for (const [cat, total] of categoryTotal) {
+    if (total > 0 && (categoryDone.get(cat) ?? 0) === total) categoriesComplete++;
+  }
+  const pathsComplete = summaries.filter(
+    (s) => s.requiredCount > 0 && s.completedCount >= s.requiredCount,
+  ).length;
+
+  const badgeValues: Record<string, number> = {
+    explorer: distinctCompleted.size,
+    scholar: masteredIds.size,
+    streak: streak.longest,
+    cartographer: categoriesComplete,
+    trailblazer: pathsComplete,
+  };
+  const badges: Badge[] = BADGE_DEFS.map((def) =>
+    evaluateBadge(def, badgeValues[def.id] ?? 0),
+  );
+  badges.push(evaluateBadge(ringScholarDef(totalCore), completedCore));
+
+  return json({
+    paths: summaries,
+    recentTopics,
+    rank,
+    activity,
+    masteredCount: masteredIds.size,
+    badges,
+  } satisfies ProgressMeResponse);
 };

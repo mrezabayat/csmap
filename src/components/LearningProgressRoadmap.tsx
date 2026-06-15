@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
+import { computeFog } from "~/lib/fog";
 
 interface RoadmapTopic {
   id: string;
@@ -14,6 +15,8 @@ interface RoadmapTopic {
    * topics in the same section leave this undefined.
    */
   section?: string;
+  /** Prerequisite topic ids; Fog of War (G3) locks on the ones in this path. */
+  prerequisites?: string[];
 }
 
 interface Props {
@@ -100,6 +103,27 @@ export default function LearningProgressRoadmap({ pathId, topics }: Props) {
   const requiredCount = requiredIds.size;
   const disabled = state !== "ready";
 
+  // Fog of War: lock topics whose in-path prerequisites aren't done yet. Only
+  // surfaced once real progress has loaded — a signed-out visitor sees the full
+  // map, not a wall of locks.
+  const fog = useMemo(
+    () =>
+      computeFog(
+        topics.map((t) => ({
+          id: t.id,
+          prerequisites: t.prerequisites ?? [],
+          optional: t.optional,
+        })),
+        completed,
+      ),
+    [topics, completed],
+  );
+  const titleById = useMemo(
+    () => new Map(topics.map((t) => [t.id, t.title])),
+    [topics],
+  );
+  const showFog = state === "ready";
+
   const statusText = useMemo(() => {
     if (state === "loading") return "Loading progress...";
     if (state === "signed-out") return "Sign in to save progress.";
@@ -172,6 +196,10 @@ export default function LearningProgressRoadmap({ pathId, topics }: Props) {
         {topics.map((topic, index) => {
           const isCompleted = completed.has(topic.id);
           const isSaving = saving.has(topic.id);
+          const fogState = fog.get(topic.id);
+          const isLocked = showFog && !isCompleted && Boolean(fogState?.locked);
+          const missingTitles =
+            fogState?.missing.map((id) => titleById.get(id) ?? id) ?? [];
           const isFirstOfNewSection =
             !!topic.section &&
             (index === 0 || topics[index - 1]?.section !== topic.section);
@@ -189,17 +217,21 @@ export default function LearningProgressRoadmap({ pathId, topics }: Props) {
                 </li>
               )}
               <li
-                className={`flex items-start gap-3 rounded-lg border bg-[var(--color-atlas-surface)] p-3 ${
+                className={`flex items-start gap-3 rounded-lg border bg-[var(--color-atlas-surface)] p-3 transition-opacity ${
                   topic.optional
                     ? "border-dashed border-[var(--color-atlas-line)]"
                     : "border-[var(--color-atlas-line)]"
-                }`}
+                } ${isLocked ? "opacity-60" : ""}`}
               >
                 <span
-                  className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[var(--color-atlas-accent-soft)] text-xs font-semibold text-[var(--color-atlas-accent)]"
+                  className={`mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                    isLocked
+                      ? "bg-[var(--color-atlas-line)] text-[var(--color-atlas-muted)]"
+                      : "bg-[var(--color-atlas-accent-soft)] text-[var(--color-atlas-accent)]"
+                  }`}
                   aria-hidden="true"
                 >
-                  {index + 1}
+                  {isLocked ? "🔒" : index + 1}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-baseline gap-2">
@@ -221,6 +253,11 @@ export default function LearningProgressRoadmap({ pathId, topics }: Props) {
                   <p className="mt-0.5 text-sm text-[var(--color-atlas-muted)]">
                     {topic.summary}
                   </p>
+                  {isLocked && missingTitles.length > 0 && (
+                    <p className="mt-1 text-xs text-[var(--color-atlas-muted)]">
+                      🔒 Complete first: {missingTitles.join(", ")}
+                    </p>
+                  )}
                 </div>
                 <label className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center">
                   <span className="sr-only">

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from "~/layouts/BaseLayout.astro";
 import MeDashboard from "~/components/MeDashboard.tsx";
+import PopularTopics from "~/components/PopularTopics.tsx";
 import { createAuth } from "~/lib/auth";
 import { getCloudflareEnv } from "~/lib/cloudflare";
 
@@ -74,5 +75,7 @@ try {
         </p>
       </div>
     )}
+
+    <PopularTopics client:visible />
   </div>
 </BaseLayout>

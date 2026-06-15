@@ -1,0 +1,38 @@
+{
+  "topic": "tcp",
+  "questions": [
+    {
+      "q": "Which guarantee does TCP add that raw IP does not provide?",
+      "choices": [
+        "Reliable, in-order delivery of a byte stream",
+        "Encryption of the payload",
+        "Routing packets between networks",
+        "Assigning IP addresses to hosts"
+      ],
+      "answer": 0,
+      "explain": "IP delivers individual packets best-effort. TCP layers on reliability (retransmits losses) and ordering (reassembles segments) to present an ordered byte stream. Encryption is TLS's job; routing and addressing belong to IP."
+    },
+    {
+      "q": "What is the correct sequence of the TCP three-way handshake?",
+      "choices": [
+        "SYN → SYN-ACK → ACK",
+        "ACK → SYN → FIN",
+        "SYN → ACK → SYN-ACK",
+        "FIN → FIN-ACK → RST"
+      ],
+      "answer": 0,
+      "explain": "The client sends SYN, the server replies SYN-ACK, and the client confirms with ACK — establishing the connection in one round trip. FIN/RST are used to close or reset, not open."
+    },
+    {
+      "q": "TCP flow control and congestion control solve different problems. Which pairing is correct?",
+      "choices": [
+        "Flow control protects the receiver; congestion control protects the network",
+        "Flow control protects the network; congestion control protects the receiver",
+        "Both protect only the sender's CPU",
+        "Both are handled entirely by IP, not TCP"
+      ],
+      "answer": 0,
+      "explain": "Flow control uses the receiver's advertised window so the sender doesn't overrun a slow receiver. Congestion control (CUBIC, BBR, …) reacts to loss and RTT so one connection doesn't overwhelm the shared network."
+    }
+  ]
+}

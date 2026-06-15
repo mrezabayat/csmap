@@ -4,6 +4,9 @@
 
 type CloudflareBindings = {
   DB: D1Database;
+  // Gamification G6 — leaderboard aggregate cache. Optional so code degrades
+  // gracefully (recompute from D1) when the namespace isn't provisioned.
+  LEADERBOARD_KV?: KVNamespace;
   BETTER_AUTH_SECRET: string;
   BETTER_AUTH_URL?: string;
   GOOGLE_CLIENT_ID?: string;

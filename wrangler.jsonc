@@ -17,6 +17,16 @@
       "database_id": "75e609c7-9a77-4d5a-926b-8951f1dca74b"
     }
   ],
+  // Gamification G6 — leaderboard aggregate cache (read-hot, write-rarely).
+  // Provision once with:  wrangler kv namespace create LEADERBOARD_KV
+  // then paste the returned id below. Local `astro dev` simulates it regardless
+  // of the id; /api/leaderboard degrades to a live D1 query if KV is missing.
+  "kv_namespaces": [
+    {
+      "binding": "LEADERBOARD_KV",
+      "id": "9a273824d93746f8b6b0cd14a81339ca"
+    }
+  ],
   "observability": {
     "enabled": false
   }

@@ -10,7 +10,9 @@ import AppearsInCard from "~/components/AppearsInCard.astro";
 import NeighborhoodGraph from "~/components/NeighborhoodGraph.tsx";
 import PathContextStrip from "~/components/PathContextStrip.tsx";
 import InlineMarkComplete from "~/components/InlineMarkComplete.tsx";
+import TopicQuiz from "~/components/TopicQuiz.tsx";
 import MermaidRenderer from "~/components/MermaidRenderer.astro";
+import type { Quiz } from "~/lib/quiz";
 import { getTopicRelations, getNeighborGraph, categoryUrl } from "~/lib/graph";
 import { buildPathContexts } from "~/lib/path-contexts";
 import { topicReadingTimeMinutes } from "~/lib/reading-time";
@@ -51,6 +53,18 @@ const updatedLabel = updated.toISOString().slice(0, 10);
 const tags = topic.data.tags ?? [];
 const categoryDisplay = categoryLabel(category as CategorySlug);
 const readingMinutes = topicReadingTimeMinutes(topic);
+
+// Checkpoint quiz (G4): load this topic's sibling `<id>.quiz.json` if it exists.
+// Eager glob is fine — the JSON files are tiny and only the matching one is
+// passed to the island.
+const quizModules = import.meta.glob<{ default: Quiz }>(
+  "../content/topics/**/*.quiz.json",
+  { eager: true },
+);
+const quizEntry = Object.entries(quizModules).find(([p]) =>
+  p.endsWith(`/${topic.id}.quiz.json`),
+);
+const quiz = quizEntry ? quizEntry[1].default : null;
 ---
 
 <BaseLayout title={title} description={summary}>
@@ -232,6 +246,8 @@ const readingMinutes = topicReadingTimeMinutes(topic);
         pathContexts={pathContexts}
       />
     )}
+
+    {quiz && <TopicQuiz client:visible topicId={topic.id} quiz={quiz} />}
 
     <footer
       class="mt-10 border-t border-[var(--color-atlas-line)] pt-4 text-sm text-[var(--color-atlas-muted)] flex flex-wrap gap-x-4 gap-y-1"

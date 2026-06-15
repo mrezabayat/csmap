@@ -1,0 +1,38 @@
+{
+  "topic": "cap-theorem",
+  "questions": [
+    {
+      "q": "During a network partition, the CAP theorem says a distributed system must give up one of which two properties?",
+      "choices": [
+        "Latency or Throughput",
+        "Durability or Isolation",
+        "Consistency or Availability",
+        "Partition tolerance or Replication"
+      ],
+      "answer": 2,
+      "explain": "Partitions are a fact of real networks, so P is forced on you. That leaves a choice between Consistency (linearizable reads) and Availability (every request gets a non-error response)."
+    },
+    {
+      "q": "A datastore that keeps serving reads and writes on both sides of a partition and reconciles afterward is making which choice?",
+      "choices": [
+        "CP — consistent, the minority side refuses requests",
+        "AP — available, replicas diverge and reconcile later",
+        "CA — it has opted out of partition tolerance",
+        "ACID — it is enforcing serializable transactions"
+      ],
+      "answer": 1,
+      "explain": "Staying available on both sides means replicas can diverge, so it's an AP system (e.g. Cassandra, DynamoDB) that reconciles with last-write-wins, vector clocks, or CRDTs once the partition heals."
+    },
+    {
+      "q": "Why is calling single-node PostgreSQL a \"CA\" system misleading?",
+      "choices": [
+        "PostgreSQL is actually an AP system by default",
+        "CA is impossible for any database to achieve",
+        "PostgreSQL gives up consistency to gain availability",
+        "CAP's trade-off only appears during partitions, which can't happen on one node — so the label says nothing useful"
+      ],
+      "answer": 3,
+      "explain": "CAP is a *during-partition* trade-off. A single machine can't partition, so 'CA' is vacuous; the label only becomes meaningful (and a real C-vs-A choice) once you replicate across nodes."
+    }
+  ]
+}

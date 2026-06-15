@@ -58,6 +58,8 @@ const roadmapTopics = orderedItems.map((i) => ({
   href: topicUrl(i.id),
   optional: i.optional,
   section: i.section,
+  // Fog of War (G3): in-path prerequisites drive lock state, filtered client-side.
+  prerequisites: graph.relationsById.get(i.id)?.prerequisites ?? [],
 }));
 ---
 
