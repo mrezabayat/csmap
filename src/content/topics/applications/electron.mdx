@@ -13,68 +13,194 @@ tags: ["applications", "desktop", "javascript", "framework"]
 prerequisites: ["javascript-language", "web-browser"]
 related: ["progressive-web-app", "webassembly"]
 nextSteps: []
-updated: 2026-06-08
+updated: 2026-06-15
+structure: 2
 ---
 
 ## In simple terms
 
-Electron lets web developers build desktop apps using the same HTML, CSS, and JavaScript they use for websites. It bundles Chromium (the browser engine that powers Chrome) and Node.js into a single executable — so your app gets a full browser for rendering the UI and Node.js for accessing the file system, native OS features, and system resources. Write once in JavaScript, ship on Windows, macOS, and Linux. VS Code, Slack, Discord, WhatsApp Desktop, and GitHub Desktop are all Electron apps.
+Electron lets web developers build desktop apps using the same HTML, CSS, and JavaScript they already know. It bundles Chromium (the engine that powers Chrome) and Node.js into a single executable — your app gets a full browser for the UI and Node.js for file system, OS integrations, and native modules. Write once in JavaScript, ship on Windows, macOS, and Linux.
+
+VS Code, Slack, Discord, WhatsApp Desktop, and GitHub Desktop are all Electron apps.
+
+## The Visual Map
+
+```mermaid
+graph TD
+    subgraph ElectronApp["Electron Application"]
+        subgraph MainProcess["Main Process (Node.js)"]
+            AppLifecycle["App lifecycle\n(app.on, BrowserWindow)"]
+            NativeAPIs["Native OS APIs\n(menus, tray, notifications, fs)"]
+            ipcMain["ipcMain\n(receive messages from renderer)"]
+        end
+
+        subgraph ContextBridge["Context Bridge (security boundary)"]
+            PreloadScript["Preload script\n(exposeInMainWorld)"]
+        end
+
+        subgraph RendererProcess["Renderer Process (Chromium)"]
+            HTML["HTML / CSS / JS\n(React, Vue, plain HTML)"]
+            ipcRenderer["ipcRenderer\n(send messages to main)"]
+        end
+    end
+
+    NativeAPIs <--> AppLifecycle
+    AppLifecycle --> ipcMain
+    ipcMain <-->|"IPC channel"| PreloadScript
+    PreloadScript --> ipcRenderer
+    ipcRenderer --> HTML
+    HTML --> ipcRenderer
+```
 
 ## More detail
 
-**Architecture:**
-- **Main process:** a Node.js process that manages the application lifecycle, native menus, system tray, file system access, and creates renderer windows. The "backend" of the app.
-- **Renderer process:** a Chromium instance rendering HTML/CSS/JavaScript — one per window, like a browser tab. The "frontend."
-- **IPC (Inter-Process Communication):** `ipcMain` / `ipcRenderer` — message passing between the Node.js main process and the Chromium renderer process. Renderer processes cannot access Node.js APIs directly (security isolation).
-- **Context Bridge:** a safe API surface for the renderer to call limited main-process functions.
+Electron has two types of process — they cannot share memory and communicate only via IPC:
+
+**Main process** — a single Node.js process that owns the application lifecycle: creating `BrowserWindow` instances, managing native menus, system tray, notifications, and file system access. Think of it as the "backend" of the app. It can use any Node.js module or native addon.
+
+**Renderer process** — a Chromium instance per window (like a browser tab) that renders HTML/CSS/JavaScript. For security, renderers run with Node.js integration *disabled* by default — they cannot call `require('fs')` directly.
+
+**Context Bridge** — the security boundary between main and renderer. A preload script (executed in an isolated context before the page loads) uses `contextBridge.exposeInMainWorld()` to expose a limited, type-safe API surface to the renderer. This prevents XSS attacks from gaining Node.js access.
+
+**Why Electron works:**
+- **Write once, run anywhere** — one codebase and one engineering team for Windows, macOS, and Linux. The alternative is separate Swift/Obj-C, C# WPF/WinForms, and GTK/Qt codebases.
+- **npm ecosystem** — React, Vue, webpack, and every web tool runs in Electron unchanged.
+- **Native access via Node.js** — file system, child processes, native modules, and OS APIs unavailable in a browser.
+
+Electron resolved a decades-long problem of cross-platform desktop development. VS Code's success (50+ million users) proved that an Electron app can be a best-in-class developer tool. Understanding Electron clarifies the architecture of the majority of popular desktop apps you use and explains why RAM usage may be higher than expected.
+
+## Under the Hood
+
+The core IPC pattern — how a renderer safely calls a Node.js API via the context bridge:
 
 ```javascript
-// Main process — main.js
+// main.js — Node.js main process
 const { app, BrowserWindow, ipcMain } = require('electron');
-ipcMain.handle('read-file', (event, path) => fs.readFileSync(path, 'utf8'));
+const fs = require('fs');
 
-// Renderer (preload script)
-const { contextBridge, ipcRenderer } = require('electron');
-contextBridge.exposeInMainWorld('api', {
-  readFile: (path) => ipcRenderer.invoke('read-file', path)
+app.whenReady().then(() => {
+  const win = new BrowserWindow({
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      nodeIntegration: false,   // renderer cannot call require()
+      contextIsolation: true,   // renderer has a separate JS context
+    },
+  });
+  win.loadFile('index.html');
+});
+
+// Handle file-read requests from the renderer
+ipcMain.handle('read-file', async (event, filePath) => {
+  // Validate path before reading — never trust renderer input directly
+  if (!filePath.startsWith(app.getPath('home'))) {
+    throw new Error('Access denied');
+  }
+  return fs.promises.readFile(filePath, 'utf8');
 });
 ```
 
-**Why Electron works:**
-- **Write once, run anywhere:** one codebase, one engineering team, three operating systems. Without Electron, you'd need separate Objective-C/Swift (macOS), C# WPF/WinForms (Windows), and GTK/Qt (Linux) teams.
-- **Web technology ecosystem:** npm, React, Vue, and every web tool works in Electron.
-- **Native access via Node.js:** file system, child processes, native modules — things not available in a browser.
+```javascript
+// preload.js — runs in isolated context before the page loads
+const { contextBridge, ipcRenderer } = require('electron');
 
-**Why Electron is criticised:**
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Expose only specific, validated operations — not the full ipcRenderer
+  readFile: (path) => ipcRenderer.invoke('read-file', path),
+});
+```
 
-*Memory and disk footprint:* each Electron app bundles a full Chromium (~150 MB) and Node.js. A typical Electron app is 100–300 MB installed. If you have Slack, Discord, VS Code, and Spotify open simultaneously, you have 4 Chromium instances in memory — potentially 1–2 GB of RAM just for the browsers. VS Code uses ~500 MB RAM; a native equivalent would use ~50 MB.
+```javascript
+// renderer.js — web page JavaScript, no Node.js access
+const content = await window.electronAPI.readFile('/home/user/notes.txt');
+document.getElementById('editor').textContent = content;
+```
 
-*CPU usage:* Chromium's rendering pipeline, V8's JIT, and JavaScript execution consume more CPU than native frameworks. Battery drain is a common complaint.
+The three-file pattern (main ↔ preload ↔ renderer) is Electron's core security architecture. Older Electron apps enabled `nodeIntegration: true` in renderers — a pattern now strongly discouraged because any XSS in the renderer gained full Node.js (and thus OS) access.
 
-*Startup time:* loading Chromium and Node.js from disk takes 1–3 seconds on average hardware. Native apps typically start in 100–500ms.
+## Engineering Trade-offs
 
-**Alternatives:**
-- **Tauri (Rust):** uses the OS's native WebView (WebKit on macOS/Linux, EdgeHTML/WebView2 on Windows) instead of bundling Chromium. Apps are 5–10 MB installed, use much less RAM. Trade-off: less WebView consistency across platforms; Rust backend instead of Node.js.
-- **Flutter Desktop:** Google's UI framework using its own rendering engine (Skia/Impeller). True native feel, good performance, Dart language.
-- **Qt / wxWidgets / .NET MAUI:** truly native frameworks.
+**Chromium bundle size vs. cross-platform reach**
+Each Electron app ships a full Chromium (~120–150 MB) and Node.js runtime. A typical install is 100–300 MB. With Slack, Discord, VS Code, and WhatsApp Desktop open simultaneously, you have four Chromium instances in memory — potentially 1–2 GB of RAM for the browser engines alone. Tauri (Rust + system WebView) installs at 5–10 MB and uses the OS's existing web engine instead.
 
-## Why it matters
+**JavaScript performance vs. native performance**
+Chromium's V8 JIT and rendering pipeline consume more CPU and battery than equivalent native frameworks. Startup takes 1–3 seconds (loading Chromium from disk) vs. 100–500 ms for a native app. For most productivity tools this is acceptable; for a game or professional audio app, it would not be.
 
-Electron's model — web UI + native process — resolved a decades-long problem of cross-platform desktop development. VS Code's success (50+ million users) proved that an Electron app could be a best-in-class development tool. Understanding Electron clarifies the architecture of the majority of popular desktop apps you use, the trade-offs of web-first development tools, and why RAM usage is higher than expected. As Tauri and lighter alternatives mature, understanding the trade-offs helps make informed platform choices.
+**System WebView (Tauri) vs. bundled Chromium (Electron)**
+Tauri's approach uses the OS's native WebView (WebKit on macOS/Linux, WebView2/Edge on Windows), drastically reducing install size and RAM. The cost is rendering inconsistency across platforms — WebKit and WebView2 differ in CSS support and JS performance, and you can't guarantee the engine version your users have.
+
+**IPC verbosity vs. security**
+Node integration in the renderer (`nodeIntegration: true`) is ergonomic — you call `require('fs')` directly from the page. But any XSS vulnerability in the renderer becomes OS-level code execution. Context isolation + IPC is more code but provides a meaningful security boundary. All new Electron apps should use context isolation.
+
+**Electron vs. Flutter Desktop vs. native**
+Flutter Desktop uses its own rendering engine (Skia/Impeller), has native feel, and performs better than Electron, but requires Dart. Fully native frameworks (Swift/AppKit, C# WinUI, Qt) give best performance and OS integration at the cost of separate codebases per platform. The right choice depends on whether web-tech reuse or native fidelity is the priority.
 
 ## Real-world examples
 
-- VS Code (Microsoft): the most popular code editor worldwide, written in TypeScript on Electron.
-- Slack: desktop Slack is an Electron app.
-- Discord: Electron on desktop.
-- GitHub Desktop, Figma (now native), Notion, 1Password 7, Twitch.
-- WhatsApp Desktop: Electron (Windows), native on macOS.
+- **VS Code** (Microsoft) — the most popular code editor globally, 50+ million users. Built in TypeScript on Electron; demonstrates that Electron can host a best-in-class developer tool.
+- **Slack** — entire desktop client is Electron; the team has invested heavily in performance work (lazy loading, out-of-process tab rendering) to address the RAM reputation.
+- **Discord** — Electron on Windows and Linux; native on macOS after 2023 rewrite.
+- **GitHub Desktop** — Electron-based Git GUI; source is open source and a readable Electron reference implementation.
+- **Figma** — originally Electron; migrated key rendering to a native macOS app in 2023 for performance, illustrating the ceiling Electron hits for graphics-intensive apps.
 
 ## Common misconceptions
 
-- **"Electron apps are web apps pretending to be desktop apps."** Electron apps have full access to the file system, native menus, system tray, notifications, and OS APIs — capabilities unavailable in a browser. They are genuinely desktop applications.
-- **"Electron is always slow."** VS Code's startup, editing performance, and extension system are excellent despite being Electron. Performance depends on the app's implementation; Electron doesn't preclude performant apps.
+- **"Electron apps are web apps pretending to be desktop apps."** Electron apps have full access to the file system, native menus, system tray, notifications, and arbitrary OS APIs via Node.js — capabilities unavailable in a browser. They are genuinely desktop applications with a web-based UI layer.
+- **"Electron is always slow."** VS Code's startup, editing performance, and extension system are excellent despite being Electron. Performance depends on the app's implementation; the framework does not preclude performant apps. The criticism is valid for resource use, not for UI responsiveness when implemented well.
+
+## Try it yourself
+
+Simulate Electron's two-process IPC pattern — main process handling a privileged request from the renderer:
+
+```bash
+python3 - << 'EOF'
+import queue, threading, time, os
+
+# Simulate the main process (Node.js side)
+ipc_channel = queue.Queue()
+response_channel = queue.Queue()
+
+def main_process():
+    """Handles privileged requests from the renderer."""
+    while True:
+        msg = ipc_channel.get()
+        if msg is None: break
+        channel, payload = msg
+        if channel == "read-file":
+            path = payload
+            # Validate before acting (never trust renderer input)
+            if not path.startswith(os.path.expanduser("~")):
+                response_channel.put({"error": "Access denied"})
+            else:
+                response_channel.put({"result": f"[contents of {path}]"})
+        elif channel == "get-platform":
+            response_channel.put({"result": os.name})
+
+threading.Thread(target=main_process, daemon=True).start()
+
+# Simulate the renderer process (web page side)
+def renderer_invoke(channel, payload):
+    ipc_channel.put((channel, payload))
+    return response_channel.get(timeout=1)
+
+print("Renderer -> Main IPC simulation:\n")
+print("  ipcRenderer.invoke('get-platform')")
+r = renderer_invoke("get-platform", None)
+print(f"    <- {r}\n")
+
+print("  ipcRenderer.invoke('read-file', '~/notes.txt')")
+r = renderer_invoke("read-file", os.path.expanduser("~/notes.txt"))
+print(f"    <- {r}\n")
+
+print("  ipcRenderer.invoke('read-file', '/etc/passwd')  # blocked")
+r = renderer_invoke("read-file", "/etc/passwd")
+print(f"    <- {r}")
+
+ipc_channel.put(None)
+EOF
+```
 
 ## Learn next
 
-Electron's model is being challenged by [progressive web apps](/t/progressive-web-app) (browser-based with offline and install capabilities) and lighter frameworks like Tauri. [WebAssembly](/t/webassembly) can run inside Electron's Chromium for compute-intensive logic. Understanding [Node.js](/t/nodejs) is essential for Electron's main process.
+- [Progressive Web App](/t/progressive-web-app) — the browser-based alternative to Electron; installable web apps that avoid the Chromium bundle by running in the OS's existing browser.
+- [WebAssembly](/t/webassembly) — can run inside Electron's Chromium for compute-intensive logic; used by Figma's renderer and VS Code's language servers.
+- [Web Browser](/t/web-browser) — Electron is Chromium; understanding the browser's process model, site isolation, and V8 pipeline explains Electron's architecture and resource use.
