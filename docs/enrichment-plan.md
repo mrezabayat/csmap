@@ -1,6 +1,27 @@
 # Content Enrichment & Taxonomy Plan
 
-> **Status (2026-06-16):** Phase 0 (infrastructure) shipped, **Phase 1 complete** (334/334 classified; ambiguous calls recorded in the per-category commit messages, `git log --grep="Master Computing Taxonomy"`). **Phase 2 in progress: 258/334 enriched — foundations (26/26), operating-systems (23/23), networks-and-internet (23/23), distributed-systems-and-cloud (25/25), security-and-privacy (21/21), applications (15/15), computer-architecture (15/15), data-and-databases (20/20), programming-languages (23/23), software-engineering (21/21), hardware (19/19), low-latency-systems (12/12), operations-and-reliability (15/15) COMPLETE**, all gates green. Remaining categories: mathematical-foundations (12), graphics-and-media (14), human-computer-interaction (12), artificial-intelligence (23), history-and-society (15, LAST). Next: mathematical-foundations. Use `/enrich-topic` per topic; `npm run audit:taxonomy` is the progress meter.
+> **Status (2026-06-17):** Phase 0 (infrastructure) shipped, **Phase 1 complete** (334/334 classified; ambiguous calls recorded in the per-category commit messages, `git log --grep="Master Computing Taxonomy"`). **Phase 2 in progress: 258/334 enriched** — 76 topics remaining across 5 categories. Next: mathematical-foundations. Use `/enrich-topic` per topic; `npm run audit:taxonomy` is the progress meter.
+>
+> | Category | Topics | Status |
+> |---|---|---|
+> | foundations | 26/26 | ✅ Complete |
+> | operating-systems | 23/23 | ✅ Complete |
+> | networks-and-internet | 23/23 | ✅ Complete |
+> | distributed-systems-and-cloud | 25/25 | ✅ Complete |
+> | security-and-privacy | 21/21 | ✅ Complete |
+> | applications | 15/15 | ✅ Complete |
+> | computer-architecture | 15/15 | ✅ Complete |
+> | data-and-databases | 20/20 | ✅ Complete |
+> | programming-languages | 23/23 | ✅ Complete |
+> | software-engineering | 21/21 | ✅ Complete |
+> | hardware | 19/19 | ✅ Complete |
+> | low-latency-systems | 12/12 | ✅ Complete |
+> | operations-and-reliability | 15/15 | ✅ Complete |
+> | **mathematical-foundations** | **0/12** | ⏳ Next |
+> | graphics-and-media | 0/14 | Pending |
+> | human-computer-interaction | 0/12 | Pending |
+> | artificial-intelligence | 0/23 | Pending |
+> | history-and-society | 0/15 | Pending (last) |
 >
 > Follows on from `content-roadmap.md` (all 3 rings complete, 334 topics, all `status: reviewed`). This plan upgrades every topic from the v1 six-heading structure to the enriched v2 structure, classifies every topic into the Master Computing Taxonomy, and installs the tooling so every *future* topic is born classified and enriched.
 
