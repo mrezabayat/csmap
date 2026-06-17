@@ -1,0 +1,172 @@
+---
+import BaseLayout from "~/layouts/BaseLayout.astro";
+import { isAdminSession } from "~/lib/newsletter-send";
+
+// Server-rendered so we can gate on the better-auth session before sending any
+// of the console markup to the browser.
+export const prerender = false;
+
+const env = Astro.locals.runtime?.env;
+let isAdmin = false;
+if (env?.DB) {
+  isAdmin = await isAdminSession(Astro.request, env, Astro.clientAddress);
+}
+---
+
+<BaseLayout title="Newsletter admin">
+  <meta slot="head" name="robots" content="noindex" />
+
+  <div class="mx-auto max-w-2xl px-4 py-10">
+    <h1 class="text-2xl font-bold text-[var(--color-atlas-ink)]">
+      Newsletter admin
+    </h1>
+
+    {!isAdmin && (
+      <p class="mt-4 rounded-md border border-[var(--color-atlas-line)] bg-[var(--color-atlas-bg)] p-4 text-sm text-[var(--color-atlas-muted)]">
+        You don't have access to this page. Sign in with an authorized account
+        using the menu in the top-right, then reload. If you just signed in and
+        still see this, your email isn't on the admin allowlist.
+      </p>
+    )}
+
+    {isAdmin && (
+      <>
+        <p class="mt-1 text-sm text-[var(--color-atlas-muted)]">
+          Compose a one-off issue, or run the automatic “what's new” digest on
+          demand. Everything sends to confirmed subscribers only.
+        </p>
+
+        <!-- One-off issue -->
+        <section class="mt-8 rounded-lg border border-[var(--color-atlas-line)] p-4">
+          <h2 class="text-base font-semibold text-[var(--color-atlas-ink)]">
+            Compose an issue
+          </h2>
+          <label class="mt-3 block">
+            <span class="text-sm text-[var(--color-atlas-muted)]">Subject</span>
+            <input
+              type="text"
+              id="subject"
+              class="mt-1 w-full rounded-md border border-[var(--color-atlas-line)] bg-[var(--color-atlas-bg)] px-3 py-2 text-sm text-[var(--color-atlas-ink)] focus:border-[var(--color-atlas-accent)] focus:outline-none"
+            />
+          </label>
+          <label class="mt-3 block">
+            <span class="text-sm text-[var(--color-atlas-muted)]">
+              Body (HTML allowed; plain-text version is derived automatically)
+            </span>
+            <textarea
+              id="body"
+              rows="10"
+              class="mt-1 w-full rounded-md border border-[var(--color-atlas-line)] bg-[var(--color-atlas-bg)] px-3 py-2 font-mono text-sm text-[var(--color-atlas-ink)] focus:border-[var(--color-atlas-accent)] focus:outline-none"
+            ></textarea>
+          </label>
+          <button
+            type="button"
+            id="send-issue"
+            class="mt-3 rounded-md border border-[var(--color-atlas-accent)] bg-[var(--color-atlas-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+          >
+            Send to all confirmed subscribers
+          </button>
+        </section>
+
+        <!-- Auto digest -->
+        <section class="mt-6 rounded-lg border border-[var(--color-atlas-line)] p-4">
+          <h2 class="text-base font-semibold text-[var(--color-atlas-ink)]">
+            Auto digest
+          </h2>
+          <p class="mt-1 text-sm text-[var(--color-atlas-muted)]">
+            Builds an email from topics published since the last digest. This
+            runs automatically every Monday — use these for testing or an early
+            send.
+          </p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              id="digest-preview"
+              class="rounded-md border border-[var(--color-atlas-line)] px-4 py-2 text-sm font-medium text-[var(--color-atlas-ink)] hover:border-[var(--color-atlas-accent)] disabled:opacity-60"
+            >
+              Preview (dry run)
+            </button>
+            <button
+              type="button"
+              id="digest-send"
+              class="rounded-md border border-[var(--color-atlas-accent)] bg-[var(--color-atlas-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+            >
+              Send digest now
+            </button>
+          </div>
+        </section>
+
+        <pre
+          id="result"
+          class="mt-6 hidden overflow-auto rounded-md border border-[var(--color-atlas-line)] bg-[var(--color-atlas-bg)] p-3 text-xs text-[var(--color-atlas-ink)]"></pre>
+      </>
+    )}
+  </div>
+</BaseLayout>
+
+<script>
+  // The admin session cookie authorizes these requests; no secret is stored or
+  // sent from the browser. Same-origin fetch includes the cookie automatically.
+  const el = <T extends HTMLElement>(id: string) =>
+    document.getElementById(id) as T | null;
+
+  const result = el<HTMLPreElement>("result");
+  if (result) {
+    const show = (data: unknown, ok: boolean) => {
+      result.classList.remove("hidden");
+      result.textContent = JSON.stringify(data, null, 2);
+      result.style.borderColor = ok ? "var(--color-atlas-accent)" : "#dc2626";
+    };
+
+    /** Strip HTML to a plain-text fallback for the email's text/plain part. */
+    const htmlToText = (html: string): string => {
+      const div = document.createElement("div");
+      div.innerHTML = html;
+      return (div.textContent ?? "").replace(/\n{3,}/g, "\n\n").trim();
+    };
+
+    const call = async (
+      url: string,
+      body: Record<string, unknown> | null,
+      button: HTMLButtonElement,
+    ) => {
+      button.disabled = true;
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+        show(await res.json().catch(() => ({})), res.ok);
+      } catch (err) {
+        show({ error: String(err) }, false);
+      } finally {
+        button.disabled = false;
+      }
+    };
+
+    el<HTMLButtonElement>("send-issue")?.addEventListener("click", (e) => {
+      const subject = el<HTMLInputElement>("subject")?.value.trim() ?? "";
+      const html = el<HTMLTextAreaElement>("body")?.value.trim() ?? "";
+      if (!subject || !html) {
+        show({ error: "Subject and body are required." }, false);
+        return;
+      }
+      if (!confirm("Send this issue to ALL confirmed subscribers?")) return;
+      call(
+        "/api/newsletter/send",
+        { subject, html, text: htmlToText(html) },
+        e.currentTarget as HTMLButtonElement,
+      );
+    });
+
+    el<HTMLButtonElement>("digest-preview")?.addEventListener("click", (e) =>
+      call("/api/newsletter/digest?dry=1", null, e.currentTarget as HTMLButtonElement),
+    );
+
+    el<HTMLButtonElement>("digest-send")?.addEventListener("click", (e) => {
+      if (!confirm("Send the digest now to ALL confirmed subscribers?")) return;
+      call("/api/newsletter/digest", null, e.currentTarget as HTMLButtonElement);
+    });
+  }
+</script>

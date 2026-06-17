@@ -13,8 +13,11 @@ export default defineConfig({
   }),
   integrations: [
     mdx(),
-    // /dev/* pages are scratch/verification pages — keep them out of the sitemap.
-    sitemap({ filter: (page) => !page.includes("/dev/") }),
+    // /dev/* are scratch pages and /admin/* is the private newsletter console —
+    // keep both out of the sitemap.
+    sitemap({
+      filter: (page) => !page.includes("/dev/") && !page.includes("/admin/"),
+    }),
     react(),
   ],
   markdown: {

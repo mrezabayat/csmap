@@ -14,8 +14,11 @@ type CloudflareBindings = {
   RESEND_API_KEY?: string;
   // Verified "from" address, e.g. "CS Map <newsletter@yourdomain>".
   NEWSLETTER_FROM?: string;
-  // Shared secret guarding the admin-only send endpoint.
+  // Shared secret guarding the admin-only send endpoint (used by the cron).
   NEWSLETTER_ADMIN_SECRET?: string;
+  // Comma-separated allowlist of emails that may use the admin console while
+  // logged in via better-auth, e.g. "you@example.com,other@example.com".
+  NEWSLETTER_ADMIN_EMAILS?: string;
 };
 
 declare namespace App {

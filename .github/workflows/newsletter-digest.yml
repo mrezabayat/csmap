@@ -1,0 +1,53 @@
+name: newsletter-digest
+
+# Sends the automatic "what's new" digest to confirmed subscribers.
+# The endpoint itself is a no-op when there are no new topics, so running on a
+# fixed schedule is safe. Trigger manually via "Run workflow" to test.
+on:
+  schedule:
+    # 09:00 UTC every Monday.
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Preview only (don't send)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: newsletter-digest
+  cancel-in-progress: false
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger digest
+        env:
+          ADMIN_SECRET: ${{ secrets.NEWSLETTER_ADMIN_SECRET }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          if [ -z "$ADMIN_SECRET" ]; then
+            echo "::error::NEWSLETTER_ADMIN_SECRET repo secret is not set."
+            exit 1
+          fi
+          URL="https://csmap.mycodingdays.com/api/newsletter/digest"
+          if [ "$DRY" = "true" ]; then
+            URL="$URL?dry=1"
+          fi
+          echo "POST $URL"
+          code=$(curl -s -S -o response.json -w "%{http_code}" \
+            -X POST "$URL" \
+            -H "authorization: Bearer $ADMIN_SECRET")
+          echo "HTTP $code"
+          cat response.json
+          echo
+          # Treat any non-2xx as a failure so the run shows red.
+          case "$code" in
+            2*) exit 0 ;;
+            *) echo "::error::Digest request failed (HTTP $code)"; exit 1 ;;
+          esac

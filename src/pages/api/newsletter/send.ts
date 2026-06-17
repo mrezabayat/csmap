@@ -1,38 +1,46 @@
 import type { APIRoute } from "astro";
 import { getCloudflareEnv } from "~/lib/cloudflare";
-import { buildCampaignEmail, sendEmail } from "~/lib/email";
-import type { SubscriberRow } from "~/lib/newsletter";
+import { checkRateLimit } from "~/lib/rate-limit";
+import { authorizeAdmin, sendCampaignToConfirmed } from "~/lib/newsletter-send";
 
 export const prerender = false;
 
-function json(data: unknown, status = 200): Response {
+// Allow a handful of admin actions, then throttle. Generous enough for real
+// use, tight enough that the endpoint can't be hammered.
+const RATE_LIMIT = 20;
+const RATE_WINDOW_MS = 15 * 60 * 1000;
+// Slow down credential guessing without affecting legitimate use.
+const AUTH_FAIL_DELAY_MS = 500;
+
+function json(data: unknown, status = 200, headers: HeadersInit = {}): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: { "content-type": "application/json; charset=utf-8", ...headers },
   });
 }
 
-/** Constant-time-ish comparison to avoid leaking the secret via timing. */
-function secretsMatch(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
+const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const POST: APIRoute = async (context) => {
   const env = getCloudflareEnv(context);
 
-  if (!env.NEWSLETTER_ADMIN_SECRET) {
+  if (!env.NEWSLETTER_ADMIN_SECRET && !env.NEWSLETTER_ADMIN_EMAILS) {
     return json({ error: "Newsletter sending is not configured." }, 503);
   }
   if (!env.RESEND_API_KEY || !env.NEWSLETTER_FROM) {
     return json({ error: "Newsletter is not configured." }, 503);
   }
 
-  const auth = context.request.headers.get("authorization") ?? "";
-  const provided = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  if (!provided || !secretsMatch(provided, env.NEWSLETTER_ADMIN_SECRET)) {
+  const ip = context.clientAddress;
+  const rl = await checkRateLimit(env, `nl-send:${ip}`, RATE_LIMIT, RATE_WINDOW_MS);
+  if (!rl.allowed) {
+    return json({ error: "Too many requests." }, 429, {
+      "retry-after": String(rl.retryAfter),
+    });
+  }
+
+  if (!(await authorizeAdmin(context.request, env, ip))) {
+    await delay(AUTH_FAIL_DELAY_MS);
     return json({ error: "Unauthorized" }, 401);
   }
 
@@ -50,32 +58,12 @@ export const POST: APIRoute = async (context) => {
     return json({ error: "subject, html, and text are required." }, 400);
   }
 
-  let subscribers: SubscriberRow[];
+  let summary;
   try {
-    const { results } = await env.DB.prepare(
-      `SELECT * FROM newsletter_subscriber WHERE status = 'confirmed'`,
-    ).all<SubscriberRow>();
-    subscribers = results;
+    summary = await sendCampaignToConfirmed(env, { subject, bodyHtml, bodyText });
   } catch {
-    return json({ error: "Failed to load subscribers." }, 500);
+    return json({ error: "Failed to send." }, 500);
   }
 
-  let sent = 0;
-  const failed: string[] = [];
-  for (const sub of subscribers) {
-    const mail = buildCampaignEmail({ subject, bodyHtml, bodyText }, sub);
-    const result = await sendEmail({
-      apiKey: env.RESEND_API_KEY,
-      from: env.NEWSLETTER_FROM,
-      to: sub.email,
-      subject: mail.subject,
-      html: mail.html,
-      text: mail.text,
-      unsubscribe: mail.unsubscribe,
-    });
-    if (result.ok) sent++;
-    else failed.push(sub.email);
-  }
-
-  return json({ ok: true, recipients: subscribers.length, sent, failed });
+  return json({ ok: true, ...summary });
 };

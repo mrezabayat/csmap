@@ -46,6 +46,7 @@ const canonicalUrl = canonical
     <meta name="twitter:title" content={fullTitle} />
     <meta name="twitter:description" content={finalDescription} />
     <meta name="generator" content={Astro.generator} />
+    <slot name="head" />
     <script is:inline>
       // Set theme before paint to avoid FOUC. Stored choice wins over OS pref.
       try {
