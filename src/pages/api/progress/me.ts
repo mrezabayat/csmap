@@ -1,8 +1,7 @@
 import type { APIRoute } from "astro";
 import { createAuth } from "~/lib/auth";
 import { getCloudflareEnv, type CloudflareEnv } from "~/lib/cloudflare";
-import { loadGraph } from "~/lib/graph";
-import { normalisePathTopics } from "~/lib/paths";
+import { getPathMeta, getTopicTitle } from "~/lib/progress-meta";
 
 export const prerender = false;
 
@@ -78,8 +77,6 @@ export const GET: APIRoute = async (context) => {
     return json({ error: "Failed to load progress" }, 500);
   }
 
-  const { paths, topicsById } = await loadGraph();
-
   // Group raw rows by path id.
   const byPath = new Map<
     string,
@@ -93,18 +90,15 @@ export const GET: APIRoute = async (context) => {
 
   const summaries: ProgressMePathSummary[] = [];
   for (const [pathId, entries] of byPath) {
-    const path = paths.find((p) => p.id === pathId);
+    const path = getPathMeta(pathId);
     if (!path) continue; // Orphaned progress for a removed path; ignore.
 
-    const normalised = normalisePathTopics(path.data.topics);
-    const requiredIds = normalised
-      .filter((n) => !n.optional)
-      .map((n) => n.id);
+    const requiredIds = path.requiredTopicIds;
     const requiredCount = requiredIds.length;
     const requiredSet = new Set(requiredIds);
 
     // Filter to topics still in the path; drop any stale ones the schema removed.
-    const allowedIds = new Set(normalised.map((n) => n.id));
+    const allowedIds = new Set(path.topicIds);
     const completedTopicIds = entries
       .map((e) => e.topicId)
       .filter((id) => allowedIds.has(id));
@@ -129,7 +123,7 @@ export const GET: APIRoute = async (context) => {
 
     summaries.push({
       pathId,
-      pathTitle: path.data.title,
+      pathTitle: path.title,
       completedTopicIds,
       completedCount,
       requiredCount,
@@ -145,13 +139,12 @@ export const GET: APIRoute = async (context) => {
     .sort((a, b) => b.completed_at - a.completed_at)
     .slice(0, 20)
     .map((row) => {
-      const topic = topicsById.get(row.topic_id);
-      const path = paths.find((p) => p.id === row.path_id);
+      const path = getPathMeta(row.path_id);
       return {
         pathId: row.path_id,
-        pathTitle: path?.data.title ?? row.path_id,
+        pathTitle: path?.title ?? row.path_id,
         topicId: row.topic_id,
-        topicTitle: topic?.data.title ?? row.topic_id,
+        topicTitle: getTopicTitle(row.topic_id) ?? row.topic_id,
         completedAt: new Date(row.completed_at).toISOString(),
       };
     });

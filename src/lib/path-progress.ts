@@ -1,5 +1,4 @@
-import { loadGraph } from "./graph";
-import { pathTopicIds, requiredPathTopicIds } from "./paths";
+import { getPathMeta } from "./progress-meta";
 
 export interface ProgressPathSpec {
   pathId: string;
@@ -12,14 +11,13 @@ export interface ProgressPathSpec {
 export async function getProgressPathSpec(
   pathId: string,
 ): Promise<ProgressPathSpec | null> {
-  const { paths } = await loadGraph();
-  const path = paths.find((p) => p.id === pathId);
-  if (!path) return null;
+  const meta = getPathMeta(pathId);
+  if (!meta) return null;
 
   return {
-    pathId: path.id,
-    topicIds: pathTopicIds(path.data.topics),
-    requiredTopicIds: requiredPathTopicIds(path.data.topics),
+    pathId: meta.id,
+    topicIds: meta.topicIds,
+    requiredTopicIds: meta.requiredTopicIds,
   };
 }
 
@@ -27,6 +25,6 @@ export async function isValidProgressTarget(
   pathId: string,
   topicId: string,
 ): Promise<boolean> {
-  const spec = await getProgressPathSpec(pathId);
-  return Boolean(spec?.topicIds.includes(topicId));
+  const meta = getPathMeta(pathId);
+  return Boolean(meta?.topicIds.includes(topicId));
 }
