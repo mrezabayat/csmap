@@ -1,0 +1,121 @@
+---
+interface Props {
+  /** Tag where the signup happened, stored on the subscriber row. */
+  source?: string;
+  /** Optional heading; omit for a bare inline form. */
+  heading?: string;
+  blurb?: string;
+}
+
+const {
+  source = "footer",
+  heading = "Get new topics by email",
+  blurb = "Occasional updates when new topics are published. No spam, unsubscribe anytime.",
+} = Astro.props;
+---
+
+<section
+  class="newsletter-signup"
+  data-newsletter
+  aria-label="Newsletter signup"
+>
+  {heading && (
+    <h2 class="text-sm font-semibold text-[var(--color-atlas-ink)]">
+      {heading}
+    </h2>
+  )}
+  {blurb && (
+    <p class="mt-1 text-xs text-[var(--color-atlas-muted)]">{blurb}</p>
+  )}
+
+  <form
+    class="mt-3 flex flex-wrap items-center gap-2"
+    action="/api/newsletter/subscribe"
+    method="post"
+    data-newsletter-form
+  >
+    <input type="hidden" name="source" value={source} />
+    <label class="sr-only" for={`newsletter-email-${source}`}>
+      Email address
+    </label>
+    <input
+      id={`newsletter-email-${source}`}
+      type="email"
+      name="email"
+      required
+      autocomplete="email"
+      placeholder="you@example.com"
+      class="min-w-0 flex-1 rounded-md border border-[var(--color-atlas-line)] bg-[var(--color-atlas-bg)] px-3 py-2 text-sm text-[var(--color-atlas-ink)] placeholder:text-[var(--color-atlas-muted)] focus:border-[var(--color-atlas-accent)] focus:outline-none"
+    />
+    <button
+      type="submit"
+      class="rounded-md border border-[var(--color-atlas-accent)] bg-[var(--color-atlas-accent)] px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-60"
+    >
+      Subscribe
+    </button>
+  </form>
+
+  <p
+    class="mt-2 text-xs hidden"
+    data-newsletter-status
+    role="status"
+    aria-live="polite"
+  >
+  </p>
+</section>
+
+<script>
+  // Progressive enhancement: submit via fetch so we can show inline feedback
+  // instead of navigating to the raw JSON response.
+  document.querySelectorAll<HTMLElement>("[data-newsletter]").forEach((root) => {
+    const form = root.querySelector<HTMLFormElement>("[data-newsletter-form]");
+    const status = root.querySelector<HTMLElement>("[data-newsletter-status]");
+    if (!form || !status) return;
+
+    const setStatus = (msg: string, ok: boolean) => {
+      status.textContent = msg;
+      status.classList.remove("hidden");
+      status.style.color = ok ? "var(--color-atlas-accent)" : "#dc2626";
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const button = form.querySelector<HTMLButtonElement>(
+        "button[type=submit]",
+      );
+      const data = new FormData(form);
+      const email = String(data.get("email") ?? "");
+      if (button) button.disabled = true;
+
+      try {
+        const res = await fetch(form.action, {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ email, source: data.get("source") }),
+        });
+        const payload = (await res.json().catch(() => ({}))) as {
+          status?: string;
+          error?: string;
+        };
+
+        if (res.ok) {
+          if (payload.status === "already-subscribed") {
+            setStatus("You're already subscribed — thanks!", true);
+          } else {
+            setStatus("Check your inbox to confirm your subscription.", true);
+          }
+          form.reset();
+        } else {
+          setStatus(
+            payload.error ?? "Something went wrong. Please try again.",
+            false,
+          );
+        }
+      } catch {
+        setStatus("Network error. Please try again.", false);
+      } finally {
+        if (button) button.disabled = false;
+      }
+    });
+  });
+</script>

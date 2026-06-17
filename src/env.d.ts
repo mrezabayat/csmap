@@ -10,6 +10,12 @@ type CloudflareBindings = {
   GOOGLE_CLIENT_SECRET?: string;
   GITHUB_CLIENT_ID?: string;
   GITHUB_CLIENT_SECRET?: string;
+  // Resend API key for sending newsletter emails.
+  RESEND_API_KEY?: string;
+  // Verified "from" address, e.g. "CS Map <newsletter@yourdomain>".
+  NEWSLETTER_FROM?: string;
+  // Shared secret guarding the admin-only send endpoint.
+  NEWSLETTER_ADMIN_SECRET?: string;
 };
 
 declare namespace App {

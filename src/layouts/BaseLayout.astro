@@ -1,6 +1,7 @@
 ---
 import "~/styles/global.css";
 import AuthMenu from "~/components/AuthMenu";
+import NewsletterSignup from "~/components/NewsletterSignup.astro";
 import { SITE } from "~/site.config";
 
 interface Props {
@@ -173,6 +174,9 @@ const canonicalUrl = canonical
     <footer
       class="border-t border-[var(--color-atlas-line)] bg-[var(--color-atlas-surface)] mt-12"
     >
+      <div class="mx-auto max-w-6xl px-4 py-8 border-b border-[var(--color-atlas-line)]">
+        <NewsletterSignup />
+      </div>
       <div
         class="mx-auto max-w-6xl px-4 py-6 text-sm text-[var(--color-atlas-muted)] flex flex-wrap items-center justify-between gap-3"
       >
